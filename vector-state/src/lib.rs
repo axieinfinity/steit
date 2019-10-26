@@ -1,4 +1,4 @@
-mod de;
-mod ser;
+pub mod de;
+pub mod ser;
 
-mod varint;
+pub mod varint;

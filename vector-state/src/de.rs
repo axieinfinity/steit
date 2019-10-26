@@ -1,17 +1,16 @@
 use std::io;
 
-use varint::Varint;
-use std::io::Error;
+use crate::varint::Varint;
 
 pub trait Deserialize: Sized {
     fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self>;
 }
 
 impl<I> Deserialize for I
-    where
-        I: Varint,
+where
+    I: Varint,
 {
-    fn deserialize<R: io::Read>(reader: &mut R) -> Result<Self, Error> {
+    fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self> {
         Varint::deserialize(reader)
     }
 }

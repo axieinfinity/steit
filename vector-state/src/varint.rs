@@ -86,7 +86,7 @@ impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
 
 // Reference: https://bit.ly/2BJbkd5
-pub fn size_32(value: i32) -> u8 {
+fn size_32(value: i32) -> u8 {
     if value & (!0 << 7) == 0 {
         return 1;
     }
@@ -107,7 +107,7 @@ pub fn size_32(value: i32) -> u8 {
 }
 
 // Reference: https://bit.ly/2MPq54D
-pub fn size_64(mut value: i64) -> u8 {
+fn size_64(mut value: i64) -> u8 {
     // Handle two popular special cases upfront ...
     if value & (!0i64 << 7) == 0 {
         return 1;
