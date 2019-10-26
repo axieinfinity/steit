@@ -136,3 +136,59 @@ pub fn size_64(mut value: i64) -> u8 {
 
     size
 }
+
+#[cfg(test)]
+mod tests {
+    use std::fmt;
+
+    use super::Varint;
+
+    fn encode<T: Varint>(value: T) -> Vec<u8> {
+        let mut bytes = Vec::with_capacity(10);
+        value.serialize(&mut bytes).unwrap();
+        bytes
+    }
+
+    fn decode<T: Varint>(bytes: &[u8]) -> T {
+        T::deserialize(&mut &*bytes).unwrap()
+    }
+
+    fn assert_encode<T: Varint>(value: T, expected_bytes: &[u8]) {
+        assert_eq!(&*encode(value), expected_bytes);
+    }
+
+    fn assert_decode<T: Varint + PartialEq + fmt::Debug>(bytes: &[u8], expected_value: T) {
+        assert_eq!(decode::<T>(bytes), expected_value);
+    }
+
+    #[test]
+    fn encode_zig_zag() {
+        assert_encode(0, &[0]);
+        assert_encode(-1, &[1]);
+        assert_encode(1, &[2]);
+        assert_encode(-2, &[3]);
+        assert_encode(2, &[4]);
+    }
+
+    #[test]
+    fn decode_zig_zag() {
+        assert_decode(&[0], 0);
+        assert_decode(&[1], -1);
+        assert_decode(&[2], 1);
+        assert_decode(&[3], -2);
+        assert_decode(&[4], 2);
+    }
+
+    fn assert_back_and_forth<T: Varint + Copy + PartialEq + fmt::Debug>(value: T) {
+        assert_eq!(decode::<T>(&*encode(value)), value);
+    }
+
+    #[test]
+    fn back_and_forth() {
+        assert_back_and_forth(-1i8 as u64);
+        assert_back_and_forth(!0u64);
+        assert_back_and_forth(-1i8 as u32);
+        assert_back_and_forth(1_000_000);
+        assert_back_and_forth(42);
+    }
+}
