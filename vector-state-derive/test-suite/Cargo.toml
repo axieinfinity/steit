@@ -1,0 +1,12 @@
+[package]
+name = "vector-state-derive-test"
+version = "0.1.0"
+description = "Tests for state derivation."
+authors = ["Sky Mavis Engineering <engineering@skymavis.com>"]
+edition = "2018"
+license = "MIT"
+publish = false
+
+[dependencies]
+vector-state = { path = "../../vector-state" }
+vector-state-derive = { path = ".." }

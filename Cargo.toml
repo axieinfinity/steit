@@ -2,4 +2,5 @@
 members = [
     "vector-state",
     "vector-state-derive",
+    "vector-state-derive/test-suite",
 ]
