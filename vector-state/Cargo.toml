@@ -1,0 +1,24 @@
+[package]
+name = "vector-state"
+version = "0.1.0"
+description = "Easy state management and synchronization between server and client."
+authors = ["Sky Mavis Engineering <engineering@skymavis.com>"]
+license = "MIT"
+homepage = "https://github.com/skymavis/vector"
+repository = "https://github.com/skymavis/vector"
+categories = ["data-structures", "encoding", "game-engines"]
+keywords = ["state", "serialization", "synchronization", "protobuf"]
+include = ["src/**/*", "LICENSE", "README.md"]
+readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[badges]
+travis-ci = { repository = "skymavis/vector", branch = "master" }
+coveralls = { repository = "skymavis/vector", branch = "master" }
+is-it-maintained-issue-resolution = { repository = "skymavis/vector" }
+is-it-maintained-open-issues = { repository = "skymavis/vector" }
+maintenance = { status = "actively-developed" }
+
+[dependencies]
