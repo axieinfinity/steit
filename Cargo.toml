@@ -1,4 +1,5 @@
 [workspace]
 members = [
     "vector-state",
+    "vector-state-derive",
 ]
