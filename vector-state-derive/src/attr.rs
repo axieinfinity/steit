@@ -1,13 +1,13 @@
 use crate::context::Context;
 
-pub struct AttrHolder<'a, T> {
+pub struct Attr<'a, T> {
     context: &'a Context,
     name: &'static str,
     value: Option<T>,
     tokens: proc_macro2::TokenStream,
 }
 
-impl<'a, T> AttrHolder<'a, T> {
+impl<'a, T> Attr<'a, T> {
     pub fn new(context: &'a Context, name: &'static str) -> Self {
         Self {
             context,
@@ -29,24 +29,24 @@ impl<'a, T> AttrHolder<'a, T> {
         }
     }
 
-    pub fn attr(self) -> Option<Attr<T>> {
-        let AttrHolder { value, tokens, .. } = self;
-        value.map(|value| Attr { value, tokens })
+    pub fn value(self) -> Option<AttrValue<T>> {
+        let Attr { value, tokens, .. } = self;
+        value.map(|value| AttrValue { value, tokens })
     }
 }
 
-pub struct Attr<T> {
+pub struct AttrValue<T> {
     value: T,
     tokens: proc_macro2::TokenStream,
 }
 
-impl<T> Attr<T> {
-    pub fn value(&self) -> &T {
+impl<T> AttrValue<T> {
+    pub fn get(&self) -> &T {
         &self.value
     }
 }
 
-impl<T> quote::ToTokens for Attr<T> {
+impl<T> quote::ToTokens for AttrValue<T> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         self.tokens.to_tokens(tokens);
     }

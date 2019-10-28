@@ -1,4 +1,4 @@
-use crate::attr::{Attr, AttrHolder};
+use crate::attr::{Attr, AttrValue};
 use crate::context::Context;
 use crate::util;
 
@@ -7,7 +7,7 @@ const PRIMITIVE_TYPES: &[&str] = &["bool", "i8", "i16", "i32", "i64", "u8", "u16
 
 pub enum FieldKind {
     Primitive {
-        default: Option<Attr<proc_macro2::TokenStream>>,
+        default: Option<AttrValue<proc_macro2::TokenStream>>,
     },
 
     State,
@@ -17,7 +17,7 @@ pub struct IndexedField<'a> {
     name: Option<syn::Ident>,
     ty: &'a syn::Type,
     index: usize,
-    tag: Attr<u16>,
+    tag: AttrValue<u16>,
     kind: FieldKind,
 }
 
@@ -49,9 +49,9 @@ impl<'a> IndexedField<'a> {
         field: &syn::Field,
         attrs: &[syn::Attribute],
         is_primitive: bool,
-    ) -> Result<(Attr<u16>, Option<Attr<proc_macro2::TokenStream>>), ()> {
-        let mut tag_holder = AttrHolder::new(context, "tag");
-        let mut default_holder = AttrHolder::new(context, "default");
+    ) -> Result<(AttrValue<u16>, Option<AttrValue<proc_macro2::TokenStream>>), ()> {
+        let mut tag_attr = Attr::new(context, "tag");
+        let mut default_attr = Attr::new(context, "default");
 
         let mut tag_encountered = false;
 
@@ -66,7 +66,7 @@ impl<'a> IndexedField<'a> {
 
                     if let Ok(lit) = util::get_lit_int(context, "tag", &item.lit) {
                         if let Ok(tag) = lit.base10_parse() {
-                            tag_holder.set(lit, tag);
+                            tag_attr.set(lit, tag);
                         } else {
                             context.error(lit, format!("unable to parse #[state(tag = {})]", lit));
                         }
@@ -82,7 +82,7 @@ impl<'a> IndexedField<'a> {
 
                     if let Ok(lit) = util::get_lit_str(context, "default", &item.lit) {
                         if let Ok(default) = lit.value().parse() {
-                            default_holder.set(lit, default);
+                            default_attr.set(lit, default);
                         } else {
                             context.error(
                                 lit,
@@ -104,8 +104,8 @@ impl<'a> IndexedField<'a> {
             }
         }
 
-        if let Some(tag) = tag_holder.attr() {
-            Ok((tag, default_holder.attr()))
+        if let Some(tag) = tag_attr.value() {
+            Ok((tag, default_attr.value()))
         } else {
             if !tag_encountered {
                 context.error(field, "expected a `tag` attribute #[state(tag = ...)]");
@@ -115,7 +115,7 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn tag(&self) -> &Attr<u16> {
+    pub fn tag(&self) -> &AttrValue<u16> {
         &self.tag
     }
 }

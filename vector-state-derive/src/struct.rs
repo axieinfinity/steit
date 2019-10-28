@@ -70,7 +70,7 @@ impl<'a> Struct<'a> {
         for field in &result {
             let tag = field.tag();
 
-            if !tags.insert(*tag.value()) {
+            if !tags.insert(*tag.get()) {
                 context.error(tag, "duplicate tag");
                 unique = false;
             }
