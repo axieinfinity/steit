@@ -1,55 +1,89 @@
-use proc_macro2::TokenStream;
+use std::collections::HashSet;
 
-use crate::field::IndexedField;
+use crate::context::Context;
+use crate::field::{IndexedField, PathField};
 use crate::util;
 
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
+    path: PathField,
+    indexed: Vec<IndexedField<'a>>,
 }
 
 impl<'a> Struct<'a> {
-    pub fn new(
+    pub fn parse<O: quote::ToTokens>(
+        context: &Context,
         input: &'a syn::DeriveInput,
-        fields: &syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
-        named: bool,
+        object: O,
+        fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
         variant: Option<&syn::Ident>,
-    ) -> Self {
-        let (path, indexed) = Self::extract_path(fields);
+    ) -> Result<Self, ()> {
+        let (paths, indexed): (Vec<_>, _) =
+            fields.iter().enumerate().partition(|&(_index, field)| {
+                match util::type_name(context, &field.ty) {
+                    Some(ident) if ident == "Path" => true,
+                    _ => false,
+                }
+            });
 
-        let indexed: Vec<_> = indexed
-            .iter()
-            .map(|&(index, field)| IndexedField::new(field, index))
-            .collect();
-
-        for field in indexed {
-            field.debug();
+        if paths.len() == 0 {
+            context.error(object, "expected exactly one `Path` field, got none");
+            return Err(());
         }
 
-        Self { input }
+        if paths.len() > 1 {
+            context.error(fields, "expected exactly one `Path` field, got multiple");
+            return Err(());
+        }
+
+        let path = paths
+            .first()
+            .map(|&(index, field)| PathField::new(field, index))
+            .unwrap_or_else(|| unreachable!("expected a `Path` field"));
+
+        Self::parse_indexed(context, indexed).map(|indexed| Self {
+            input,
+            path,
+            indexed,
+        })
     }
 
-    fn extract_path(
-        fields: &syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
-    ) -> ((usize, &syn::Field), Vec<(usize, &syn::Field)>) {
-        let (paths, indexed): (Vec<_>, _) = fields
-            .iter()
-            .enumerate()
-            .partition(|&(index, field)| util::type_name(&field.ty) == "Path");
+    fn parse_indexed(
+        context: &Context,
+        indexed: Vec<(usize, &'a syn::Field)>,
+    ) -> Result<Vec<IndexedField<'a>>, ()> {
+        let mut result = Vec::with_capacity(indexed.len());
 
-        assert_eq!(
-            paths.len(),
-            1,
-            "expected exactly one `vector_state::Path` field"
-        );
+        for (index, field) in &indexed {
+            if let Ok(field) = IndexedField::parse(context, field, *index) {
+                result.push(field);
+            }
+        }
 
-        let path = *paths.first().unwrap_or_else(|| unreachable!());
+        if result.len() != indexed.len() {
+            return Err(());
+        }
 
-        (path, indexed)
+        let mut tags = HashSet::new();
+        let mut unique = true;
+
+        for field in &result {
+            let tag = field.tag();
+
+            if !tags.insert(*tag.value()) {
+                context.error(tag, "duplicate tag");
+                unique = false;
+            }
+        }
+
+        if unique {
+            Ok(result)
+        } else {
+            Err(())
+        }
     }
 }
 
 impl<'a> quote::ToTokens for Struct<'a> {
-    fn to_tokens(&self, tokens: &mut TokenStream) {
-        unimplemented!()
-    }
+    fn to_tokens(&self, _tokens: &mut proc_macro2::TokenStream) {}
 }

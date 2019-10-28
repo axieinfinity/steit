@@ -7,6 +7,58 @@ mod tests {
     use vector_state::path::Path;
 
     #[derive(State)]
+    struct Good {
+        path: Path,
+    }
+
+    /* #[derive(State)]
+    union Test {}
+
+    #[derive(State)]
+    struct Test2;
+
+    #[derive(State)]
+    struct Test3 {}
+
+    #[derive(State)]
+    struct Test4 {
+        path: Path,
+        path2: Path,
+    } */
+
+    #[derive(State)]
+    struct Test5 {
+        path: Path,
+        #[state(tag = "0")]
+        #[state(tag = "0")]
+        x: i32,
+    }
+
+    #[derive(State)]
+    struct Test6 {
+        path: Path,
+        #[state(tag = 0, default = 0)]
+        good: Good,
+    }
+
+    #[derive(State)]
+    struct Test7 {
+        path: Path,
+        #[state(tag = 0)]
+        #[state(default = "10")]
+        x: i32,
+    }
+
+    #[derive(State)]
+    struct Test8 {
+        path: Path,
+        #[state(tag = 0)]
+        x: i32,
+        #[state(tag = 0)]
+        y: i32,
+    }
+
+    /* #[derive(State)]
     struct Pos2d {
         path: Path,
         #[state(tag = 0, default = "7")]
@@ -35,5 +87,5 @@ mod tests {
         path: Path,
         #[state(tag = 2)]
         pos: Pos,
-    }
+    } */
 }

@@ -7,10 +7,7 @@ pub trait Serialize {
     fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
 }
 
-impl<I> Serialize for I
-where
-    I: Varint,
-{
+impl<I: Varint> Serialize for I {
     fn size(&self) -> u32 {
         Varint::size(self) as u32
     }
