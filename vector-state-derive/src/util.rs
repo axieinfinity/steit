@@ -97,15 +97,20 @@ pub fn with_preimports(
     name: &syn::Ident,
     tokens: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let r#const = format_ident!("_IMPL_STATE_FOR_{}", name);
-    let r#const = to_snake_case(&r#const.to_string()).to_uppercase();
-    let r#const = format_ident!("{}", r#const);
+    let r#const = format_ident!(
+        "_IMPL_STATE_FOR_{}",
+        to_snake_case(&name.to_string()).to_uppercase()
+    );
 
     quote! {
         const #r#const: () = {
             extern crate vector_state;
+
+            use std::io;
+
             use vector_state::de::Deserialize;
             use vector_state::ser::Serialize;
+
             #tokens
         };
     }
