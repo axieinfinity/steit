@@ -6,12 +6,12 @@ extern crate vector_state_derive;
 mod tests {
     use vector_state::path::Path;
 
-    #[derive(State)]
+    /* #[derive(State)]
     struct Good {
         path: Path,
     }
 
-    /* #[derive(State)]
+    #[derive(State)]
     union Test {}
 
     #[derive(State)]
@@ -24,7 +24,7 @@ mod tests {
     struct Test4 {
         path: Path,
         path2: Path,
-    } */
+    }
 
     #[derive(State)]
     struct Test5 {
@@ -58,7 +58,21 @@ mod tests {
         y: i32,
     }
 
-    /* #[derive(State)]
+    #[derive(State)]
+    struct Test9 {
+        path: Path,
+        #[state(what = 0)]
+        x: i32,
+    }
+
+    #[derive(State)]
+    struct Test10 {
+        path: Path,
+        #[state(0)]
+        x: i32,
+    }
+
+    #[derive(State)]
     struct Pos2d {
         path: Path,
         #[state(tag = 0, default = "7")]
@@ -88,4 +102,16 @@ mod tests {
         #[state(tag = 2)]
         pos: Pos,
     } */
+
+    #[derive(Debug, State)]
+    struct Point(
+        Path,
+        #[state(tag = 0, default = "7")] i32,
+        #[state(tag = 1, default = "10")] i32,
+    );
+
+    #[test]
+    fn test() {
+        println!("{:?}", Point::new(Path::new()));
+    }
 }

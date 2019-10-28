@@ -94,7 +94,7 @@ impl<'a> IndexedField<'a> {
 
                 syn::NestedMeta::Meta(item) => {
                     let path = item.path();
-                    let path = quote!(path).to_string().replace(' ', "");
+                    let path = quote!(#path).to_string().replace(' ', "");
                     context.error(item.path(), format!("unknown state attribute `{}`", path));
                 }
 
@@ -118,14 +118,64 @@ impl<'a> IndexedField<'a> {
     pub fn tag(&self) -> &AttrValue<u16> {
         &self.tag
     }
+
+    pub fn to_init(&self) -> proc_macro2::TokenStream {
+        let init = match &self.kind {
+            FieldKind::Primitive {
+                default: Some(default),
+            } => {
+                let default = default.get();
+                quote!(#default)
+            }
+
+            FieldKind::Primitive { default: None } => quote!(Default::default()),
+
+            FieldKind::State => {
+                let ty = self.ty;
+                let tag = *self.tag.get();
+                quote!(<#ty>::new(path.derive(#tag)))
+            }
+        };
+
+        get_init(&self.name, self.index, init)
+    }
 }
 
-pub struct PathField {
+pub struct PathField<'a> {
+    name: Option<syn::Ident>,
+    ty: &'a syn::Type,
     index: usize,
 }
 
-impl PathField {
-    pub fn new(_field: &syn::Field, index: usize) -> Self {
-        Self { index }
+impl<'a> PathField<'a> {
+    pub fn new(field: &'a syn::Field, index: usize) -> Self {
+        Self {
+            name: field.ident.clone(),
+            ty: &field.ty,
+            index,
+        }
+    }
+
+    pub fn to_arg(&self) -> proc_macro2::TokenStream {
+        let ty = self.ty;
+        quote!(path: #ty)
+    }
+
+    pub fn to_init(&self) -> proc_macro2::TokenStream {
+        get_init(&self.name, self.index, quote!(path))
+    }
+}
+
+fn get_init(
+    name: &Option<syn::Ident>,
+    index: usize,
+    init: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    match name {
+        Some(name) => quote!(#name: #init),
+        None => {
+            let index = syn::Index::from(index);
+            quote!(#index: #init)
+        }
     }
 }

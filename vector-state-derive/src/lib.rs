@@ -86,7 +86,7 @@ fn impl_struct<O: quote::ToTokens>(
 
 fn impl_union(
     context: &Context,
-    input: &syn::DeriveInput,
+    _input: &syn::DeriveInput,
     data: &syn::DataUnion,
 ) -> proc_macro2::TokenStream {
     context.error(data.union_token, "cannot #[derive(State)] for unions yet")

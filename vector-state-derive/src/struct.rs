@@ -6,7 +6,8 @@ use crate::util;
 
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
-    path: PathField,
+    variant: Option<&'a syn::Ident>,
+    path: PathField<'a>,
     indexed: Vec<IndexedField<'a>>,
 }
 
@@ -16,7 +17,7 @@ impl<'a> Struct<'a> {
         input: &'a syn::DeriveInput,
         object: O,
         fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
-        variant: Option<&syn::Ident>,
+        variant: Option<&'a syn::Ident>,
     ) -> Result<Self, ()> {
         let (paths, indexed): (Vec<_>, _) =
             fields.iter().enumerate().partition(|&(_index, field)| {
@@ -43,6 +44,7 @@ impl<'a> Struct<'a> {
 
         Self::parse_indexed(context, indexed).map(|indexed| Self {
             input,
+            variant,
             path,
             indexed,
         })
@@ -82,8 +84,42 @@ impl<'a> Struct<'a> {
             Err(())
         }
     }
+
+    fn get_inits(&self) -> proc_macro2::TokenStream {
+        let mut inits: Vec<_> = self.indexed.iter().map(|field| field.to_init()).collect();
+        inits.push(self.path.to_init());
+        quote![{ #(#inits),* }]
+    }
 }
 
 impl<'a> quote::ToTokens for Struct<'a> {
-    fn to_tokens(&self, _tokens: &mut proc_macro2::TokenStream) {}
+    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
+        let name = &self.input.ident;
+        let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
+
+        let (new, qual, doc) = match self.variant {
+            Some(variant) => (
+                format_ident!("new_{}", util::to_snake_case(&variant.to_string())),
+                quote!(::#variant),
+                format!("Constructs a new `{}::{}`.", name, variant),
+            ),
+            None => (
+                format_ident!("new"),
+                quote!(),
+                format!("Constructs a new `{}`.", name),
+            ),
+        };
+
+        let arg = self.path.to_arg();
+        let inits = self.get_inits();
+
+        tokens.extend(quote! {
+            impl #impl_generics #name #ty_generics #where_clause {
+                #[doc = #doc]
+                pub fn #new(#arg) -> Self {
+                    #name #qual #inits
+                }
+            }
+        });
+    }
 }
