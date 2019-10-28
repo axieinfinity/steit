@@ -1,40 +1,53 @@
-pub enum FieldExt<'a> {
-    Path(PathExt),
-    Indexed(IndexedFieldExt<'a>),
+// Note that we intentionally exclude some unsupported primitive types
+const PRIMITIVE_TYPES: &[&str] = &["bool", "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"];
+
+pub enum FieldKind {
+    Primitive {
+        default: Option<proc_macro2::TokenStream>,
+    },
+
+    State,
 }
 
-impl<'a> FieldExt<'a> {
-    pub fn new(field: &'a syn::Field, field_index: usize, named: bool) -> Self {
-        let ty = &field.ty;
-        let is_path = ty_name(&field.ty) == "Path";
+pub struct IndexedField<'a> {
+    name: Option<syn::Ident>,
+    ty: &'a syn::Type,
+    index: usize,
+    tag: u16,
+    kind: FieldKind,
+}
 
-        let ident = if named {
-            field.ident.clone().unwrap()
+impl<'a> IndexedField<'a> {
+    pub fn new(field: &'a syn::Field, index: usize) -> Self {
+        let ty = &field.ty;
+
+        let full_type_name = quote!(#ty).to_string();
+        let is_primitive = PRIMITIVE_TYPES.contains(&&*full_type_name);
+
+        let (tag, default) = Self::parse_attrs(&field.attrs, is_primitive);
+
+        let kind = if is_primitive {
+            FieldKind::Primitive { default }
         } else {
-            format_ident!("f_{}", field_index)
+            FieldKind::State
         };
 
-        if is_path {
-            FieldExt::Path(PathExt { ident, named })
-        } else {
-            let full_ty_name = quote!(#ty).to_string();
-            let is_state = full_ty_name != "i32" && full_ty_name != "bool";
-            let (index, default) = Self::parse_attrs(&field.attrs, is_state);
-
-            FieldExt::Indexed(IndexedFieldExt {
-                ty,
-                ident,
-                named,
-                index,
-                default,
-                is_state,
-            })
+        Self {
+            name: field.ident.clone(),
+            ty,
+            index,
+            tag,
+            kind,
         }
+    }
+
+    pub fn debug(&self) {
+        println!("{:?}, {}, {}", self.name, self.index, self.tag)
     }
 
     fn parse_attrs(
         attrs: &[syn::Attribute],
-        is_state: bool,
+        is_primitive: bool,
     ) -> (u16, Option<proc_macro2::TokenStream>) {
         let mut tag = None;
         let mut default = None;
@@ -46,10 +59,10 @@ impl<'a> FieldExt<'a> {
                 }
 
                 // Now we have already have #[state(nested_1, nested_2, ...)].
-                // We will try to parse each nested meta.
+                // We will try to parse each nested meta item.
 
                 for meta in nested {
-                    // We only care about name-value metas, such as "tag = 1".
+                    // We only care about name-value meta items, such as "tag = 1".
                     if let syn::NestedMeta::Meta(syn::Meta::NameValue(ref name_value)) = meta {
                         match name_value {
                             // tag = {int}
@@ -71,7 +84,7 @@ impl<'a> FieldExt<'a> {
                                 lit: syn::Lit::Str(ref lit),
                                 ..
                             } if path.is_ident("default") => {
-                                if is_state {
+                                if !is_primitive {
                                     panic!("a state field cannot have a default value")
                                 }
 
@@ -96,71 +109,4 @@ impl<'a> FieldExt<'a> {
     }
 }
 
-pub struct PathExt {
-    ident: syn::Ident,
-    named: bool,
-}
-
-impl PathExt {
-    pub fn as_arg(&self) -> proc_macro2::TokenStream {
-        let field_name = &self.ident;
-        quote!(#field_name: Path)
-    }
-
-    pub fn as_init(&self) -> proc_macro2::TokenStream {
-        let field_name = &self.ident;
-        let init = quote!(#field_name);
-
-        if self.named {
-            quote!(#field_name: #init)
-        } else {
-            quote!(#init)
-        }
-    }
-}
-
-pub struct IndexedFieldExt<'a> {
-    ty: &'a syn::Type,
-    ident: syn::Ident,
-    named: bool,
-    index: u16,
-    default: Option<proc_macro2::TokenStream>,
-    is_state: bool,
-}
-
-impl<'a> IndexedFieldExt<'a> {
-    pub fn as_init(&self, path: &PathExt) -> proc_macro2::TokenStream {
-        let field_name = &self.ident;
-        let path = &path.ident;
-
-        let init = if !self.is_state {
-            match self.default {
-                Some(ref default) => quote!(#default),
-                None => quote!(Default::default()),
-            }
-        } else {
-            let ty_name = ty_name(self.ty);
-            let index = self.index;
-            quote!(#ty_name::new(#path.derive(#index)))
-        };
-
-        if self.named {
-            quote!(#field_name: #init)
-        } else {
-            quote!(#init)
-        }
-    }
-}
-
-fn ty_name(ty: &syn::Type) -> &syn::Ident {
-    match ty {
-        syn::Type::Path(syn::TypePath { ref path, .. }) => {
-            &path
-                .segments
-                .last()
-                .expect("expected at least one path segment")
-                .ident
-        }
-        _ => panic!("expected a path type"),
-    }
-}
+pub struct PathField {}
