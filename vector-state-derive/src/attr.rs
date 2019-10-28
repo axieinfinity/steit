@@ -13,7 +13,7 @@ impl<'a, T> Attr<'a, T> {
             context,
             name,
             value: None,
-            tokens: proc_macro2::TokenStream::new(),
+            tokens: quote!(),
         }
     }
 

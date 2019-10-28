@@ -120,7 +120,7 @@ impl<'a> IndexedField<'a> {
     }
 
     pub fn to_init(&self) -> proc_macro2::TokenStream {
-        let init = match &self.kind {
+        let value = match &self.kind {
             FieldKind::Primitive {
                 default: Some(default),
             } => {
@@ -137,7 +137,39 @@ impl<'a> IndexedField<'a> {
             }
         };
 
-        get_init(&self.name, self.index, init)
+        get_init(&self.name, self.index, value)
+    }
+
+    pub fn to_sizer(&self) -> proc_macro2::TokenStream {
+        let tag = *self.tag.get() as u32;
+        let access = get_access(&self.name, self.index);
+
+        let (sizer, wire_type) = match self.kind {
+            FieldKind::Primitive { .. } => (quote!(), 0u32),
+            FieldKind::State => (quote!(size += self.#access.size().size();), 2),
+        };
+
+        quote! {
+            size += (#tag << 3 | #wire_type).size();
+            #sizer
+            size += self.#access.size();
+        }
+    }
+
+    pub fn to_serializer(&self) -> proc_macro2::TokenStream {
+        let tag = *self.tag.get() as u32;
+        let access = get_access(&self.name, self.index);
+
+        let (sizer, wire_type) = match self.kind {
+            FieldKind::Primitive { .. } => (quote!(), 0u32),
+            FieldKind::State => (quote!(self.#access.size().serialize(writer)?;), 2),
+        };
+
+        quote! {
+            (#tag << 3 | #wire_type).serialize(writer)?;
+            #sizer
+            self.#access.serialize(writer)?;
+        }
     }
 }
 
@@ -166,16 +198,20 @@ impl<'a> PathField<'a> {
     }
 }
 
+fn get_access(name: &Option<syn::Ident>, index: usize) -> proc_macro2::TokenStream {
+    use quote::ToTokens;
+
+    match name {
+        Some(name) => quote!(#name),
+        None => syn::Index::from(index).into_token_stream(),
+    }
+}
+
 fn get_init(
     name: &Option<syn::Ident>,
     index: usize,
-    init: proc_macro2::TokenStream,
+    value: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    match name {
-        Some(name) => quote!(#name: #init),
-        None => {
-            let index = syn::Index::from(index);
-            quote!(#index: #init)
-        }
-    }
+    let access = get_access(name, index);
+    quote!(#access: #value)
 }

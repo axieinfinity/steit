@@ -85,10 +85,21 @@ impl<'a> Struct<'a> {
         }
     }
 
-    fn get_inits(&self) -> proc_macro2::TokenStream {
+    fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
         let mut inits: Vec<_> = self.indexed.iter().map(|field| field.to_init()).collect();
         inits.push(self.path.to_init());
-        quote![{ #(#inits),* }]
+        inits
+    }
+
+    fn get_sizers(&self) -> Vec<proc_macro2::TokenStream> {
+        self.indexed.iter().map(|field| field.to_sizer()).collect()
+    }
+
+    fn get_serializers(&self) -> Vec<proc_macro2::TokenStream> {
+        self.indexed
+            .iter()
+            .map(|field| field.to_serializer())
+            .collect()
     }
 }
 
@@ -113,13 +124,29 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let arg = self.path.to_arg();
         let inits = self.get_inits();
 
+        let sizers = self.get_sizers();
+        let serializers = self.get_serializers();
+
         let impls = util::with_preimports(
             name,
             quote! {
                 impl #impl_generics #name #ty_generics #where_clause {
                     #[doc = #doc]
                     pub fn #new(#arg) -> Self {
-                        #name #qual #inits
+                        #name #qual { #(#inits,)* }
+                    }
+                }
+
+                impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                    fn size(&self) -> u32 {
+                        let mut size = 0;
+                        #(#sizers)*
+                        size
+                    }
+
+                    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                        #(#serializers)*
+                        Ok(())
                     }
                 }
             },

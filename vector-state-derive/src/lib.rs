@@ -74,7 +74,9 @@ fn impl_struct<O: quote::ToTokens>(
 ) -> proc_macro2::TokenStream {
     let r#impl = |fields: &syn::punctuated::Punctuated<_, _>| {
         let r#struct = Struct::parse(&context, &input, &object, fields, variant).ok();
-        quote!(#r#struct)
+        let tokens = quote!(#r#struct);
+        println!("{}", tokens.to_string());
+        tokens
     };
 
     match *fields {
