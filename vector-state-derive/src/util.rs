@@ -92,3 +92,21 @@ pub fn get_lit_int<'a>(
         Err(())
     }
 }
+
+pub fn with_preimports(
+    name: &syn::Ident,
+    tokens: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let r#const = format_ident!("_IMPL_STATE_FOR_{}", name);
+    let r#const = to_snake_case(&r#const.to_string()).to_uppercase();
+    let r#const = format_ident!("{}", r#const);
+
+    quote! {
+        const #r#const: () = {
+            extern crate vector_state;
+            use vector_state::de::Deserialize;
+            use vector_state::ser::Serialize;
+            #tokens
+        };
+    }
+}

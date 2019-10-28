@@ -113,13 +113,18 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let arg = self.path.to_arg();
         let inits = self.get_inits();
 
-        tokens.extend(quote! {
-            impl #impl_generics #name #ty_generics #where_clause {
-                #[doc = #doc]
-                pub fn #new(#arg) -> Self {
-                    #name #qual #inits
+        let impls = util::with_preimports(
+            name,
+            quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    #[doc = #doc]
+                    pub fn #new(#arg) -> Self {
+                        #name #qual #inits
+                    }
                 }
-            }
-        });
+            },
+        );
+
+        tokens.extend(impls);
     }
 }
