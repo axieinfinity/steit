@@ -27,7 +27,7 @@ impl<T: Serialize> Serialize for Entry<T> {
         }
     }
 
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         self.size().serialize(writer)?;
         self.kind().serialize(writer)?;
 
@@ -58,25 +58,20 @@ pub struct Logger {
 }
 
 impl Logger {
-    pub fn log_update<T: Serialize>(
-        &mut self,
-        path: Path,
-        tag: u16,
-        value: T,
-    ) -> Result<(), io::Error> {
+    pub fn log_update<T: Serialize>(&mut self, path: Path, tag: u16, value: T) -> io::Result<()> {
         self.log_entry(Entry::Update { path, tag, value })
     }
 
-    pub fn log_add<T: Serialize>(&mut self, path: Path, item: T) -> Result<(), io::Error> {
+    pub fn log_add<T: Serialize>(&mut self, path: Path, item: T) -> io::Result<()> {
         self.log_entry(Entry::Add { path, item })
     }
 
-    pub fn log_remove<T: Serialize>(&mut self, path: Path, tag: u16) -> Result<(), io::Error> {
+    pub fn log_remove<T: Serialize>(&mut self, path: Path, tag: u16) -> io::Result<()> {
         self.log_entry(Entry::<T>::Remove { path, tag })
     }
 
     #[inline]
-    fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> Result<(), io::Error> {
+    fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
         entry.serialize(&mut self.buf)
     }
 }

@@ -95,7 +95,7 @@ impl Path {
         }
     }
 
-    fn serialize<W: io::Write>(node: &Rc<Node<u16>>, writer: &mut W) -> Result<(), io::Error> {
+    fn serialize<W: io::Write>(node: &Rc<Node<u16>>, writer: &mut W) -> io::Result<()> {
         match node.as_ref() {
             Node::Root => {}
             Node::Child { parent, value } => {
@@ -116,13 +116,13 @@ impl Serialize for Path {
         Self::size(&self.node)
     }
 
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         Varint::serialize(&self.size(), writer)?;
         Self::serialize(&self.node, writer)
     }
 }
 
-pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Vec<u16>, io::Error> {
+pub fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Vec<u16>> {
     let size = Varint::deserialize(reader)?;
     let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
     let mut segments = Vec::new();
