@@ -1,6 +1,5 @@
 use std::{
-    io,
-    fmt,
+    fmt, io,
     rc::{Rc, Weak},
 };
 

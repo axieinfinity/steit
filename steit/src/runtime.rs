@@ -1,6 +1,10 @@
-use std::fmt;
+use std::{fmt, io};
 
-use crate::{log::Logger, path::Path};
+use crate::{
+    log::{Entry, EntryKind, Logger},
+    path::Path,
+    ser::Serialize,
+};
 
 pub struct Runtime {
     logger: Logger,
@@ -20,6 +24,21 @@ impl Runtime {
             logger: self.logger.clone(),
             path: self.path.down(tag),
         }
+    }
+
+    pub fn log_update<T: Serialize>(&mut self, tag: u16, value: &T) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::new(&self.path, EntryKind::Update { tag, value }))
+    }
+
+    pub fn log_add<T: Serialize>(&mut self, item: &T) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::new(&self.path, EntryKind::Add { item }))
+    }
+
+    pub fn log_remove<T: Serialize>(&mut self, tag: u16) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::new(&self.path, EntryKind::Remove::<T> { tag }))
     }
 }
 
