@@ -113,8 +113,8 @@ mod tests {
     #[derive(Debug, PartialEq, State)]
     struct Point(
         Runtime,
-        #[state(tag = 0, default = "5")] i32,
-        #[state(tag = 1, default = "10")] i32,
+        #[state(tag = 2, default = "5")] i32,
+        #[state(tag = 3, default = "10")] i32,
     );
 
     #[derive(Debug, PartialEq, State)]

@@ -158,7 +158,10 @@ impl<'a> IndexedField<'a> {
         );
 
         let ty = self.ty;
+        let tag = *self.tag.get();
         let access = get_access(&self.name, self.index);
+
+        let runtime = get_access(&runtime.name, runtime.index);
 
         match self.kind {
             FieldKind::Primitive { .. } => {
@@ -167,7 +170,7 @@ impl<'a> IndexedField<'a> {
                 quote! {
                     #[doc = #doc]
                     pub fn #name(&mut self, value: #ty) -> &mut Self {
-                        // TODO: Track changes
+                        self.#runtime.log_update(#tag, &value).unwrap();
                         self.#access = value;
                         self
                     }
@@ -176,14 +179,13 @@ impl<'a> IndexedField<'a> {
 
             FieldKind::State => {
                 let name = format_ident!("set_{}_with", access.to_string());
-                let runtime = get_access(&runtime.name, runtime.index);
-                let tag = *self.tag.get();
 
                 quote! {
                     #[doc = #doc]
                     pub fn #name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
-                        // TODO: Track changes
-                        self.#access = get_value(self.#runtime.nested(#tag));
+                        let value = get_value(self.#runtime.nested(#tag));
+                        self.#runtime.log_update(#tag, &value).unwrap();
+                        self.#access = value;
                         self
                     }
                 }
