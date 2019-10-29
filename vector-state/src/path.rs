@@ -141,6 +141,15 @@ mod tests {
 
     use super::{deserialize, Path};
 
+    macro_rules! t {
+        ($name:ident : $segments:expr) => {
+            #[test]
+            fn $name() {
+                assert_back_and_forth($segments);
+            }
+        };
+    }
+
     fn assert_back_and_forth(segments: &[u16]) {
         let mut paths = vec![Path::root()];
 
@@ -157,18 +166,9 @@ mod tests {
         assert_eq!(deserialize(&mut &*bytes).unwrap(), segments);
     }
 
-    macro_rules! t {
-        ($name:ident : $segments:expr) => {
-            #[test]
-            fn $name() {
-                assert_back_and_forth($segments);
-            }
-        };
-    }
-
-    t!(back_and_forth_1 : &[0]);
-    t!(back_and_forth_2 : &[1]);
-    t!(back_and_forth_3 : &[0, 0, 0, 1]);
-    t!(back_and_forth_4 : &[1, 1, 1]);
-    t!(back_and_forth_5 : &[10_000, -1i8 as u16, 137, 1, 2, 3, 4, 0, 0, 42]);
+    t!(back_and_forth_01: &[0]);
+    t!(back_and_forth_02: &[1]);
+    t!(back_and_forth_03: &[0, 0, 0, 1]);
+    t!(back_and_forth_04: &[1, 1, 1]);
+    t!(back_and_forth_05: &[10_000, -1i8 as u16, 137, 1, 2, 3, 4, 0, 0, 42]);
 }

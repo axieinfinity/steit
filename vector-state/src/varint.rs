@@ -151,52 +151,52 @@ mod tests {
 
     use super::Varint;
 
+    macro_rules! t {
+        ($name:ident : $assert:ident, $($args:expr)=>*) => {
+            #[test]
+            fn $name() {
+                $assert($($args),*);
+            }
+        };
+    }
+
     fn encode<T: Varint>(value: T) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(10);
         value.serialize(&mut bytes).unwrap();
         bytes
     }
 
-    fn decode<T: Varint>(bytes: &[u8]) -> T {
-        T::deserialize(&mut &*bytes).unwrap()
-    }
-
     fn assert_encode<T: Varint>(value: T, expected_bytes: &[u8]) {
         assert_eq!(&*encode(value), expected_bytes);
+    }
+
+    t!(encode_zig_zag_01: assert_encode,  0 => &[0]);
+    t!(encode_zig_zag_02: assert_encode, -1 => &[1]);
+    t!(encode_zig_zag_03: assert_encode,  1 => &[2]);
+    t!(encode_zig_zag_04: assert_encode, -2 => &[3]);
+    t!(encode_zig_zag_05: assert_encode,  2 => &[4]);
+
+    fn decode<T: Varint>(bytes: &[u8]) -> T {
+        T::deserialize(&mut &*bytes).unwrap()
     }
 
     fn assert_decode<T: Varint + PartialEq + fmt::Debug>(bytes: &[u8], expected_value: T) {
         assert_eq!(decode::<T>(bytes), expected_value);
     }
 
-    #[test]
-    fn encode_zig_zag() {
-        assert_encode(0, &[0]);
-        assert_encode(-1, &[1]);
-        assert_encode(1, &[2]);
-        assert_encode(-2, &[3]);
-        assert_encode(2, &[4]);
-    }
-
-    #[test]
-    fn decode_zig_zag() {
-        assert_decode(&[0], 0);
-        assert_decode(&[1], -1);
-        assert_decode(&[2], 1);
-        assert_decode(&[3], -2);
-        assert_decode(&[4], 2);
-    }
+    t!(decode_zig_zag_01: assert_decode, &[0] =>  0);
+    t!(decode_zig_zag_02: assert_decode, &[1] => -1);
+    t!(decode_zig_zag_03: assert_decode, &[2] =>  1);
+    t!(decode_zig_zag_04: assert_decode, &[3] => -2);
+    t!(decode_zig_zag_05: assert_decode, &[4] =>  2);
 
     fn assert_back_and_forth<T: Varint + Copy + PartialEq + fmt::Debug>(value: T) {
         assert_eq!(decode::<T>(&*encode(value)), value);
     }
 
-    #[test]
-    fn back_and_forth() {
-        assert_back_and_forth(-1i8 as u64);
-        assert_back_and_forth(!0u64);
-        assert_back_and_forth(-1i8 as u32);
-        assert_back_and_forth(1_000_000);
-        assert_back_and_forth(42);
-    }
+    t!(back_and_forth_01: assert_back_and_forth, -1i8 as u64);
+    t!(back_and_forth_02: assert_back_and_forth, !0u64);
+    t!(back_and_forth_03: assert_back_and_forth, -1i8 as u32);
+    t!(back_and_forth_04: assert_back_and_forth, 1_000_000);
+    t!(back_and_forth_05: assert_back_and_forth, 42);
 }
