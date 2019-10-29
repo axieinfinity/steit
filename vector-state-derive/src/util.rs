@@ -106,10 +106,13 @@ pub fn with_preimports(
         const #r#const: () = {
             extern crate vector_state;
 
-            use std::io;
+            use std::io::{self, Read};
 
             use vector_state::de::Deserialize;
+            use vector_state::iowrap;
             use vector_state::ser::Serialize;
+            // We don't import directly to avoid confusing `serialize` and `deserialize` calls.
+            use vector_state::varint;
 
             #tokens
         };

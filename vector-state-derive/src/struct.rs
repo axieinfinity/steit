@@ -90,17 +90,12 @@ impl<'a> Struct<'a> {
         inits.push(self.path.to_init());
         inits
     }
+}
 
-    fn get_sizers(&self) -> Vec<proc_macro2::TokenStream> {
-        self.indexed.iter().map(|field| field.to_sizer()).collect()
-    }
-
-    fn get_serializers(&self) -> Vec<proc_macro2::TokenStream> {
-        self.indexed
-            .iter()
-            .map(|field| field.to_serializer())
-            .collect()
-    }
+macro_rules! collect_fields {
+    ($self:ident, $method:ident) => {
+        $self.indexed.iter().map(|field| field.$method()).collect()
+    };
 }
 
 impl<'a> quote::ToTokens for Struct<'a> {
@@ -124,8 +119,9 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let arg = self.path.to_arg();
         let inits = self.get_inits();
 
-        let sizers = self.get_sizers();
-        let serializers = self.get_serializers();
+        let sizers: Vec<_> = collect_fields!(self, to_sizer);
+        let serializers: Vec<_> = collect_fields!(self, to_serializer);
+        let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
 
         let impls = util::with_preimports(
             name,
@@ -149,6 +145,50 @@ impl<'a> quote::ToTokens for Struct<'a> {
                         Ok(())
                     }
                 }
+
+                impl #impl_generics Deserialize for #name #ty_generics #where_clause {
+                    fn deserialize<R: io::Read>(reader: &mut R, target: &mut Self) -> io::Result<()> {
+                        let reader = &mut iowrap::Eof::new(reader);
+
+                        while !reader.eof()? {
+                            let key: u32 = varint::Varint::deserialize(reader)?;
+                            let tag = (key >> 3) as u16;
+                            let wire_type = (key & 7) as u8;
+
+                            match tag {
+                                #(#deserializers,)*
+
+                                _ => match wire_type {
+                                    0 => {
+                                        // Other than `u8`, any int type will do
+                                        // since we deserialize just to ignore the whole varint.
+                                        <u8 as varint::Varint>::deserialize(reader)?;
+                                    }
+
+                                    2 => {
+                                        let size = varint::Varint::deserialize(reader)?;
+                                        let mut buf = Vec::new();
+
+                                        reader
+                                            .by_ref()
+                                            .take(size)
+                                            .read_to_end(&mut buf)?;
+                                    }
+
+                                    _ => {
+                                        Err(io::Error::new(
+                                            io::ErrorKind::InvalidData,
+                                            format!("unexpected wire type {}", wire_type),
+                                        ))?;
+                                    }
+                                },
+                            }
+                        }
+
+                        Ok(())
+                    }
+                }
+
             },
         );
 

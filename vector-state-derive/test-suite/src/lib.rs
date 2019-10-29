@@ -110,25 +110,41 @@ mod tests {
         #[state(tag = 1, default = "10")] i32,
     ); */
 
-    #[derive(Debug, State)]
+    #[derive(Debug, PartialEq, State)]
     struct Point(
         Path,
         #[state(tag = 0, default = "5")] i32,
         #[state(tag = 1, default = "10")] i32,
     );
 
-    #[derive(Debug, State)]
+    #[derive(Debug, PartialEq, State)]
     struct Segment(Path, #[state(tag = 0)] Point, #[state(tag = 1)] Point);
 
-    use std::io;
+    use std::{
+        fmt,
+        io::{self, Read},
+    };
 
     use vector_state::de::Deserialize;
     use vector_state::ser::Serialize;
+    use vector_state::varint;
 
     fn debug<O: Serialize>(object: &O) {
         let mut writer = Vec::new();
         object.serialize(&mut writer).unwrap();
         println!("{:?}", writer);
+    }
+
+    fn check<O: fmt::Debug + PartialEq + Serialize + Deserialize>(object: &O, r#new: &mut O) {
+        let mut bytes = Vec::new();
+        object.serialize(&mut bytes).unwrap();
+        O::deserialize(&mut &*bytes, r#new);
+        println!();
+        println!("original:      {:?}", object);
+        println!("over the wire: {:?}", r#new);
+        println!("bytes: {:?}", bytes);
+        println!();
+        assert_eq!(r#new, object);
     }
 
     #[test]
@@ -148,5 +164,6 @@ mod tests {
         segment.2 = point_b;
         println!("{:?}, size = {}", segment, segment.size());
         debug(&segment);
+        check(&segment, &mut Segment::new(Path::new()));
     }
 }
