@@ -162,7 +162,7 @@ impl<'a> IndexedField<'a> {
 
         quote! {
             #[doc = #doc]
-            #[inline(always)]
+            #[inline]
             pub fn #name(&self) -> &#ty {
                 &self.#access
             }
@@ -177,7 +177,7 @@ impl<'a> IndexedField<'a> {
 
         quote! {
             #[doc = #doc]
-            #[inline(always)]
+            #[inline]
             pub fn #name(&mut self) -> &mut #ty {
                 &mut self.#access
             }

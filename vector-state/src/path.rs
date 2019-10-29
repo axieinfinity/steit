@@ -59,7 +59,7 @@ impl<T: Clone + PartialEq> PartialEq for Node<T> {
 #[derive(Debug, PartialEq)]
 pub struct Path {
     // We don't use borrow and lifetime here
-    // since we don't want users to carry that burden over to their states.
+    // since we don't want users to add more complexity from our side to their states.
     node: Rc<Node<u16>>,
 }
 
