@@ -1,4 +1,4 @@
-use std::{io, mem};
+use std::io;
 
 pub trait Varint: Sized {
     fn size(&self) -> u8;
@@ -62,21 +62,27 @@ macro_rules! impl_signed_varint {
         impl Varint for $t {
             #[inline]
             fn size(&self) -> u8 {
-                // ZigZag encoding: https://bit.ly/2Pl9Gq8
-                let encoded = ((self << 1) ^ (self >> ((mem::size_of::<$t>() << 3) - 1))) as $ut;
-                encoded.size()
+                (impl_signed_varint!(@encode self, $t) as $ut).size()
             }
 
             fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
-                let encoded = ((self << 1) ^ (self >> ((mem::size_of::<$t>() << 3) - 1))) as $ut;
-                encoded.serialize(writer)
+                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
             }
 
             fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self> {
                 let encoded = <$ut>::deserialize(reader)? as $t;
-                Ok((encoded >> 1) ^ -(encoded & 1))
+                Ok(impl_signed_varint!(@decode encoded))
             }
         }
+    };
+
+    // ZigZag encoding: https://bit.ly/2Pl9Gq8
+    (@encode $value:ident, $t:ty) => {
+        ($value << 1) ^ ($value >> ((std::mem::size_of::<$t>() << 3) - 1))
+    };
+
+    (@decode $value:ident) => {
+        ($value >> 1) ^ -($value & 1)
     };
 }
 
