@@ -148,10 +148,10 @@ mod tests {
         println!("{:?}, size = {}", point_a, point_a.size());
         debug(&point_a);
 
-        println!("f_1 = {}", point_a.f_1());
-        println!("f_2 = {}", point_a.f_2_mut());
-        point_a.set_f_1(137);
-        println!("f_1 = {} (changed)", point_a.f_1());
+        println!("f#1 = {}", point_a.1);
+        println!("f#2 = {}", point_a.2);
+        point_a.set_1(137);
+        println!("f#1 = {} (changed)", point_a.1);
 
         let mut point_b = Point::new(Path::root());
         point_b.2 = 200;
@@ -159,15 +159,15 @@ mod tests {
         debug(&point_b);
 
         let mut segment = Segment::new(Path::root());
-        segment.1 = point_a;
-        segment.2 = point_b;
+        segment.1 = Point(segment.0.child(0), point_a.1, point_a.2);
+        segment.2 = Point(segment.0.child(1), point_b.1, point_b.2);
         println!("{:?}, size = {}", segment, segment.size());
         println!();
         debug(&segment);
         check(&segment, &mut Segment::new(Path::root()));
 
-        segment.set_f_1_with(Point::new);
-        segment.set_f_2_with(Point::new);
+        segment.set_1_with(Point::new);
+        segment.set_2_with(Point::new);
         debug(&segment);
         check(&segment, &mut Segment::new(Path::root()));
     }
