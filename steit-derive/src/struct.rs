@@ -2,13 +2,13 @@ use std::collections::HashSet;
 
 use crate::{
     context::Context,
-    field::{IndexedField, PathField},
+    field::{IndexedField, RuntimeField},
 };
 
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
     variant: Option<&'a syn::Ident>,
-    path: PathField<'a>,
+    runtime: RuntimeField<'a>,
     indexed: Vec<IndexedField<'a>>,
 }
 
@@ -20,33 +20,33 @@ impl<'a> Struct<'a> {
         fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
         variant: Option<&'a syn::Ident>,
     ) -> Result<Self, ()> {
-        let (paths, indexed): (Vec<_>, _) =
+        let (runtimes, indexed): (Vec<_>, _) =
             fields.iter().enumerate().partition(|&(_index, field)| {
                 match type_name(context, &field.ty) {
-                    Some(ident) if ident == "Path" => true,
+                    Some(ident) if ident == "Runtime" => true,
                     _ => false,
                 }
             });
 
-        if paths.len() == 0 {
-            context.error(object, "expected exactly one `Path` field, got none");
+        if runtimes.len() == 0 {
+            context.error(object, "expected exactly one `Runtime` field, got none");
             return Err(());
         }
 
-        if paths.len() > 1 {
-            context.error(fields, "expected exactly one `Path` field, got multiple");
+        if runtimes.len() > 1 {
+            context.error(fields, "expected exactly one `Runtime` field, got multiple");
             return Err(());
         }
 
-        let path = paths
+        let runtime = runtimes
             .first()
-            .map(|&(index, field)| PathField::new(field, index))
-            .unwrap_or_else(|| unreachable!("expected a `Path` field"));
+            .map(|&(index, field)| RuntimeField::new(field, index))
+            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
 
         Self::parse_indexed(context, indexed).map(|indexed| Self {
             input,
             variant,
-            path,
+            runtime,
             indexed,
         })
     }
@@ -88,7 +88,7 @@ impl<'a> Struct<'a> {
 
     fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
         let mut inits: Vec<_> = self.indexed.iter().map(|field| field.to_init()).collect();
-        inits.push(self.path.to_init());
+        inits.push(self.runtime.to_init());
         inits
     }
 }
@@ -121,10 +121,10 @@ impl<'a> quote::ToTokens for Struct<'a> {
             ),
         };
 
-        let arg = self.path.to_arg();
+        let arg = self.runtime.to_arg();
         let inits = self.get_inits();
 
-        let setters: Vec<_> = collect_fields!(self, to_setter(&self.path));
+        let setters: Vec<_> = collect_fields!(self, to_setter(&self.runtime));
 
         let sizers: Vec<_> = collect_fields!(self, to_sizer);
         let serializers: Vec<_> = collect_fields!(self, to_serializer);

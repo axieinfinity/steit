@@ -141,14 +141,14 @@ impl<'a> IndexedField<'a> {
             FieldKind::State => {
                 let ty = self.ty;
                 let tag = *self.tag.get();
-                quote!(<#ty>::new(path.down(#tag)))
+                quote!(<#ty>::new(runtime.nested(#tag)))
             }
         };
 
         get_init(&self.name, self.index, value)
     }
 
-    pub fn to_setter(&self, path: &PathField<'_>) -> proc_macro2::TokenStream {
+    pub fn to_setter(&self, runtime: &RuntimeField<'_>) -> proc_macro2::TokenStream {
         let doc = format!(
             "Sets {}.",
             match &self.name {
@@ -176,14 +176,14 @@ impl<'a> IndexedField<'a> {
 
             FieldKind::State => {
                 let name = format_ident!("set_{}_with", access.to_string());
-                let path = get_access(&path.name, path.index);
+                let runtime = get_access(&runtime.name, runtime.index);
                 let tag = *self.tag.get();
 
                 quote! {
                     #[doc = #doc]
-                    pub fn #name<F: FnOnce(Path) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                    pub fn #name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
                         // TODO: Track changes
-                        self.#access = get_value(self.#path.down(#tag));
+                        self.#access = get_value(self.#runtime.nested(#tag));
                         self
                     }
                 }
@@ -244,13 +244,13 @@ impl<'a> IndexedField<'a> {
     }
 }
 
-pub struct PathField<'a> {
+pub struct RuntimeField<'a> {
     name: Option<syn::Ident>,
     ty: &'a syn::Type,
     index: usize,
 }
 
-impl<'a> PathField<'a> {
+impl<'a> RuntimeField<'a> {
     pub fn new(field: &'a syn::Field, index: usize) -> Self {
         Self {
             name: field.ident.clone(),
@@ -261,11 +261,11 @@ impl<'a> PathField<'a> {
 
     pub fn to_arg(&self) -> proc_macro2::TokenStream {
         let ty = self.ty;
-        quote!(path: #ty)
+        quote!(runtime: #ty)
     }
 
     pub fn to_init(&self) -> proc_macro2::TokenStream {
-        get_init(&self.name, self.index, quote!(path))
+        get_init(&self.name, self.index, quote!(runtime))
     }
 }
 
