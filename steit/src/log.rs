@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::{path::Path, ser::Serialize};
+use std::cell::RefCell;
 
 enum EntryKind<T: Serialize> {
     Update { tag: u16, value: T },
@@ -58,11 +59,16 @@ impl<T: Serialize> Serialize for Entry<T> {
     }
 }
 
+#[derive(Clone)]
 pub struct Logger {
-    buf: Vec<u8>,
+    buf: RefCell<Vec<u8>>,
 }
 
 impl Logger {
+    pub fn new() -> Self {
+        Self { buf: RefCell::new(Vec::new()) }
+    }
+
     pub fn log_update<T: Serialize>(&mut self, path: Path, tag: u16, value: T) -> io::Result<()> {
         self.log_entry(Entry {
             path,
@@ -86,6 +92,6 @@ impl Logger {
 
     #[inline]
     fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
-        entry.serialize(&mut self.buf)
+        entry.serialize(&mut *self.buf.borrow_mut())
     }
 }
