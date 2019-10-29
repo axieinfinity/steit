@@ -1,5 +1,7 @@
 use std::io;
 
+use iowrap::ReadMany;
+
 pub trait Varint: Sized {
     fn size(&self) -> u8;
     fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
@@ -38,7 +40,7 @@ macro_rules! impl_unsigned_varint {
                 let mut offset = 0;
 
                 loop {
-                    reader.read_exact(&mut buf)?;
+                    reader.read_many(&mut buf)?;
                     value |= (buf[0] & 0x7f) as $t << offset;
 
                     if buf[0] & 0x80 == 0 {
