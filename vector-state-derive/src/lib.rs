@@ -8,8 +8,7 @@ mod field;
 mod r#struct;
 mod util;
 
-use crate::context::Context;
-use crate::r#struct::Struct;
+use crate::{context::Context, r#struct::Struct};
 
 #[proc_macro_derive(State, attributes(state))]
 pub fn derive(input: proc_macro::TokenStream) -> proc_macro::TokenStream {

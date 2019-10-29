@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
-use crate::context::Context;
-use crate::field::{IndexedField, PathField};
-use crate::util;
+use crate::{
+    context::Context,
+    field::{IndexedField, PathField},
+    util,
+};
 
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,

@@ -122,8 +122,7 @@ mod tests {
 
     use std::fmt;
 
-    use vector_state::de::Deserialize;
-    use vector_state::ser::Serialize;
+    use vector_state::{de::Deserialize, ser::Serialize};
 
     fn debug<O: Serialize>(object: &O) {
         let mut writer = Vec::new();

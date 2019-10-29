@@ -1,6 +1,8 @@
-use crate::attr::{Attr, AttrValue};
-use crate::context::Context;
-use crate::util;
+use crate::{
+    attr::{Attr, AttrValue},
+    context::Context,
+    util,
+};
 
 // Note that we intentionally exclude some unsupported primitive types
 const PRIMITIVE_TYPES: &[&str] = &["bool", "i8", "i16", "i32", "i64", "u8", "u16", "u32", "u64"];

@@ -1,8 +1,9 @@
-use std::io;
-use std::rc::{Rc, Weak};
+use std::{
+    io,
+    rc::{Rc, Weak},
+};
 
-use crate::ser::Serialize;
-use crate::varint::Varint;
+use crate::{ser::Serialize, varint::Varint};
 use std::io::Read;
 
 #[derive(Debug)]
@@ -138,8 +139,7 @@ pub fn deserialize<R: io::Read>(reader: &mut R) -> Result<Vec<u16>, io::Error> {
 mod tests {
     use crate::ser::Serialize;
 
-    use super::deserialize;
-    use super::Path;
+    use super::{deserialize, Path};
 
     fn assert_back_and_forth(segments: &[u16]) {
         let mut paths = vec![Path::root()];
