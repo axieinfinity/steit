@@ -65,7 +65,7 @@ impl Path {
         }
     }
 
-    pub fn child(&self, tag: u16) -> Self {
+    pub fn down(&self, tag: u16) -> Self {
         Self {
             node: Rc::new(Node::child(&self.node, tag)),
         }
@@ -151,7 +151,7 @@ mod tests {
         let mut paths = vec![Path::root()];
 
         for segment in segments {
-            let path = paths.last().unwrap().child(*segment);
+            let path = paths.last().unwrap().down(*segment);
             paths.push(path);
         }
 

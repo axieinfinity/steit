@@ -159,8 +159,8 @@ mod tests {
         debug(&point_b);
 
         let mut segment = Segment::new(Path::root());
-        segment.1 = Point(segment.0.child(0), point_a.1, point_a.2);
-        segment.2 = Point(segment.0.child(1), point_b.1, point_b.2);
+        segment.1 = Point(segment.0.down(0), point_a.1, point_a.2);
+        segment.2 = Point(segment.0.down(1), point_b.1, point_b.2);
         println!("{:?}, size = {}", segment, segment.size());
         println!();
         debug(&segment);

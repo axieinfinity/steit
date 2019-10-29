@@ -141,7 +141,7 @@ impl<'a> IndexedField<'a> {
             FieldKind::State => {
                 let ty = self.ty;
                 let tag = *self.tag.get();
-                quote!(<#ty>::new(path.child(#tag)))
+                quote!(<#ty>::new(path.down(#tag)))
             }
         };
 
@@ -183,7 +183,7 @@ impl<'a> IndexedField<'a> {
                     #[doc = #doc]
                     pub fn #name<F: FnOnce(Path) -> #ty>(&mut self, get_value: F) -> &mut Self {
                         // TODO: Track changes
-                        self.#access = get_value(self.#path.child(#tag));
+                        self.#access = get_value(self.#path.down(#tag));
                         self
                     }
                 }
