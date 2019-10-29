@@ -1,11 +1,11 @@
 use std::{
     io,
+    fmt,
     rc::{Rc, Weak},
 };
 
 use crate::{ser::Serialize, varint};
 
-#[derive(Debug)]
 enum Node<T> {
     Root,
     Child { parent: Weak<Self>, value: T },
@@ -45,13 +45,6 @@ impl<T> Node<T> {
     }
 }
 
-impl<T: Clone + PartialEq> PartialEq for Node<T> {
-    fn eq(&self, other: &Self) -> bool {
-        self.to_values() == other.to_values()
-    }
-}
-
-#[derive(Debug, PartialEq)]
 pub struct Path {
     // We don't use borrow and lifetime here
     // since we don't want users to add more complexity from our side to their states.
@@ -103,6 +96,18 @@ impl Path {
         }
 
         Ok(())
+    }
+}
+
+impl PartialEq for Path {
+    fn eq(&self, other: &Self) -> bool {
+        self.to_values() == other.to_values()
+    }
+}
+
+impl fmt::Debug for Path {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Path {:?}", self.to_values())
     }
 }
 
