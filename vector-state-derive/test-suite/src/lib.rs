@@ -144,7 +144,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut point_a = Point::new(Path::new());
+        let mut point_a = Point::new(Path::root());
         point_a.1 = 100;
         println!("{:?}, size = {}", point_a, point_a.size());
         debug(&point_a);
@@ -154,22 +154,22 @@ mod tests {
         point_a.set_f_1(137);
         println!("f_1 = {} (changed)", point_a.f_1());
 
-        let mut point_b = Point::new(Path::new());
+        let mut point_b = Point::new(Path::root());
         point_b.2 = 200;
         println!("{:?}, size = {}", point_b, point_b.size());
         debug(&point_b);
 
-        let mut segment = Segment::new(Path::new());
+        let mut segment = Segment::new(Path::root());
         segment.1 = point_a;
         segment.2 = point_b;
         println!("{:?}, size = {}", segment, segment.size());
         println!();
         debug(&segment);
-        check(&segment, &mut Segment::new(Path::new()));
+        check(&segment, &mut Segment::new(Path::root()));
 
         segment.set_f_1_with(Point::new);
         segment.set_f_2_with(Point::new);
         debug(&segment);
-        check(&segment, &mut Segment::new(Path::new()));
+        check(&segment, &mut Segment::new(Path::root()));
     }
 }

@@ -108,11 +108,14 @@ pub fn with_preimports(
 
             use std::io::{self, Read};
 
-            use vector_state::de::Deserialize;
-            use vector_state::iowrap;
-            use vector_state::ser::Serialize;
-            // We don't import directly to avoid confusing `serialize` and `deserialize` calls.
-            use vector_state::varint;
+            use vector_state::{
+                de::Deserialize,
+                iowrap,
+                ser::Serialize,
+                // We don't import directly
+                // to avoid confusing `serialize` and `deserialize` calls.
+                varint,
+            };
 
             #tokens
         };
