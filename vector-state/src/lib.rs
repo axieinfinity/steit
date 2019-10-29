@@ -1,10 +1,10 @@
 pub mod de;
 pub mod ser;
 
-pub mod varint;
+mod varint;
 
-pub mod log;
-pub mod path;
+mod log;
+mod path;
 pub mod runtime;
 
 pub use iowrap;
