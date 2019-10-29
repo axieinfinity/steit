@@ -1,15 +1,14 @@
-use std::io;
+use std::{cell::RefCell, io};
 
 use crate::{path::Path, ser::Serialize};
-use std::cell::RefCell;
 
-enum EntryKind<T: Serialize> {
-    Update { tag: u16, value: T },
-    Add { item: T },
+pub enum EntryKind<'a, T: Serialize> {
+    Update { tag: u16, value: &'a T },
+    Add { item: &'a T },
     Remove { tag: u16 },
 }
 
-impl<T: Serialize> EntryKind<T> {
+impl<'a, T: Serialize> EntryKind<'a, T> {
     pub fn code(&self) -> u8 {
         match self {
             EntryKind::Update { .. } => 0,
@@ -19,15 +18,22 @@ impl<T: Serialize> EntryKind<T> {
     }
 }
 
-struct Entry<T: Serialize> {
-    path: Path,
-    kind: EntryKind<T>,
+pub struct Entry<'a, T: Serialize> {
+    path: &'a Path,
+    kind: EntryKind<'a, T>,
 }
 
-impl<T: Serialize> Serialize for Entry<T> {
+impl<'a, T: Serialize> Entry<'a, T> {
+    pub fn new(path: &'a Path, kind: EntryKind<'a, T>) -> Self {
+        Self { path, kind }
+    }
+}
+
+impl<'a, T: Serialize> Serialize for Entry<'a, T> {
     fn size(&self) -> u32 {
-        1 + self.path.size()
-            + match &self.kind {
+        1 + self.path.size().size()
+            + self.path.size()
+            + match self.kind {
                 EntryKind::Update { tag, value } => tag.size() + value.size(),
                 EntryKind::Add { item } => item.size(),
                 EntryKind::Remove { tag } => tag.size(),
@@ -40,7 +46,7 @@ impl<T: Serialize> Serialize for Entry<T> {
         self.kind.code().serialize(writer)?;
         self.path.serialize(writer)?;
 
-        match &self.kind {
+        match self.kind {
             EntryKind::Update { tag, value } => {
                 tag.serialize(writer)?;
                 value.serialize(writer)?;
@@ -66,32 +72,17 @@ pub struct Logger {
 
 impl Logger {
     pub fn new() -> Self {
-        Self { buf: RefCell::new(Vec::new()) }
-    }
-
-    pub fn log_update<T: Serialize>(&mut self, path: Path, tag: u16, value: T) -> io::Result<()> {
-        self.log_entry(Entry {
-            path,
-            kind: EntryKind::Update { tag, value },
-        })
-    }
-
-    pub fn log_add<T: Serialize>(&mut self, path: Path, item: T) -> io::Result<()> {
-        self.log_entry(Entry {
-            path,
-            kind: EntryKind::Add { item },
-        })
-    }
-
-    pub fn log_remove<T: Serialize>(&mut self, path: Path, tag: u16) -> io::Result<()> {
-        self.log_entry(Entry {
-            path,
-            kind: EntryKind::Remove::<T> { tag },
-        })
+        Self {
+            buf: RefCell::new(Vec::new()),
+        }
     }
 
     #[inline]
-    fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
-        entry.serialize(&mut *self.buf.borrow_mut())
+    pub fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
+        // TODO: Make logging infallable
+        entry.serialize(&mut *self.buf.borrow_mut())?;
+        println!("=== entry: {:?}", self.buf.borrow());
+        self.buf.borrow_mut().clear();
+        Ok(())
     }
 }
