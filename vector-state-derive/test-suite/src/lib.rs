@@ -120,14 +120,10 @@ mod tests {
     #[derive(Debug, PartialEq, State)]
     struct Segment(Path, #[state(tag = 0)] Point, #[state(tag = 1)] Point);
 
-    use std::{
-        fmt,
-        io::{self, Read},
-    };
+    use std::fmt;
 
     use vector_state::de::Deserialize;
     use vector_state::ser::Serialize;
-    use vector_state::varint;
 
     fn debug<O: Serialize>(object: &O) {
         let mut writer = Vec::new();
@@ -138,7 +134,7 @@ mod tests {
     fn check<O: fmt::Debug + PartialEq + Serialize + Deserialize>(object: &O, r#new: &mut O) {
         let mut bytes = Vec::new();
         object.serialize(&mut bytes).unwrap();
-        O::deserialize(&mut &*bytes, r#new);
+        r#new.deserialize(&mut &*bytes).unwrap();
         println!();
         println!("original:      {:?}", object);
         println!("over the wire: {:?}", r#new);

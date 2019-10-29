@@ -173,19 +173,15 @@ impl<'a> IndexedField<'a> {
     }
 
     pub fn to_deserializer(&self) -> proc_macro2::TokenStream {
-        let ty = self.ty;
         let tag = *self.tag.get();
         let access = get_access(&self.name, self.index);
 
         let (deserializer, wire_type) = match self.kind {
-            FieldKind::Primitive { .. } => (
-                quote!(<#ty>::deserialize(reader, &mut target.#access)?;),
-                0u8,
-            ),
+            FieldKind::Primitive { .. } => (quote!(self.#access.deserialize(reader)?;), 0u8),
             FieldKind::State => (
                 quote! {
                     let size = varint::Varint::deserialize(reader)?;
-                    <#ty>::deserialize(&mut reader.by_ref().take(size), &mut target.#access)?;
+                    self.#access.deserialize(&mut reader.by_ref().take(size))?;
                 },
                 2,
             ),

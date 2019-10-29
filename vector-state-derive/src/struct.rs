@@ -147,7 +147,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
                 }
 
                 impl #impl_generics Deserialize for #name #ty_generics #where_clause {
-                    fn deserialize<R: io::Read>(reader: &mut R, target: &mut Self) -> io::Result<()> {
+                    fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
                         let reader = &mut iowrap::Eof::new(reader);
 
                         while !reader.eof()? {
