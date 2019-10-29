@@ -12,10 +12,6 @@ enum Node<T> {
 }
 
 impl<T> Node<T> {
-    pub fn root() -> Self {
-        Node::Root
-    }
-
     pub fn child(parent: &Rc<Self>, value: T) -> Self {
         Node::Child {
             parent: Rc::downgrade(parent),
@@ -65,7 +61,7 @@ pub struct Path {
 impl Path {
     pub fn root() -> Self {
         Self {
-            node: Rc::new(Node::root()),
+            node: Rc::new(Node::Root),
         }
     }
 

@@ -1,13 +1,13 @@
 [package]
-name = "vector-state-derive"
+name = "steit-derive"
 version = "0.1.0"
 description = "Convenient state derivation."
 authors = ["Sky Mavis Engineering <engineering@skymavis.com>"]
 edition = "2018"
 license = "MIT"
-homepage = "https://github.com/skymavis/vector"
-repository = "https://github.com/skymavis/vector"
-categories = ["data-structures", "encoding", "game-engines"]
+homepage = "https://github.com/skymavis/steit"
+repository = "https://github.com/skymavis/steit"
+categories = ["data-structures", "encoding"]
 keywords = ["state", "serialization", "synchronization", "protobuf"]
 include = ["src/**/*", "LICENSE", "README.md"]
 readme = "README.md"
@@ -16,10 +16,10 @@ readme = "README.md"
 all-features = true
 
 [badges]
-travis-ci = { repository = "skymavis/vector", branch = "master" }
-coveralls = { repository = "skymavis/vector", branch = "master" }
-is-it-maintained-issue-resolution = { repository = "skymavis/vector" }
-is-it-maintained-open-issues = { repository = "skymavis/vector" }
+travis-ci = { repository = "skymavis/steit", branch = "master" }
+coveralls = { repository = "skymavis/steit", branch = "master" }
+is-it-maintained-issue-resolution = { repository = "skymavis/steit" }
+is-it-maintained-open-issues = { repository = "skymavis/steit" }
 maintenance = { status = "actively-developed" }
 
 [lib]

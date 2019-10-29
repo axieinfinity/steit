@@ -1,10 +1,11 @@
 pub mod de;
 pub mod ser;
 
-mod varint;
+pub mod varint;
 
 mod log;
-mod path;
+// TODO: Hide `path` module
+pub mod path;
 pub mod runtime;
 
 pub use iowrap;

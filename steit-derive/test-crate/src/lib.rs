@@ -1,10 +1,10 @@
 #[allow(unused_imports)]
 #[macro_use]
-extern crate vector_state_derive;
+extern crate steit_derive;
 
 #[cfg(test)]
 mod tests {
-    use vector_state::path::Path;
+    use steit::path::Path;
 
     /* #[derive(State)]
     struct Good {
@@ -122,7 +122,7 @@ mod tests {
 
     use std::fmt;
 
-    use vector_state::{de::Deserialize, ser::Serialize};
+    use steit::{de::Deserialize, ser::Serialize};
 
     fn debug<O: Serialize>(object: &O) {
         let mut writer = Vec::new();

@@ -234,11 +234,11 @@ fn with_preimports(
 
     quote! {
         const #r#const: () = {
-            extern crate vector_state;
+            extern crate steit;
 
             use std::io::{self, Read};
 
-            use vector_state::{
+            use steit::{
                 de::Deserialize,
                 iowrap,
                 ser::Serialize,

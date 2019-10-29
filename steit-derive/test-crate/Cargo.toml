@@ -1,5 +1,5 @@
 [package]
-name = "vector-state-derive-test"
+name = "steit-derive-test"
 version = "0.1.0"
 description = "Tests for state derivation."
 authors = ["Sky Mavis Engineering <engineering@skymavis.com>"]
@@ -8,5 +8,5 @@ license = "MIT"
 publish = false
 
 [dependencies]
-vector-state = { path = "../../vector-state" }
-vector-state-derive = { path = ".." }
+steit = { path = "../../steit" }
+steit-derive = { path = ".." }

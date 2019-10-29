@@ -1,6 +1,6 @@
 [workspace]
 members = [
-    "vector-state",
-    "vector-state-derive",
-    "vector-state-derive/test-crate",
+    "steit",
+    "steit-derive",
+    "steit-derive/test-crate",
 ]

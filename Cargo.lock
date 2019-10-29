@@ -22,6 +22,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "steit"
+version = "0.1.0"
+dependencies = [
+ "iowrap 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "steit-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "steit-derive-test"
+version = "0.1.0"
+dependencies = [
+ "steit 0.1.0",
+ "steit-derive 0.1.0",
+]
+
+[[package]]
 name = "syn"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -35,30 +59,6 @@ dependencies = [
 name = "unicode-xid"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-
-[[package]]
-name = "vector-state"
-version = "0.1.0"
-dependencies = [
- "iowrap 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "vector-state-derive"
-version = "0.1.0"
-dependencies = [
- "proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "syn 1.0.5 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "vector-state-derive-test"
-version = "0.1.0"
-dependencies = [
- "vector-state 0.1.0",
- "vector-state-derive 0.1.0",
-]
 
 [metadata]
 "checksum iowrap 0.2.0 (registry+https://github.com/rust-lang/crates.io-index)" = "aae06e081563a8d3c978679d8fea1c03456b324945138dfd26ae6667d02ace62"

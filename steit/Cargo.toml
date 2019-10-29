@@ -1,0 +1,26 @@
+[package]
+name = "steit"
+version = "0.1.0"
+description = "State management and server-client synchronization."
+authors = ["Sky Mavis Engineering <engineering@skymavis.com>"]
+edition = "2018"
+license = "MIT"
+homepage = "https://github.com/skymavis/steit"
+repository = "https://github.com/skymavis/steit"
+categories = ["data-structures", "encoding"]
+keywords = ["state", "serialization", "synchronization", "protobuf"]
+include = ["src/**/*", "LICENSE", "README.md"]
+readme = "README.md"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[badges]
+travis-ci = { repository = "skymavis/steit", branch = "master" }
+coveralls = { repository = "skymavis/steit", branch = "master" }
+is-it-maintained-issue-resolution = { repository = "skymavis/steit" }
+is-it-maintained-open-issues = { repository = "skymavis/steit" }
+maintenance = { status = "actively-developed" }
+
+[dependencies]
+iowrap = "0.2.0"
