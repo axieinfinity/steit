@@ -96,6 +96,10 @@ macro_rules! collect_fields {
     ($self:ident, $method:ident) => {
         $self.indexed.iter().map(|field| field.$method()).collect()
     };
+
+    ($self:ident, $method:ident ($($rest:tt)*)) => {
+        $self.indexed.iter().map(|field| field.$method($($rest)*)).collect()
+    };
 }
 
 impl<'a> quote::ToTokens for Struct<'a> {
@@ -119,6 +123,8 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let arg = self.path.to_arg();
         let inits = self.get_inits();
 
+        let accessors: Vec<_> = collect_fields!(self, to_accessors(&self.path));
+
         let sizers: Vec<_> = collect_fields!(self, to_sizer);
         let serializers: Vec<_> = collect_fields!(self, to_serializer);
         let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
@@ -131,6 +137,8 @@ impl<'a> quote::ToTokens for Struct<'a> {
                     pub fn #new(#arg) -> Self {
                         #name #qual { #(#inits,)* }
                     }
+
+                    #(#accessors)*
                 }
 
                 impl #impl_generics Serialize for #name #ty_generics #where_clause {

@@ -135,7 +135,6 @@ mod tests {
         let mut bytes = Vec::new();
         object.serialize(&mut bytes).unwrap();
         r#new.deserialize(&mut &*bytes).unwrap();
-        println!();
         println!("original:      {:?}", object);
         println!("over the wire: {:?}", r#new);
         println!("bytes: {:?}", bytes);
@@ -150,6 +149,11 @@ mod tests {
         println!("{:?}, size = {}", point_a, point_a.size());
         debug(&point_a);
 
+        println!("f_1 = {}", point_a.f_1());
+        println!("f_2 = {}", point_a.f_2_mut());
+        point_a.set_f_1(137);
+        println!("f_1 = {} (changed)", point_a.f_1());
+
         let mut point_b = Point::new(Path::new());
         point_b.2 = 200;
         println!("{:?}, size = {}", point_b, point_b.size());
@@ -159,6 +163,12 @@ mod tests {
         segment.1 = point_a;
         segment.2 = point_b;
         println!("{:?}, size = {}", segment, segment.size());
+        println!();
+        debug(&segment);
+        check(&segment, &mut Segment::new(Path::new()));
+
+        segment.set_f_1_with(Point::new);
+        segment.set_f_2_with(Point::new);
         debug(&segment);
         check(&segment, &mut Segment::new(Path::new()));
     }

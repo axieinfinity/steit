@@ -140,6 +140,84 @@ impl<'a> IndexedField<'a> {
         get_init(&self.name, self.index, value)
     }
 
+    pub fn to_accessors(&self, path: &PathField<'_>) -> proc_macro2::TokenStream {
+        let getter = self.to_getter();
+        let mut_getter = self.to_mut_getter();
+        let setter = self.to_setter(path);
+
+        quote! {
+            #getter
+            #mut_getter
+            #setter
+        }
+    }
+
+    fn to_getter(&self) -> proc_macro2::TokenStream {
+        let doc = format!("Gets {}.", get_desc(&self.name, self.index));
+        let name = get_name(&self.name, self.index);
+        let ty = self.ty;
+        let access = get_access(&self.name, self.index);
+
+        quote! {
+            #[doc = #doc]
+            #[inline(always)]
+            pub fn #name(&self) -> &#ty {
+                &self.#access
+            }
+        }
+    }
+
+    fn to_mut_getter(&self) -> proc_macro2::TokenStream {
+        let doc = format!("Gets mutable {}.", get_desc(&self.name, self.index));
+        let name = format_ident!("{}_mut", get_name(&self.name, self.index));
+        let ty = self.ty;
+        let access = get_access(&self.name, self.index);
+
+        quote! {
+            #[doc = #doc]
+            #[inline(always)]
+            pub fn #name(&mut self) -> &mut #ty {
+                &mut self.#access
+            }
+        }
+    }
+
+    fn to_setter(&self, path: &PathField<'_>) -> proc_macro2::TokenStream {
+        let doc = format!("Sets {}.", get_desc(&self.name, self.index));
+        let ty = self.ty;
+        let access = get_access(&self.name, self.index);
+        let tag = *self.tag.get();
+
+        match self.kind {
+            FieldKind::Primitive { .. } => {
+                let name = format_ident!("set_{}", get_name(&self.name, self.index));
+
+                quote! {
+                    #[doc = #doc]
+                    pub fn #name(&mut self, value: #ty) -> &mut Self {
+                        // TODO: Track changes
+                        self.#access = value;
+                        self
+                    }
+                }
+            }
+
+            FieldKind::State => {
+                let name = format_ident!("set_{}_with", get_name(&self.name, self.index));
+                let path = get_access(&path.name, path.index);
+
+                quote! {
+                    #[doc = #doc]
+                    pub fn #name<F: FnOnce(Path) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                        // TODO: Track changes
+                        self.#access = get_value(self.#path.derive(#tag));
+                        self
+                    }
+                }
+            }
+        }
+    }
+
     pub fn to_sizer(&self) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
         let access = get_access(&self.name, self.index);
@@ -234,4 +312,18 @@ fn get_init(
 ) -> proc_macro2::TokenStream {
     let access = get_access(name, index);
     quote!(#access: #value)
+}
+
+fn get_name(name: &Option<syn::Ident>, index: usize) -> syn::Ident {
+    match name {
+        Some(name) => name.to_owned(),
+        None => format_ident!("f_{}", index),
+    }
+}
+
+fn get_desc(name: &Option<syn::Ident>, index: usize) -> String {
+    match name {
+        Some(name) => format!("`{}`", name),
+        None => format!("field #{}", index),
+    }
 }
