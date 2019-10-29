@@ -6,7 +6,6 @@ mod attr;
 mod context;
 mod field;
 mod r#struct;
-mod util;
 
 use crate::{context::Context, r#struct::Struct};
 

@@ -2,49 +2,54 @@ use std::io;
 
 use crate::{path::Path, ser::Serialize};
 
-pub enum Entry<T: Serialize> {
-    Update { path: Path, tag: u16, value: T },
-    Add { path: Path, item: T },
-    Remove { path: Path, tag: u16 },
+enum EntryKind<T: Serialize> {
+    Update { tag: u16, value: T },
+    Add { item: T },
+    Remove { tag: u16 },
 }
 
-impl<T: Serialize> Entry<T> {
-    pub fn kind(&self) -> u8 {
+impl<T: Serialize> EntryKind<T> {
+    pub fn code(&self) -> u8 {
         match self {
-            Entry::Update { .. } => 0,
-            Entry::Add { .. } => 1,
-            Entry::Remove { .. } => 2,
+            EntryKind::Update { .. } => 0,
+            EntryKind::Add { .. } => 1,
+            EntryKind::Remove { .. } => 2,
         }
     }
+}
+
+struct Entry<T: Serialize> {
+    path: Path,
+    kind: EntryKind<T>,
 }
 
 impl<T: Serialize> Serialize for Entry<T> {
     fn size(&self) -> u32 {
-        1 + match self {
-            Entry::Update { path, tag, value } => path.size() + tag.size() + value.size(),
-            Entry::Add { path, item } => path.size() + item.size(),
-            Entry::Remove { path, tag } => path.size() + tag.size(),
-        }
+        1 + self.path.size()
+            + match &self.kind {
+                EntryKind::Update { tag, value } => tag.size() + value.size(),
+                EntryKind::Add { item } => item.size(),
+                EntryKind::Remove { tag } => tag.size(),
+            }
     }
 
     fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
         self.size().serialize(writer)?;
-        self.kind().serialize(writer)?;
 
-        match self {
-            Entry::Update { path, tag, value } => {
-                path.serialize(writer)?;
+        self.kind.code().serialize(writer)?;
+        self.path.serialize(writer)?;
+
+        match &self.kind {
+            EntryKind::Update { tag, value } => {
                 tag.serialize(writer)?;
                 value.serialize(writer)?;
             }
 
-            Entry::Add { path, item } => {
-                path.serialize(writer)?;
+            EntryKind::Add { item } => {
                 item.serialize(writer)?;
             }
 
-            Entry::Remove { path, tag } => {
-                path.serialize(writer)?;
+            EntryKind::Remove { tag } => {
                 tag.serialize(writer)?;
             }
         }
@@ -59,15 +64,24 @@ pub struct Logger {
 
 impl Logger {
     pub fn log_update<T: Serialize>(&mut self, path: Path, tag: u16, value: T) -> io::Result<()> {
-        self.log_entry(Entry::Update { path, tag, value })
+        self.log_entry(Entry {
+            path,
+            kind: EntryKind::Update { tag, value },
+        })
     }
 
     pub fn log_add<T: Serialize>(&mut self, path: Path, item: T) -> io::Result<()> {
-        self.log_entry(Entry::Add { path, item })
+        self.log_entry(Entry {
+            path,
+            kind: EntryKind::Add { item },
+        })
     }
 
     pub fn log_remove<T: Serialize>(&mut self, path: Path, tag: u16) -> io::Result<()> {
-        self.log_entry(Entry::<T>::Remove { path, tag })
+        self.log_entry(Entry {
+            path,
+            kind: EntryKind::Remove::<T> { tag },
+        })
     }
 
     #[inline]

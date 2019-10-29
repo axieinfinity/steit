@@ -3,7 +3,6 @@ use std::collections::HashSet;
 use crate::{
     context::Context,
     field::{IndexedField, PathField},
-    util,
 };
 
 pub struct Struct<'a> {
@@ -23,7 +22,7 @@ impl<'a> Struct<'a> {
     ) -> Result<Self, ()> {
         let (paths, indexed): (Vec<_>, _) =
             fields.iter().enumerate().partition(|&(_index, field)| {
-                match util::type_name(context, &field.ty) {
+                match type_name(context, &field.ty) {
                     Some(ident) if ident == "Path" => true,
                     _ => false,
                 }
@@ -111,7 +110,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         let (new, qual, doc) = match self.variant {
             Some(variant) => (
-                format_ident!("new_{}", util::to_snake_case(&variant.to_string())),
+                format_ident!("new_{}", to_snake_case(&variant.to_string())),
                 quote!(::#variant),
                 format!("Constructs a new `{}::{}`.", name, variant),
             ),
@@ -125,13 +124,13 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let arg = self.path.to_arg();
         let inits = self.get_inits();
 
-        let accessors: Vec<_> = collect_fields!(self, to_accessors(&self.path));
+        let setters: Vec<_> = collect_fields!(self, to_setter(&self.path));
 
         let sizers: Vec<_> = collect_fields!(self, to_sizer);
         let serializers: Vec<_> = collect_fields!(self, to_serializer);
         let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
 
-        let impls = util::with_preimports(
+        let impls = with_preimports(
             name,
             quote! {
                 impl #impl_generics #name #ty_generics #where_clause {
@@ -140,7 +139,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
                         #name #qual { #(#inits,)* }
                     }
 
-                    #(#accessors)*
+                    #(#setters)*
                 }
 
                 impl #impl_generics Serialize for #name #ty_generics #where_clause {
@@ -204,4 +203,68 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         tokens.extend(impls);
     }
+}
+
+fn type_name<'a>(context: &Context, ty: &'a syn::Type) -> Option<&'a syn::Ident> {
+    match ty {
+        syn::Type::Path(syn::TypePath { ref path, .. }) => {
+            if let Some(segment) = path.segments.last() {
+                Some(&segment.ident)
+            } else {
+                context.error(ty, "expected a non-empty type path");
+                None
+            }
+        }
+
+        _ => {
+            context.error(ty, "expected a type path");
+            None
+        }
+    }
+}
+
+fn with_preimports(
+    name: &syn::Ident,
+    tokens: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let r#const = format_ident!(
+        "_IMPL_STATE_FOR_{}",
+        to_snake_case(&name.to_string()).to_uppercase()
+    );
+
+    quote! {
+        const #r#const: () = {
+            extern crate vector_state;
+
+            use std::io::{self, Read};
+
+            use vector_state::{
+                de::Deserialize,
+                iowrap,
+                ser::Serialize,
+                // We don't import directly
+                // to avoid confusing `serialize` and `deserialize` calls.
+                varint,
+            };
+
+            #tokens
+        };
+    }
+}
+
+fn to_snake_case(s: &str) -> String {
+    let mut chars = s.chars().peekable();
+    let mut out = String::new();
+
+    while let Some(c) = chars.next() {
+        out.extend(c.to_lowercase());
+
+        if let Some(next_c) = chars.peek() {
+            if next_c.is_uppercase() {
+                out.push('_');
+            }
+        }
+    }
+
+    out
 }

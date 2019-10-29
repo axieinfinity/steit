@@ -26,7 +26,7 @@ impl Context {
             .unwrap_or_else(|| unreachable!("expected list of errors to be defined"))
             .push(error);
 
-        Default::default()
+        quote!()
     }
 
     pub fn check(self) -> Result<(), Vec<syn::Error>> {

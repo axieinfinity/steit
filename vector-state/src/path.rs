@@ -3,8 +3,7 @@ use std::{
     rc::{Rc, Weak},
 };
 
-use crate::{ser::Serialize, varint::Varint};
-use std::io::Read;
+use crate::{ser::Serialize, varint};
 
 #[derive(Debug)]
 enum Node<T> {
@@ -84,7 +83,7 @@ impl Path {
         match node.as_ref() {
             Node::Root => 0,
             Node::Child { parent, value } => {
-                let mut size = Varint::size(value) as u32;
+                let mut size = value.size() as u32;
 
                 if let Some(parent) = parent.upgrade() {
                     size += Self::size(&parent)
@@ -103,7 +102,7 @@ impl Path {
                     Self::serialize(&parent, writer)?;
                 }
 
-                Varint::serialize(value, writer)?;
+                value.serialize(writer)?;
             }
         }
 
@@ -117,18 +116,20 @@ impl Serialize for Path {
     }
 
     fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
-        Varint::serialize(&self.size(), writer)?;
+        self.size().serialize(writer)?;
         Self::serialize(&self.node, writer)
     }
 }
 
 pub fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Vec<u16>> {
-    let size = Varint::deserialize(reader)?;
+    use io::Read;
+
+    let size = varint::Varint::deserialize(reader)?;
     let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
     let mut segments = Vec::new();
 
     while !reader.eof()? {
-        let segment = Varint::deserialize(reader)?;
+        let segment = varint::Varint::deserialize(reader)?;
         segments.push(segment);
     }
 
