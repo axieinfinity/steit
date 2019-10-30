@@ -1,10 +1,7 @@
-#[allow(unused_imports)]
-#[macro_use]
-extern crate steit_derive;
-
 #[cfg(test)]
 mod tests {
     use steit::runtime::Runtime;
+    use steit_derive::State;
 
     /* #[derive(State)]
     struct Good {
