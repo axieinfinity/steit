@@ -93,6 +93,11 @@ impl_signed_varint!(i16, u16);
 impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
 
+#[inline]
+pub fn deserialize<T: Varint>(reader: &mut impl io::Read) -> io::Result<T> {
+    <T as Varint>::deserialize(reader)
+}
+
 // Reference: https://bit.ly/2BJbkd5
 fn size_32(value: i32) -> u8 {
     if value & (!0 << 7) == 0 {

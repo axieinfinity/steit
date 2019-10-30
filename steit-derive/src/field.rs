@@ -235,7 +235,7 @@ impl<'a> IndexedField<'a> {
         let deserializer = match self.kind {
             FieldKind::Primitive { .. } => quote!(self.#access.deserialize(reader)?;),
             FieldKind::State => quote! {
-                let size = varint::Varint::deserialize(reader)?;
+                let size = varint::deserialize(reader)?;
                 self.#access.deserialize(&mut reader.by_ref().take(size))?;
             },
         };

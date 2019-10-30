@@ -160,7 +160,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
                         let reader = &mut iowrap::Eof::new(reader);
 
                         while !reader.eof()? {
-                            let key: u32 = varint::Varint::deserialize(reader)?;
+                            let key: u32 = varint::deserialize(reader)?;
                             let tag = (key >> 3) as u16;
                             let wire_type = (key & 7) as u8;
 
@@ -175,7 +175,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
                                     }
 
                                     2 => {
-                                        let size = varint::Varint::deserialize(reader)?;
+                                        let size = varint::deserialize(reader)?;
                                         let mut buf = Vec::new();
 
                                         reader

@@ -124,12 +124,12 @@ impl Serialize for Path {
 pub fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Vec<u16>> {
     use io::Read;
 
-    let size = varint::Varint::deserialize(reader)?;
+    let size = varint::deserialize(reader)?;
     let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
     let mut segments = Vec::new();
 
     while !reader.eof()? {
-        let segment = varint::Varint::deserialize(reader)?;
+        let segment = varint::deserialize(reader)?;
         segments.push(segment);
     }
 
