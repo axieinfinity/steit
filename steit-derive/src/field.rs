@@ -1,6 +1,7 @@
 use crate::{
     attr::{Attr, AttrValue},
     context::Context,
+    derivation::DerivationKind,
 };
 
 // Note that we intentionally exclude some unsupported primitive types
@@ -23,10 +24,22 @@ pub struct IndexedField<'a> {
 }
 
 impl<'a> IndexedField<'a> {
-    pub fn parse(context: &Context, field: &'a syn::Field, index: usize) -> Result<Self, ()> {
+    pub fn parse(
+        context: &Context,
+        kind: &DerivationKind,
+        field: &'a syn::Field,
+        index: usize,
+    ) -> Result<Self, ()> {
         let ty = &field.ty;
         let full_type_name = quote!(#ty).to_string();
         let is_primitive = PRIMITIVE_TYPES.contains(&&*full_type_name);
+
+        if kind == &DerivationKind::State {
+            if let syn::Visibility::Inherited = field.vis {
+            } else {
+                context.error(&field.vis, "expected field to be private");
+            }
+        }
 
         Self::parse_attrs(context, &field, &field.attrs, is_primitive).map(|(tag, default)| {
             let kind = if is_primitive {
@@ -58,7 +71,7 @@ impl<'a> IndexedField<'a> {
 
         for item in attrs
             .iter()
-            .flat_map(|attr| get_state_meta_items(context, attr))
+            .flat_map(|attr| get_steit_meta_items(context, attr))
             .flatten()
         {
             match &item {
@@ -69,7 +82,7 @@ impl<'a> IndexedField<'a> {
                         if let Ok(tag) = lit.base10_parse() {
                             tag_attr.set(lit, tag);
                         } else {
-                            context.error(lit, format!("unable to parse #[state(tag = {})]", lit));
+                            context.error(lit, format!("unable to parse #[steit(tag = {})]", lit));
                         }
                     }
                 }
@@ -78,7 +91,10 @@ impl<'a> IndexedField<'a> {
                     if item.path.is_ident("default") =>
                 {
                     if !is_primitive {
-                        context.error(item, "unexpected default value for this nested state");
+                        context.error(
+                            item,
+                            "unexpected default value for this nested steit object",
+                        );
                     }
 
                     if let Ok(lit) = get_lit_str(context, "default", &item.lit) {
@@ -87,7 +103,7 @@ impl<'a> IndexedField<'a> {
                         } else {
                             context.error(
                                 lit,
-                                format!("unable to parse #[state(default = {:?})]", lit.value()),
+                                format!("unable to parse #[steit(default = {:?})]", lit.value()),
                             );
                         }
                     }
@@ -96,11 +112,11 @@ impl<'a> IndexedField<'a> {
                 syn::NestedMeta::Meta(item) => {
                     let path = item.path();
                     let path = quote!(#path).to_string().replace(' ', "");
-                    context.error(item.path(), format!("unknown state attribute `{}`", path));
+                    context.error(item.path(), format!("unknown steit attribute `{}`", path));
                 }
 
                 syn::NestedMeta::Lit(lit) => {
-                    context.error(lit, "unexpected literal in state attributes");
+                    context.error(lit, "unexpected literal in steit attributes");
                 }
             }
         }
@@ -109,7 +125,7 @@ impl<'a> IndexedField<'a> {
             Ok((tag, default_attr.value()))
         } else {
             if !tag_encountered {
-                context.error(field, "expected a `tag` attribute #[state(tag = ...)]");
+                context.error(field, "expected a `tag` attribute #[steit(tag = ...)]");
             }
 
             Err(())
@@ -253,7 +269,12 @@ pub struct RuntimeField<'a> {
 }
 
 impl<'a> RuntimeField<'a> {
-    pub fn new(field: &'a syn::Field, index: usize) -> Self {
+    pub fn new(context: &Context, field: &'a syn::Field, index: usize) -> Self {
+        if let syn::Visibility::Inherited = field.vis {
+        } else {
+            context.error(&field.vis, "expected `Runtime` field to be private");
+        }
+
         Self {
             name: field.ident.clone(),
             ty: &field.ty,
@@ -271,18 +292,18 @@ impl<'a> RuntimeField<'a> {
     }
 }
 
-fn get_state_meta_items(
+fn get_steit_meta_items(
     context: &Context,
     attr: &syn::Attribute,
 ) -> Result<Vec<syn::NestedMeta>, ()> {
-    if !attr.path.is_ident("state") {
+    if !attr.path.is_ident("steit") {
         return Ok(Vec::new());
     }
 
     match attr.parse_meta() {
         Ok(syn::Meta::List(meta)) => Ok(meta.nested.into_iter().collect()),
         Ok(other) => {
-            context.error(other, "expected #[state(...)]");
+            context.error(other, "expected #[steit(...)]");
             Err(())
         }
         Err(err) => {

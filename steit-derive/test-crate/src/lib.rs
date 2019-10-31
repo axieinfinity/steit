@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use steit::runtime::Runtime;
-    use steit_derive::State;
+    use steit_derive::{Deserialize, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -26,96 +26,102 @@ mod tests {
     #[derive(State)]
     struct Test5 {
         runtime: Runtime,
-        #[state(tag = "0")]
-        #[state(tag = "0")]
+        #[steit(tag = "0")]
+        #[steit(tag = "0")]
         x: i32,
     }
 
     #[derive(State)]
     struct Test6 {
         runtime: Runtime,
-        #[state(tag = 0, default = 0)]
+        #[steit(tag = 0, default = 0)]
         good: Good,
     }
 
     #[derive(State)]
     struct Test7 {
         runtime: Runtime,
-        #[state(tag = 0)]
-        #[state(default = "10")]
+        #[steit(tag = 0)]
+        #[steit(default = "10")]
         x: i32,
     }
 
     #[derive(State)]
     struct Test8 {
         runtime: Runtime,
-        #[state(tag = 0)]
+        #[steit(tag = 0)]
         x: i32,
-        #[state(tag = 0)]
+        #[steit(tag = 0)]
         y: i32,
     }
 
     #[derive(State)]
     struct Test9 {
         runtime: Runtime,
-        #[state(what = 0)]
+        #[steit(what = 0)]
         x: i32,
     }
 
     #[derive(State)]
     struct Test10 {
         runtime: Runtime,
-        #[state(0)]
+        #[steit(0)]
         x: i32,
     }
 
     #[derive(State)]
     struct Pos2d {
         runtime: Runtime,
-        #[state(tag = 0, default = "7")]
+        #[steit(tag = 0, default = "7")]
         x: i32,
-        #[state(tag = 1, default = "2")]
+        #[steit(tag = 1, default = "2")]
         y: i32,
     }
 
     #[derive(State)]
     struct Pos3d {
         runtime: Runtime,
-        #[state(tag = 7)]
+        #[steit(tag = 7)]
         pos: Pos2d,
-        #[state(tag = 0, default = "1")]
+        #[steit(tag = 0, default = "1")]
         z: i32,
     }
 
     #[derive(State)]
     enum Pos {
-        TwoDim(#[state(tag = 0)] Pos2d, Runtime),
-        ThreeDim(#[state(tag = 0)] Pos3d, Runtime),
+        TwoDim(#[steit(tag = 0)] Pos2d, Runtime),
+        ThreeDim(#[steit(tag = 0)] Pos3d, Runtime),
     }
 
     #[derive(State)]
     struct Character {
         runtime: Runtime,
-        #[state(tag = 2)]
+        #[steit(tag = 2)]
         pos: Pos,
     }
 
     #[derive(Debug, State)]
     struct r#Why(
         Runtime,
-        #[state(tag = 0, default = "7")] i32,
-        #[state(tag = 1, default = "10")] i32,
+        #[steit(tag = 0, default = "7")] i32,
+        #[steit(tag = 1, default = "10")] i32,
     ); */
+
+    #[derive(Serialize, Deserialize)]
+    struct What {
+        #[steit(tag = 0)]
+        x: i32,
+    }
 
     #[derive(Debug, PartialEq, State)]
     struct Point(
         Runtime,
-        #[state(tag = 2, default = "5")] i32,
-        #[state(tag = 3, default = "10")] i32,
+        #[steit(tag = 2, default = "5")] i32,
+        #[steit(tag = 3, default = "10")] i32,
     );
 
     #[derive(Debug, PartialEq, State)]
-    struct Segment(Runtime, #[state(tag = 0)] Point, #[state(tag = 1)] Point);
+    struct Segment(Runtime, #[steit(tag = 0)] Point, #[steit(tag = 1)] Point);
 
     use std::fmt;
 
