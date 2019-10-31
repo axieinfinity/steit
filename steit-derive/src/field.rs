@@ -231,14 +231,8 @@ impl<'a> IndexedField<'a> {
         let wire_type = self.wire_type() as u32;
         let access = get_access(&self.name, self.index);
 
-        let size_serializer = match self.kind {
-            FieldKind::Primitive { .. } => quote!(),
-            FieldKind::State => quote!(self.#access.size().serialize(writer)?;),
-        };
-
         quote! {
             (#tag << 3 | #wire_type).serialize(writer)?;
-            #size_serializer
             self.#access.serialize(writer)?;
         }
     }
@@ -248,16 +242,8 @@ impl<'a> IndexedField<'a> {
         let wire_type = self.wire_type();
         let access = get_access(&self.name, self.index);
 
-        let deserializer = match self.kind {
-            FieldKind::Primitive { .. } => quote!(self.#access.deserialize(reader)?;),
-            FieldKind::State => quote! {
-                let size = varint::deserialize(reader)?;
-                self.#access.deserialize(&mut reader.by_ref().take(size))?;
-            },
-        };
-
         quote!(#tag if wire_type == #wire_type => {
-            #deserializer
+            self.#access.deserialize(reader)?;
         })
     }
 }

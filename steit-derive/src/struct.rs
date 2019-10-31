@@ -203,6 +203,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
                         }
 
                         fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                            self.size().serialize(writer)?;
                             #(#serializers)*
                             Ok(())
                         }
@@ -220,7 +221,8 @@ impl<'a> quote::ToTokens for Struct<'a> {
                 impls.push(quote! {
                     impl #impl_generics Deserialize for #name #ty_generics #where_clause {
                         fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
-                            let reader = &mut iowrap::Eof::new(reader);
+                            let size = varint::deserialize(reader)?;
+                            let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
 
                             while !reader.eof()? {
                                 let key: u32 = varint::deserialize(reader)?;
