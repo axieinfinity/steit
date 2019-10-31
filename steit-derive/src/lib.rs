@@ -4,23 +4,23 @@ extern crate quote;
 
 mod attr;
 mod context;
-mod derivation;
+mod derive;
 mod field;
 mod r#struct;
 
-use crate::derivation::DerivationKind;
+use crate::derive::DeriveKind;
 
 #[proc_macro_derive(Deserialize, attributes(steit))]
 pub fn serialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    derivation::derive(&DerivationKind::Serialize, input)
+    derive::derive(&DeriveKind::Serialize, input)
 }
 
 #[proc_macro_derive(Serialize, attributes(steit))]
 pub fn deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    derivation::derive(&DerivationKind::Deserialize, input)
+    derive::derive(&DeriveKind::Deserialize, input)
 }
 
 #[proc_macro_derive(State, attributes(steit))]
 pub fn state(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
-    derivation::derive(&DerivationKind::State, input)
+    derive::derive(&DeriveKind::State, input)
 }

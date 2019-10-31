@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use crate::{
     context::Context,
-    derivation::DerivationKind,
+    derive::DeriveKind,
     field::{IndexedField, RuntimeField},
 };
 
@@ -32,7 +32,7 @@ macro_rules! collect_fields {
 impl<'a> Struct<'a> {
     pub fn parse<O: quote::ToTokens>(
         context: &Context,
-        kind: &DerivationKind,
+        kind: &DeriveKind,
         input: &'a syn::DeriveInput,
         object: O,
         fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
@@ -46,7 +46,7 @@ impl<'a> Struct<'a> {
                 }
             });
 
-        if kind != &DerivationKind::State && runtimes.len() > 0 {
+        if kind != &DeriveKind::State && runtimes.len() > 0 {
             context.error(
                 fields,
                 "unexpected `Runtime` field, as it's only allowed in #[derive(State)])",
@@ -54,9 +54,9 @@ impl<'a> Struct<'a> {
         };
 
         let struct_kind = match kind {
-            DerivationKind::Serialize => Ok(StructKind::Serialize),
-            DerivationKind::Deserialize => Ok(StructKind::Deserialize),
-            DerivationKind::State => {
+            DeriveKind::Serialize => Ok(StructKind::Serialize),
+            DeriveKind::Deserialize => Ok(StructKind::Deserialize),
+            DeriveKind::State => {
                 if runtimes.len() == 0 {
                     context.error(object, "expected exactly one `Runtime` field, got none");
                     return Err(());
@@ -90,7 +90,7 @@ impl<'a> Struct<'a> {
 
     fn parse_indexed(
         context: &Context,
-        kind: &DerivationKind,
+        kind: &DeriveKind,
         indexed: Vec<(usize, &'a syn::Field)>,
     ) -> Result<Vec<IndexedField<'a>>, ()> {
         let mut result = Vec::with_capacity(indexed.len());

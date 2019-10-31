@@ -1,13 +1,13 @@
 use crate::{context::Context, r#struct::Struct};
 
 #[derive(PartialEq)]
-pub enum DerivationKind {
+pub enum DeriveKind {
     Serialize,
     Deserialize,
     State,
 }
 
-pub fn derive(kind: &DerivationKind, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
     let context = Context::new();
 
@@ -35,7 +35,7 @@ pub fn derive(kind: &DerivationKind, input: proc_macro::TokenStream) -> proc_mac
 
 fn impl_enum(
     context: &Context,
-    kind: &DerivationKind,
+    kind: &DeriveKind,
     input: &syn::DeriveInput,
     data: &syn::DataEnum,
 ) -> proc_macro2::TokenStream {
@@ -63,7 +63,7 @@ fn impl_enum(
 
 fn impl_struct<O: quote::ToTokens>(
     context: &Context,
-    kind: &DerivationKind,
+    kind: &DeriveKind,
     input: &syn::DeriveInput,
     object: O,
     fields: &syn::Fields,
@@ -83,7 +83,7 @@ fn impl_struct<O: quote::ToTokens>(
 
 fn impl_union(
     context: &Context,
-    _kind: &DerivationKind,
+    _kind: &DeriveKind,
     _input: &syn::DeriveInput,
     data: &syn::DataUnion,
 ) -> proc_macro2::TokenStream {

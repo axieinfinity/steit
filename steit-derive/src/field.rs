@@ -1,7 +1,7 @@
 use crate::{
     attr::{Attr, AttrValue},
     context::Context,
-    derivation::DerivationKind,
+    derive::DeriveKind,
 };
 
 // Note that we intentionally exclude some unsupported primitive types
@@ -26,7 +26,7 @@ pub struct IndexedField<'a> {
 impl<'a> IndexedField<'a> {
     pub fn parse(
         context: &Context,
-        kind: &DerivationKind,
+        kind: &DeriveKind,
         field: &'a syn::Field,
         index: usize,
     ) -> Result<Self, ()> {
@@ -34,7 +34,7 @@ impl<'a> IndexedField<'a> {
         let full_type_name = quote!(#ty).to_string();
         let is_primitive = PRIMITIVE_TYPES.contains(&&*full_type_name);
 
-        if kind == &DerivationKind::State {
+        if kind == &DeriveKind::State {
             if let syn::Visibility::Inherited = field.vis {
             } else {
                 context.error(&field.vis, "expected field to be private");
