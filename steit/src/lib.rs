@@ -7,4 +7,6 @@ mod log;
 mod path;
 pub mod runtime;
 
+mod test_util;
+
 pub use iowrap;

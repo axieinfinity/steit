@@ -138,18 +138,9 @@ pub fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Vec<u16>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::ser::Serialize;
+    use crate::{ser::Serialize, test_case};
 
     use super::{deserialize, Path};
-
-    macro_rules! t {
-        ($name:ident : $segments:expr) => {
-            #[test]
-            fn $name() {
-                assert_back_and_forth($segments);
-            }
-        };
-    }
 
     fn assert_back_and_forth(segments: &[u16]) {
         let mut paths = vec![Path::root()];
@@ -167,9 +158,9 @@ mod tests {
         assert_eq!(deserialize(&mut &*bytes).unwrap(), segments);
     }
 
-    t!(back_and_forth_01: &[0]);
-    t!(back_and_forth_02: &[1]);
-    t!(back_and_forth_03: &[0, 0, 0, 1]);
-    t!(back_and_forth_04: &[1, 1, 1]);
-    t!(back_and_forth_05: &[10_000, -1i8 as u16, 137, 1, 2, 3, 4, 0, 0, 42]);
+    test_case!(back_and_forth_01: assert_back_and_forth; &[0]);
+    test_case!(back_and_forth_02: assert_back_and_forth; &[1]);
+    test_case!(back_and_forth_03: assert_back_and_forth; &[0, 0, 0, 1]);
+    test_case!(back_and_forth_04: assert_back_and_forth; &[1, 1, 1]);
+    test_case!(back_and_forth_05: assert_back_and_forth; &[10_000, -1i8 as u16, 137, 1, 2, 3, 4, 0, 0, 42]);
 }

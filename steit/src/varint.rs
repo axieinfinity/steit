@@ -154,16 +154,9 @@ fn size_64(mut value: i64) -> u8 {
 mod tests {
     use std::fmt;
 
-    use super::Varint;
+    use crate::test_case;
 
-    macro_rules! t {
-        ($name:ident : $assert:ident, $($args:expr)=>*) => {
-            #[test]
-            fn $name() {
-                $assert($($args),*);
-            }
-        };
-    }
+    use super::Varint;
 
     fn encode<T: Varint>(value: T) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(10);
@@ -175,11 +168,11 @@ mod tests {
         assert_eq!(&*encode(value), expected_bytes);
     }
 
-    t!(encode_zig_zag_01: assert_encode,  0 => &[0]);
-    t!(encode_zig_zag_02: assert_encode, -1 => &[1]);
-    t!(encode_zig_zag_03: assert_encode,  1 => &[2]);
-    t!(encode_zig_zag_04: assert_encode, -2 => &[3]);
-    t!(encode_zig_zag_05: assert_encode,  2 => &[4]);
+    test_case!(encode_zig_zag_01: assert_encode;  0 => &[0]);
+    test_case!(encode_zig_zag_02: assert_encode; -1 => &[1]);
+    test_case!(encode_zig_zag_03: assert_encode;  1 => &[2]);
+    test_case!(encode_zig_zag_04: assert_encode; -2 => &[3]);
+    test_case!(encode_zig_zag_05: assert_encode;  2 => &[4]);
 
     fn decode<T: Varint>(bytes: &[u8]) -> T {
         T::deserialize(&mut &*bytes).unwrap()
@@ -189,19 +182,19 @@ mod tests {
         assert_eq!(decode::<T>(bytes), expected_value);
     }
 
-    t!(decode_zig_zag_01: assert_decode, &[0] =>  0);
-    t!(decode_zig_zag_02: assert_decode, &[1] => -1);
-    t!(decode_zig_zag_03: assert_decode, &[2] =>  1);
-    t!(decode_zig_zag_04: assert_decode, &[3] => -2);
-    t!(decode_zig_zag_05: assert_decode, &[4] =>  2);
+    test_case!(decode_zig_zag_01: assert_decode; &[0] =>  0);
+    test_case!(decode_zig_zag_02: assert_decode; &[1] => -1);
+    test_case!(decode_zig_zag_03: assert_decode; &[2] =>  1);
+    test_case!(decode_zig_zag_04: assert_decode; &[3] => -2);
+    test_case!(decode_zig_zag_05: assert_decode; &[4] =>  2);
 
     fn assert_back_and_forth<T: Varint + Copy + PartialEq + fmt::Debug>(value: T) {
         assert_eq!(decode::<T>(&*encode(value)), value);
     }
 
-    t!(back_and_forth_01: assert_back_and_forth, -1i8 as u64);
-    t!(back_and_forth_02: assert_back_and_forth, !0u64);
-    t!(back_and_forth_03: assert_back_and_forth, -1i8 as u32);
-    t!(back_and_forth_04: assert_back_and_forth, 1_000_000);
-    t!(back_and_forth_05: assert_back_and_forth, 42);
+    test_case!(back_and_forth_01: assert_back_and_forth; -1i8 as u64);
+    test_case!(back_and_forth_02: assert_back_and_forth; !0u64);
+    test_case!(back_and_forth_03: assert_back_and_forth; -1i8 as u32);
+    test_case!(back_and_forth_04: assert_back_and_forth; 1_000_000);
+    test_case!(back_and_forth_05: assert_back_and_forth; 42);
 }
