@@ -77,7 +77,6 @@ impl Logger {
         }
     }
 
-    #[inline]
     pub fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
         // TODO: Make logging infallable
         entry.serialize(&mut *self.buf.borrow_mut())?;
