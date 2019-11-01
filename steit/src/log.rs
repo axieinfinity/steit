@@ -1,4 +1,4 @@
-use std::{cell::RefCell, io};
+use std::{cell::RefCell, io, rc::Rc};
 
 use crate::{path::Path, ser::Serialize};
 
@@ -67,19 +67,19 @@ impl<'a, T: Serialize> Serialize for Entry<'a, T> {
 
 #[derive(Clone)]
 pub struct Logger {
-    buf: RefCell<Vec<u8>>,
+    buf: Rc<RefCell<Vec<u8>>>,
 }
 
 impl Logger {
     pub fn new() -> Self {
-        Self {
-            buf: RefCell::new(Vec::new()),
+        Logger {
+            buf: Rc::new(RefCell::new(Vec::new())),
         }
     }
 
-    pub fn log_entry<T: Serialize>(&mut self, entry: Entry<T>) -> io::Result<()> {
-        // TODO: Make logging infallable
+    pub fn log_entry<T: Serialize>(&self, entry: Entry<T>) -> io::Result<()> {
         entry.serialize(&mut *self.buf.borrow_mut())?;
+        // TODO: Remove the debug code below
         println!("=== entry: {:?}", self.buf.borrow());
         self.buf.borrow_mut().clear();
         Ok(())
