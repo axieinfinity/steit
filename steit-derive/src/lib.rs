@@ -10,12 +10,12 @@ mod r#struct;
 
 use crate::derive::DeriveKind;
 
-#[proc_macro_derive(Deserialize, attributes(steit))]
+#[proc_macro_derive(Serialize, attributes(steit))]
 pub fn serialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     derive::derive(&DeriveKind::Serialize, input)
 }
 
-#[proc_macro_derive(Serialize, attributes(steit))]
+#[proc_macro_derive(Deserialize, attributes(steit))]
 pub fn deserialize(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     derive::derive(&DeriveKind::Deserialize, input)
 }
