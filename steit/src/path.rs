@@ -1,19 +1,16 @@
-use std::{
-    fmt, io,
-    rc::{Rc, Weak},
-};
+use std::{fmt, io, rc::Rc};
 
 use crate::{ser::Serialize, varint};
 
 enum Node<T> {
     Root,
-    Child { parent: Weak<Self>, value: T },
+    Child { parent: Rc<Self>, value: T },
 }
 
 impl<T> Node<T> {
     pub fn child(parent: &Rc<Self>, value: T) -> Self {
         Node::Child {
-            parent: Rc::downgrade(parent),
+            parent: parent.clone(),
             value,
         }
     }
@@ -25,10 +22,7 @@ impl<T> Node<T> {
         match self {
             Node::Root => {}
             Node::Child { parent, value } => {
-                if let Some(parent) = parent.upgrade() {
-                    parent.push_values(values);
-                }
-
+                parent.push_values(values);
                 values.push(value.clone());
             }
         }
@@ -70,15 +64,7 @@ impl Path {
     fn size(node: &Rc<Node<u16>>) -> u32 {
         match node.as_ref() {
             Node::Root => 0,
-            Node::Child { parent, value } => {
-                let mut size = value.size() as u32;
-
-                if let Some(parent) = parent.upgrade() {
-                    size += Self::size(&parent)
-                }
-
-                size
-            }
+            Node::Child { parent, value } => value.size() + Self::size(&parent),
         }
     }
 
@@ -86,10 +72,7 @@ impl Path {
         match node.as_ref() {
             Node::Root => {}
             Node::Child { parent, value } => {
-                if let Some(parent) = parent.upgrade() {
-                    Self::serialize(&parent, writer)?;
-                }
-
+                Self::serialize(&parent, writer)?;
                 value.serialize(writer)?;
             }
         }
