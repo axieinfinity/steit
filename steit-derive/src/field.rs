@@ -191,8 +191,13 @@ impl<'a> IndexedField<'a> {
 
     pub fn get_destructuring(&self) -> proc_macro2::TokenStream {
         let access = self.get_access();
-        let alias = self.get_alias();
-        quote!(#access: #alias)
+
+        if self.name.is_some() {
+            quote!(#access)
+        } else {
+            let alias = self.get_alias();
+            quote!(#access: #alias)
+        }
     }
 
     pub fn get_setter(
@@ -215,10 +220,8 @@ impl<'a> IndexedField<'a> {
         let (name, reset, setter) = match variant {
             Some(variant) => {
                 let variant_tag = variant.tag();
-                let variant = variant.ident();
-
-                let qual = quote!(::#variant);
-                let variant = util::to_snake_case(&variant.to_string());
+                let qual = variant.qual();
+                let variant = util::to_snake_case(&variant.ident().to_string());
                 let new = format_ident!("new_{}", variant);
 
                 (
@@ -226,8 +229,7 @@ impl<'a> IndexedField<'a> {
                     quote! {
                         if let #struct_name #qual { .. } = self {
                         } else {
-                            let runtime = self.runtime().parent();
-                            let value = Self::#new(runtime);
+                            let value = Self::#new(self.runtime().parent());
                             value.runtime().parent().log_update(#variant_tag, &value).unwrap();
                             *self = value;
                         }
@@ -306,13 +308,13 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn get_deserializer(&self) -> proc_macro2::TokenStream {
+    pub fn get_deserializer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get();
         let wire_type = self.wire_type();
-        let access = self.get_access();
+        let field = self.get_field(is_variant);
 
         quote!(#tag if wire_type == #wire_type => {
-            self.#access.deserialize(reader)?;
+            #field.deserialize(reader)?;
         })
     }
 }

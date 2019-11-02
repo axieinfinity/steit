@@ -24,6 +24,11 @@ impl<'a> Variant<'a> {
         &self.variant.ident
     }
 
+    pub fn qual(&self) -> proc_macro2::TokenStream {
+        let ident = self.ident();
+        quote!(::#ident)
+    }
+
     pub fn tag(&self) -> u16 {
         self.tag
     }
@@ -198,15 +203,8 @@ impl<'a> Struct<'a> {
         }
     }
 
-    pub fn qual(&self) -> Option<proc_macro2::TokenStream> {
-        self.variant.as_ref().map(|variant| {
-            let variant = variant.ident();
-            quote!(::#variant)
-        })
-    }
-
-    pub fn tag(&self) -> Option<u16> {
-        self.variant.as_ref().map(|variant| variant.tag)
+    pub fn variant(&self) -> Option<&Variant> {
+        self.variant.as_ref()
     }
 
     pub fn runtime(&self) -> Option<&RuntimeField<'_>> {
@@ -224,7 +222,6 @@ impl<'a> Struct<'a> {
     pub fn get_ctor_and_setters(&self) -> Option<proc_macro2::TokenStream> {
         if let Derive::State { .. } = self.derive {
             let name = &self.input.ident;
-            let qual = self.qual();
             let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
 
             let (new, doc) = match &self.variant {
@@ -239,7 +236,7 @@ impl<'a> Struct<'a> {
             };
 
             let args = self.get_ctor_args();
-            let qual = self.qual();
+            let qual = self.variant().map(|variant| variant.qual());
             let inits = self.get_inits();
 
             let setters: Vec<_> = self.get_setters();
@@ -275,7 +272,50 @@ impl<'a> Struct<'a> {
     }
 
     pub fn get_deserializer(&self) -> Option<proc_macro2::TokenStream> {
-        None
+        match self.derive {
+            Derive::State { .. } | Derive::Deserialize => {
+                let deserializers = map_fields!(self, get_deserializer(self.variant.is_some()));
+
+                Some(quote! {
+                    while !reader.eof()? {
+                        let key: u32 = varint::deserialize(reader)?;
+                        let tag = (key >> 3) as u16;
+                        let wire_type = (key & 7) as u8;
+
+                        match tag {
+                            #(#deserializers,)*
+
+                            _ => match wire_type {
+                                0 => {
+                                    // Other than `u8`, any int type will do
+                                    // since we deserialize just to ignore the whole varint.
+                                    let _: u8 = varint::deserialize(reader)?;
+                                }
+
+                                2 => {
+                                    let size = varint::deserialize(reader)?;
+                                    let mut buf = Vec::new();
+
+                                    reader
+                                        .by_ref()
+                                        .take(size)
+                                        .read_to_end(&mut buf)?;
+                                }
+
+                                _ => {
+                                    return Err(io::Error::new(
+                                        io::ErrorKind::InvalidData,
+                                        format!("unexpected wire type {}", wire_type),
+                                    ));
+                                }
+                            },
+                        }
+                    }
+                })
+            }
+
+            Derive::Serialize => None,
+        }
     }
 
     fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
@@ -304,126 +344,6 @@ impl<'a> Struct<'a> {
         }
     }
 }
-
-/* impl<'a> quote::ToTokens for Struct<'a> {
-    fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
-        let name = &self.input.ident;
-        let qual = self.qual();
-        let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
-
-        let mut impls = Vec::new();
-
-        if let Derive::State { .. } = self.derive {
-            let (new, doc) = match &self.variant {
-                Some(variant) => (
-                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
-                    format!("Constructs a new `{}::{}`.", name, variant.ident()),
-                ),
-                None => (
-                    format_ident!("new"),
-                    format!("Constructs a new `{}`.", name),
-                ),
-            };
-
-            let args = self.get_ctor_args();
-            let inits = self.get_inits();
-
-            let setters: Vec<_> = self.get_setters();
-
-            impls.push(quote! {
-                impl #impl_generics #name #ty_generics #where_clause {
-                    #[doc = #doc]
-                    pub fn #new(#(#args),*) -> Self {
-                        #name #qual { #(#inits,)* }
-                    }
-
-                    #(#setters)*
-                }
-            })
-        }
-
-        match self.derive {
-            Derive::State { .. } | Derive::Serialize => {
-                let sizers: Vec<_> = collect_fields!(self, get_sizer);
-                let serializers: Vec<_> = collect_fields!(self, get_serializer);
-
-                impls.push(quote! {
-                    /* impl #impl_generics Serialize for #name #ty_generics #where_clause {
-                        fn size(&self) -> u32 {
-                            let mut size = 0;
-                            #(#sizers)*
-                            size
-                        }
-
-                        fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
-                            self.size().serialize(writer)?;
-                            #(#serializers)*
-                            Ok(())
-                        }
-                    } */
-                })
-            }
-
-            _ => (),
-        }
-
-        match self.derive {
-            Derive::State { .. } | Derive::Deserialize => {
-                let deserializers: Vec<_> = collect_fields!(self, get_deserializer);
-
-                impls.push(quote! {
-                    /* impl #impl_generics Deserialize for #name #ty_generics #where_clause {
-                        fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
-                            let size = varint::deserialize(reader)?;
-                            let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
-
-                            while !reader.eof()? {
-                                let key: u32 = varint::deserialize(reader)?;
-                                let tag = (key >> 3) as u16;
-                                let wire_type = (key & 7) as u8;
-
-                                match tag {
-                                    #(#deserializers,)*
-
-                                    _ => match wire_type {
-                                        0 => {
-                                            // Other than `u8`, any int type will do
-                                            // since we deserialize just to ignore the whole varint.
-                                            <u8 as varint::Varint>::deserialize(reader)?;
-                                        }
-
-                                        2 => {
-                                            let size = varint::deserialize(reader)?;
-                                            let mut buf = Vec::new();
-
-                                            reader
-                                                .by_ref()
-                                                .take(size)
-                                                .read_to_end(&mut buf)?;
-                                        }
-
-                                        _ => {
-                                            return Err(io::Error::new(
-                                                io::ErrorKind::InvalidData,
-                                                format!("unexpected wire type {}", wire_type),
-                                            ));
-                                        }
-                                    },
-                                }
-                            }
-
-                            Ok(())
-                        }
-                    } */
-                });
-            }
-
-            _ => (),
-        }
-
-        tokens.extend(quote!(#(#impls)*));
-    }
-} */
 
 fn type_name<'a>(context: &Context, ty: &'a syn::Type) -> Option<&'a syn::Ident> {
     match ty {

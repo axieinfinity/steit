@@ -78,11 +78,12 @@ fn impl_enum(
                 .map(|r#struct| r#struct.get_ctor_and_setters());
 
             let sizer_matches = variants.iter().map(|r#struct| {
-                let qual = r#struct.qual();
+                let variant = r#struct
+                    .variant()
+                    .unwrap_or_else(|| unreachable!("expected variant"));
 
-                let tag = r#struct
-                    .tag()
-                    .unwrap_or_else(|| unreachable!("expected a tag number"));
+                let qual = variant.qual();
+                let tag = variant.tag();
 
                 let destructuring = map_fields!(r#struct, get_destructuring);
                 let sizers = map_fields!(r#struct, get_sizer(true));
@@ -91,16 +92,17 @@ fn impl_enum(
                     #name #qual { #(#destructuring)*, .. } => {
                         size += #tag.size();
                         #(#sizers)*
-                    },
+                    }
                 }
             });
 
             let serializer_matches = variants.iter().map(|r#struct| {
-                let qual = r#struct.qual();
+                let variant = r#struct
+                    .variant()
+                    .unwrap_or_else(|| unreachable!("expected variant"));
 
-                let tag = r#struct
-                    .tag()
-                    .unwrap_or_else(|| unreachable!("expected a tag number"));
+                let qual = variant.qual();
+                let tag = variant.tag();
 
                 let destructuring = map_fields!(r#struct, get_destructuring);
                 let serializers = map_fields!(r#struct, get_serializer(true));
@@ -109,7 +111,35 @@ fn impl_enum(
                     #name #qual { #(#destructuring)*, .. } => {
                         #tag.serialize(writer)?;
                         #(#serializers)*
-                    },
+                    }
+                }
+            });
+
+            let deserializer_matches = variants.iter().map(|r#struct| {
+                let variant = r#struct
+                    .variant()
+                    .unwrap_or_else(|| unreachable!("expected variant"));
+
+                let qual = variant.qual();
+                let tag = variant.tag();
+
+                let new =
+                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string()));
+
+                let destructuring = map_fields!(r#struct, get_destructuring);
+                let deserializer = r#struct.get_deserializer();
+
+                quote! {
+                    #tag => {
+                        if let #name #qual { .. } = self {
+                        } else {
+                            *self = Self::#new(self.runtime().parent());
+                        }
+
+                        if let #name #qual { #(#destructuring)*, .. } = self {
+                            #deserializer
+                        }
+                    }
                 }
             });
 
@@ -129,11 +159,35 @@ fn impl_enum(
                         Ok(())
                     }
                 }
+
+                impl #impl_generics Deserialize for #name #ty_generics #where_clause {
+                    fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
+                        let size = varint::deserialize(reader)?;
+                        let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
+                        let tag: u16 = varint::deserialize(reader)?;
+
+                        match tag {
+                            #(#deserializer_matches)*
+
+                            _ => {
+                                return Err(io::Error::new(
+                                    io::ErrorKind::InvalidData,
+                                    format!("unexpected variant tag {}", tag),
+                                ));
+                            }
+                        }
+
+                        Ok(())
+                    }
+                }
             };
 
             if kind == &DeriveKind::State {
                 let runtime_matches = variants.iter().map(|r#struct| {
-                    let qual = r#struct.qual();
+                    let qual = r#struct
+                        .variant()
+                        .unwrap_or_else(|| unreachable!("expected variant"))
+                        .qual();
 
                     let runtime = r#struct
                         .runtime()
@@ -194,9 +248,23 @@ fn impl_struct<'a, O: quote::ToTokens>(
                     }
                 });
 
+        let deserializer = r#struct.get_deserializer().map(|deserializer| {
+            quote! {
+                impl #impl_generics Deserialize for #name #ty_generics #where_clause {
+                    fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
+                        let size = varint::deserialize(reader)?;
+                        let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
+                        #deserializer
+                        Ok(())
+                    }
+                }
+            }
+        });
+
         let r#impl = quote! {
             #ctor_and_setters
             #sizer_and_serializer
+            #deserializer
         };
 
         if kind == &DeriveKind::State {
@@ -258,8 +326,6 @@ fn wrap_in_const(
     name: &syn::Ident,
     tokens: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    println!("{}", tokens.to_string());
-
     let r#const = format_ident!(
         "_IMPL_{}_FOR_{}",
         match kind {

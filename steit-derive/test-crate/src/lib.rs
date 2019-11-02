@@ -1,8 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use std::io;
+    use std::fmt;
 
-    use steit::{runtime::Runtime, ser::Serialize};
+    use steit::{de::Deserialize, runtime::Runtime, ser::Serialize};
     use steit_derive::{Deserialize, Serialize, State};
 
     /* #[derive(State)]
@@ -202,19 +202,31 @@ mod tests {
 
     struct Qux(i32);
 
+    fn back_and_forth<T: fmt::Debug + Serialize + Deserialize>(value: &mut T) {
+        let mut bytes = Vec::new();
+        value.serialize(&mut bytes).unwrap();
+        println!("{:?}", value);
+        println!("{:?}", bytes);
+        let mut bytes: &[u8] = &[3u8, 28, 40, 100];
+        value.deserialize(&mut bytes).unwrap();
+        println!("{:?}", value);
+        println!();
+    }
+
     #[test]
     fn test() {
         let mut test = Test::new_foo(Runtime::new().nested(16));
 
         println!("size: {}", test.size());
+        println!();
 
         test.set_foo_foo(20);
-        println!("{:?}", test);
+        back_and_forth(&mut test);
 
         test.set_bar_bar(10);
-        println!("{:?}", test);
+        back_and_forth(&mut test);
 
         test.set_foo_foo(50);
-        println!("{:?}", test);
+        back_and_forth(&mut test);
     }
 }

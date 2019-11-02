@@ -77,11 +77,8 @@ impl Logger {
         }
     }
 
+    #[inline]
     pub fn log_entry<T: Serialize>(&self, entry: Entry<T>) -> io::Result<()> {
-        entry.serialize(&mut *self.buf.borrow_mut())?;
-        // TODO: Remove the debug code below
-        println!("=== entry: {:?}", self.buf.borrow());
-        self.buf.borrow_mut().clear();
-        Ok(())
+        entry.serialize(&mut *self.buf.borrow_mut())
     }
 }
