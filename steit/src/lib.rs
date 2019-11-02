@@ -11,5 +11,7 @@ pub use runtime::*;
 
 mod test_util;
 
+pub use steit_derive::*;
+
 #[doc(hidden)]
 pub use iowrap;

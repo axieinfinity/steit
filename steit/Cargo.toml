@@ -24,3 +24,4 @@ maintenance = { status = "actively-developed" }
 
 [dependencies]
 iowrap = "0.2.0"
+steit-derive = { path = "../steit-derive" }

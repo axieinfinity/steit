@@ -2,8 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{Deserialize, Runtime, Serialize};
-    use steit_derive::{Deserialize, Serialize, State};
+    use steit::{Deserialize, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
