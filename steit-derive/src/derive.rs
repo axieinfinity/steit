@@ -153,7 +153,7 @@ fn impl_enum(
                         size
                     }
 
-                    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                         self.size().serialize(writer)?;
                         match self { #(#serializer_matches)* }
                         Ok(())
@@ -161,7 +161,7 @@ fn impl_enum(
                 }
 
                 impl #impl_generics Deserialize for #name #ty_generics #where_clause {
-                    fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
+                    fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<()> {
                         let size = varint::deserialize(reader)?;
                         let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
                         let tag: u16 = varint::deserialize(reader)?;
@@ -239,7 +239,7 @@ fn impl_struct<'a, O: quote::ToTokens>(
                                 size
                             }
 
-                            fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                                 self.size().serialize(writer)?;
                                 #serializer
                                 Ok(())
@@ -251,7 +251,7 @@ fn impl_struct<'a, O: quote::ToTokens>(
         let deserializer = r#struct.get_deserializer().map(|deserializer| {
             quote! {
                 impl #impl_generics Deserialize for #name #ty_generics #where_clause {
-                    fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
+                    fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<()> {
                         let size = varint::deserialize(reader)?;
                         let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
                         #deserializer

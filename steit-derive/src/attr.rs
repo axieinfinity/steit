@@ -17,7 +17,7 @@ impl<'a, T> Attr<'a, T> {
         }
     }
 
-    pub fn set<O: quote::ToTokens>(&mut self, object: O, value: T) {
+    pub fn set(&mut self, object: impl quote::ToTokens, value: T) {
         let tokens = object.into_token_stream();
 
         if self.value.is_some() {

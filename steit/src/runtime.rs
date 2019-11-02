@@ -34,13 +34,13 @@ impl Runtime {
     }
 
     #[inline]
-    pub fn log_update<T: Serialize>(&self, tag: u16, value: &T) -> io::Result<()> {
+    pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .log_entry(Entry::new(&self.path, EntryKind::Update { tag, value }))
     }
 
     #[inline]
-    pub fn log_add<T: Serialize>(&self, item: &T) -> io::Result<()> {
+    pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
         self.logger
             .log_entry(Entry::new(&self.path, EntryKind::Add { item }))
     }

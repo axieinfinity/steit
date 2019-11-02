@@ -52,11 +52,11 @@ macro_rules! map_fields {
 }
 
 impl<'a> Struct<'a> {
-    pub fn parse<O: quote::ToTokens>(
+    pub fn parse(
         context: &Context,
         kind: &DeriveKind,
         input: &'a syn::DeriveInput,
-        object: O,
+        object: impl quote::ToTokens,
         fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
         variant: Option<&'a syn::Variant>,
     ) -> Result<Self, ()> {

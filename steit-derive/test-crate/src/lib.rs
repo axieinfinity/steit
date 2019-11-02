@@ -129,13 +129,13 @@ mod tests {
 
     use steit::{de::Deserialize, ser::Serialize};
 
-    fn debug<O: Serialize>(object: &O) {
+    fn debug(object: &impl Serialize) {
         let mut writer = Vec::new();
         object.serialize(&mut writer).unwrap();
         println!("{:?}", writer);
     }
 
-    fn check<O: fmt::Debug + PartialEq + Serialize + Deserialize>(object: &O, r#new: &mut O) {
+    fn check(object: &impl PartialEq + fmt::Debug + Serialize + Deserialize, r#new: &mut O) {
         let mut bytes = Vec::new();
         object.serialize(&mut bytes).unwrap();
         r#new.deserialize(&mut &*bytes).unwrap();
@@ -202,7 +202,7 @@ mod tests {
 
     struct Qux(i32);
 
-    fn back_and_forth<T: fmt::Debug + Serialize + Deserialize>(value: &mut T) {
+    fn back_and_forth(value: &mut (impl fmt::Debug + Serialize + Deserialize)) {
         let mut bytes = Vec::new();
         value.serialize(&mut bytes).unwrap();
         println!("{:?}", value);

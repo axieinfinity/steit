@@ -267,7 +267,7 @@ impl<'a> IndexedField<'a> {
 
                 quote! {
                     #[doc = #doc]
-                    pub fn #name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                    pub fn #name(&mut self, get_value: impl FnOnce(Runtime) -> #ty) -> &mut Self {
                         #reset
                         let runtime = self.runtime();
                         let value = get_value(runtime.nested(#tag));

@@ -11,7 +11,7 @@ impl Context {
         }
     }
 
-    pub fn error<O: quote::ToTokens, M: fmt::Display>(&self, object: O, message: M) {
+    pub fn error(&self, object: impl quote::ToTokens, message: impl fmt::Display) {
         self.syn_error(syn::Error::new_spanned(object.to_token_stream(), message));
     }
 

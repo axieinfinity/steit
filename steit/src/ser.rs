@@ -4,7 +4,7 @@ use crate::varint::Varint;
 
 pub trait Serialize {
     fn size(&self) -> u32;
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
 }
 
 impl<T: Varint> Serialize for T {
@@ -12,7 +12,7 @@ impl<T: Varint> Serialize for T {
         Varint::size(self) as u32
     }
 
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         Varint::serialize(self, writer)
     }
 }

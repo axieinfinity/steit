@@ -40,7 +40,7 @@ impl<'a, T: Serialize> Serialize for Entry<'a, T> {
             }
     }
 
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.size().serialize(writer)?;
 
         self.kind.code().serialize(writer)?;
@@ -78,7 +78,7 @@ impl Logger {
     }
 
     #[inline]
-    pub fn log_entry<T: Serialize>(&self, entry: Entry<T>) -> io::Result<()> {
+    pub fn log_entry(&self, entry: Entry<impl Serialize>) -> io::Result<()> {
         entry.serialize(&mut *self.buf.borrow_mut())
     }
 }

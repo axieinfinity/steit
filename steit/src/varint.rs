@@ -4,8 +4,8 @@ use iowrap::ReadMany;
 
 pub trait Varint: Sized {
     fn size(&self) -> u8;
-    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()>;
-    fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self>;
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
+    fn deserialize(reader: &mut impl io::Read) -> io::Result<Self>;
 }
 
 macro_rules! impl_unsigned_varint {
@@ -19,7 +19,7 @@ macro_rules! impl_unsigned_varint {
                 $size_fn(*self as $size_t)
             }
 
-            fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
                 loop {
@@ -33,7 +33,7 @@ macro_rules! impl_unsigned_varint {
                 }
             }
 
-            fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self> {
+            fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
                 let mut value = 0;
 
                 let mut buf = [0];
@@ -67,11 +67,11 @@ macro_rules! impl_signed_varint {
                 (impl_signed_varint!(@encode self, $t) as $ut).size()
             }
 
-            fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
             }
 
-            fn deserialize<R: io::Read>(reader: &mut R) -> io::Result<Self> {
+            fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
                 let encoded = <$ut>::deserialize(reader)? as $t;
                 Ok(impl_signed_varint!(@decode encoded))
             }
@@ -158,13 +158,13 @@ mod tests {
 
     use super::Varint;
 
-    fn encode<T: Varint>(value: T) -> Vec<u8> {
+    fn encode(value: impl Varint) -> Vec<u8> {
         let mut bytes = Vec::with_capacity(10);
         value.serialize(&mut bytes).unwrap();
         bytes
     }
 
-    fn assert_encode<T: Varint>(value: T, expected_bytes: &[u8]) {
+    fn assert_encode(value: impl Varint, expected_bytes: &[u8]) {
         assert_eq!(&*encode(value), expected_bytes);
     }
 
@@ -178,7 +178,7 @@ mod tests {
         T::deserialize(&mut &*bytes).unwrap()
     }
 
-    fn assert_decode<T: Varint + PartialEq + fmt::Debug>(bytes: &[u8], expected_value: T) {
+    fn assert_decode<T: PartialEq + fmt::Debug + Varint>(bytes: &[u8], expected_value: T) {
         assert_eq!(decode::<T>(bytes), expected_value);
     }
 
@@ -188,7 +188,7 @@ mod tests {
     test_case!(decode_zig_zag_04: assert_decode; &[3] => -2);
     test_case!(decode_zig_zag_05: assert_decode; &[4] =>  2);
 
-    fn assert_back_and_forth<T: Varint + Copy + PartialEq + fmt::Debug>(value: T) {
+    fn assert_back_and_forth<T: Copy + PartialEq + fmt::Debug + Varint>(value: T) {
         assert_eq!(decode::<T>(&*encode(value)), value);
     }
 
