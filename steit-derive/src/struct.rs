@@ -36,13 +36,13 @@ pub struct Struct<'a> {
     indexed: Vec<IndexedField<'a>>,
 }
 
-macro_rules! collect_fields {
+macro_rules! map_fields {
     ($self:ident, $method:ident) => {
-        $self.indexed.iter().map(|field| field.$method()).collect()
+        $self.indexed.iter().map(|field| field.$method())
     };
 
     ($self:ident, $method:ident ($($rest:tt)*)) => {
-        $self.indexed.iter().map(|field| field.$method($($rest)*)).collect()
+        $self.indexed.iter().map(|field| field.$method($($rest)*))
     };
 }
 
@@ -222,7 +222,7 @@ impl<'a> Struct<'a> {
     }
 
     fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
-        let mut inits: Vec<_> = collect_fields!(self, get_init);
+        let mut inits: Vec<_> = map_fields!(self, get_init).collect();
 
         if let Derive::State { runtime } = &self.derive {
             inits.push(runtime.get_init(self.variant.as_ref().map(|variant| variant.tag)));
@@ -233,8 +233,7 @@ impl<'a> Struct<'a> {
 
     fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
         if let Derive::State { .. } = &self.derive {
-            let variant = self.variant.as_ref();
-            collect_fields!(self, get_setter(&self.input.ident, variant))
+            map_fields!(self, get_setter(&self.input.ident, self.variant.as_ref())).collect()
         } else {
             Vec::new()
         }
