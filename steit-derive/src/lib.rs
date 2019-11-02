@@ -7,6 +7,7 @@ mod context;
 mod derive;
 mod field;
 mod r#struct;
+mod util;
 
 use crate::derive::DeriveKind;
 

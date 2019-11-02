@@ -268,7 +268,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
             _ => (),
         }
 
-        tokens.extend(with_preimports(&self.kind, name, quote!(#(#impls)*)));
+        tokens.extend(quote!(#(#impls)*));
     }
 }
 
@@ -288,56 +288,4 @@ fn type_name<'a>(context: &Context, ty: &'a syn::Type) -> Option<&'a syn::Ident>
             None
         }
     }
-}
-
-fn with_preimports(
-    kind: &StructKind,
-    name: &syn::Ident,
-    tokens: proc_macro2::TokenStream,
-) -> proc_macro2::TokenStream {
-    let r#const = format_ident!(
-        "_IMPL_{}_FOR_{}",
-        match kind {
-            StructKind::Serialize => "SERIALIZE",
-            StructKind::Deserialize => "DESERIALIZE",
-            StructKind::State { .. } => "STATE",
-        },
-        to_snake_case(&name.to_string()).to_uppercase()
-    );
-
-    quote! {
-        const #r#const: () = {
-            extern crate steit;
-
-            use std::io::{self, Read};
-
-            use steit::{
-                de::Deserialize,
-                iowrap,
-                ser::Serialize,
-                // We don't import directly
-                // to avoid confusing `serialize` and `deserialize` calls.
-                varint,
-            };
-
-            #tokens
-        };
-    }
-}
-
-fn to_snake_case(s: &str) -> String {
-    let mut chars = s.chars().peekable();
-    let mut out = String::new();
-
-    while let Some(c) = chars.next() {
-        out.extend(c.to_lowercase());
-
-        if let Some(next_c) = chars.peek() {
-            if next_c.is_uppercase() {
-                out.push('_');
-            }
-        }
-    }
-
-    out
 }

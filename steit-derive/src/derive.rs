@@ -1,4 +1,4 @@
-use crate::{context::Context, r#struct::Struct};
+use crate::{context::Context, r#struct::Struct, util};
 
 #[derive(PartialEq)]
 pub enum DeriveKind {
@@ -27,7 +27,7 @@ pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        output
+        wrap_in_const(kind, &input.ident, output)
     };
 
     output.into()
@@ -88,6 +88,41 @@ fn impl_union(
     data: &syn::DataUnion,
 ) -> proc_macro2::TokenStream {
     context.error(data.union_token, "cannot derive for unions yet")
+}
+
+fn wrap_in_const(
+    kind: &DeriveKind,
+    name: &syn::Ident,
+    tokens: proc_macro2::TokenStream,
+) -> proc_macro2::TokenStream {
+    let r#const = format_ident!(
+        "_IMPL_{}_FOR_{}",
+        match kind {
+            DeriveKind::Serialize => "SERIALIZE",
+            DeriveKind::Deserialize => "DESERIALIZE",
+            DeriveKind::State => "STATE",
+        },
+        util::to_snake_case(&name.to_string()).to_uppercase()
+    );
+
+    quote! {
+        const #r#const: () = {
+            extern crate steit;
+
+            use std::io::{self, Read};
+
+            use steit::{
+                de::Deserialize,
+                iowrap,
+                ser::Serialize,
+                // We don't import directly
+                // to avoid confusing `serialize` and `deserialize` calls.
+                varint,
+            };
+
+            #tokens
+        };
+    }
 }
 
 fn to_compile_errors(errors: Vec<syn::Error>) -> proc_macro2::TokenStream {
