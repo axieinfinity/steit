@@ -145,7 +145,7 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn to_init(&self) -> proc_macro2::TokenStream {
+    pub fn get_init(&self) -> proc_macro2::TokenStream {
         let value = match &self.kind {
             FieldKind::Primitive {
                 default: Some(default),
@@ -166,7 +166,7 @@ impl<'a> IndexedField<'a> {
         get_init(&self.name, self.index, value)
     }
 
-    pub fn to_setter(
+    pub fn get_setter(
         &self,
         struct_name: &syn::Ident,
         variant: Option<&Variant>,
@@ -249,7 +249,7 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn to_sizer(&self) -> proc_macro2::TokenStream {
+    pub fn get_sizer(&self) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
         let wire_type = self.wire_type() as u32;
         let access = get_access(&self.name, self.index);
@@ -266,7 +266,7 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn to_serializer(&self) -> proc_macro2::TokenStream {
+    pub fn get_serializer(&self) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
         let wire_type = self.wire_type() as u32;
         let access = get_access(&self.name, self.index);
@@ -277,7 +277,7 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn to_deserializer(&self) -> proc_macro2::TokenStream {
+    pub fn get_deserializer(&self) -> proc_macro2::TokenStream {
         let tag = *self.tag.get();
         let wire_type = self.wire_type();
         let access = get_access(&self.name, self.index);
@@ -308,12 +308,12 @@ impl<'a> RuntimeField<'a> {
         }
     }
 
-    pub fn to_arg(&self) -> proc_macro2::TokenStream {
+    pub fn get_arg(&self) -> proc_macro2::TokenStream {
         let ty = self.ty;
         quote!(runtime: #ty)
     }
 
-    pub fn to_init(&self, tag: Option<u16>) -> proc_macro2::TokenStream {
+    pub fn get_init(&self, tag: Option<u16>) -> proc_macro2::TokenStream {
         let value = if let Some(tag) = tag {
             quote!(runtime.nested(#tag))
         } else {

@@ -215,17 +215,17 @@ impl<'a> Struct<'a> {
 
     fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
         if let Derive::State { runtime } = &self.derive {
-            vec![runtime.to_arg()]
+            vec![runtime.get_arg()]
         } else {
             Vec::new()
         }
     }
 
     fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
-        let mut inits: Vec<_> = collect_fields!(self, to_init);
+        let mut inits: Vec<_> = collect_fields!(self, get_init);
 
         if let Derive::State { runtime } = &self.derive {
-            inits.push(runtime.to_init(self.variant.as_ref().map(|variant| variant.tag)));
+            inits.push(runtime.get_init(self.variant.as_ref().map(|variant| variant.tag)));
         }
 
         inits
@@ -234,7 +234,7 @@ impl<'a> Struct<'a> {
     fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
         if let Derive::State { .. } = &self.derive {
             let variant = self.variant.as_ref();
-            collect_fields!(self, to_setter(&self.input.ident, variant))
+            collect_fields!(self, get_setter(&self.input.ident, variant))
         } else {
             Vec::new()
         }
@@ -280,8 +280,8 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         match self.derive {
             Derive::State { .. } | Derive::Serialize => {
-                let sizers: Vec<_> = collect_fields!(self, to_sizer);
-                let serializers: Vec<_> = collect_fields!(self, to_serializer);
+                let sizers: Vec<_> = collect_fields!(self, get_sizer);
+                let serializers: Vec<_> = collect_fields!(self, get_serializer);
 
                 impls.push(quote! {
                     /* impl #impl_generics Serialize for #name #ty_generics #where_clause {
@@ -305,7 +305,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         match self.derive {
             Derive::State { .. } | Derive::Deserialize => {
-                let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
+                let deserializers: Vec<_> = collect_fields!(self, get_deserializer);
 
                 impls.push(quote! {
                     /* impl #impl_generics Deserialize for #name #ty_generics #where_clause {
