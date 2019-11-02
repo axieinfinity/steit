@@ -8,18 +8,18 @@ use crate::{
     util,
 };
 
-pub enum StructDerive<'a> {
+pub enum Derive<'a> {
     Serialize,
     Deserialize,
     State { runtime: RuntimeField<'a> },
 }
 
-pub struct StructVariant<'a> {
+pub struct Variant<'a> {
     variant: &'a syn::Variant,
     tag: u16,
 }
 
-impl<'a> StructVariant<'a> {
+impl<'a> Variant<'a> {
     pub fn ident(&self) -> &syn::Ident {
         &self.variant.ident
     }
@@ -31,8 +31,8 @@ impl<'a> StructVariant<'a> {
 
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
-    variant: Option<StructVariant<'a>>,
-    derive: StructDerive<'a>,
+    variant: Option<Variant<'a>>,
+    derive: Derive<'a>,
     indexed: Vec<IndexedField<'a>>,
 }
 
@@ -57,7 +57,7 @@ impl<'a> Struct<'a> {
     ) -> Result<Self, ()> {
         let variant = if let Some(variant) = variant {
             Self::parse_attrs(context, &variant.ident, &variant.attrs).map(|tag| {
-                Some(StructVariant {
+                Some(Variant {
                     variant,
                     tag: *tag.get(),
                 })
@@ -82,8 +82,8 @@ impl<'a> Struct<'a> {
         };
 
         let derive = match kind {
-            DeriveKind::Serialize => StructDerive::Serialize,
-            DeriveKind::Deserialize => StructDerive::Deserialize,
+            DeriveKind::Serialize => Derive::Serialize,
+            DeriveKind::Deserialize => Derive::Deserialize,
             DeriveKind::State => {
                 if runtimes.len() == 0 {
                     context.error(object, "expected exactly one `Runtime` field, got none");
@@ -99,7 +99,7 @@ impl<'a> Struct<'a> {
                     .map(|&(index, field)| RuntimeField::new(context, field, index))
                     .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
 
-                StructDerive::State { runtime }
+                Derive::State { runtime }
             }
         };
 
@@ -206,7 +206,7 @@ impl<'a> Struct<'a> {
     }
 
     pub fn runtime(&self) -> Option<proc_macro2::TokenStream> {
-        if let StructDerive::State { runtime } = &self.derive {
+        if let Derive::State { runtime } = &self.derive {
             Some(runtime.get_access())
         } else {
             None
@@ -214,7 +214,7 @@ impl<'a> Struct<'a> {
     }
 
     fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
-        if let StructDerive::State { runtime } = &self.derive {
+        if let Derive::State { runtime } = &self.derive {
             vec![runtime.to_arg()]
         } else {
             Vec::new()
@@ -224,7 +224,7 @@ impl<'a> Struct<'a> {
     fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
         let mut inits: Vec<_> = collect_fields!(self, to_init);
 
-        if let StructDerive::State { runtime } = &self.derive {
+        if let Derive::State { runtime } = &self.derive {
             inits.push(runtime.to_init(self.variant.as_ref().map(|variant| variant.tag)));
         }
 
@@ -232,7 +232,7 @@ impl<'a> Struct<'a> {
     }
 
     fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
-        if let StructDerive::State { .. } = &self.derive {
+        if let Derive::State { .. } = &self.derive {
             let variant = self.variant.as_ref();
             collect_fields!(self, to_setter(&self.input.ident, variant))
         } else {
@@ -249,7 +249,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         let mut impls = Vec::new();
 
-        if let StructDerive::State { .. } = self.derive {
+        if let Derive::State { .. } = self.derive {
             let (new, doc) = match &self.variant {
                 Some(variant) => (
                     format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
@@ -279,7 +279,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
         }
 
         match self.derive {
-            StructDerive::State { .. } | StructDerive::Serialize => {
+            Derive::State { .. } | Derive::Serialize => {
                 let sizers: Vec<_> = collect_fields!(self, to_sizer);
                 let serializers: Vec<_> = collect_fields!(self, to_serializer);
 
@@ -304,7 +304,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
         }
 
         match self.derive {
-            StructDerive::State { .. } | StructDerive::Deserialize => {
+            Derive::State { .. } | Derive::Deserialize => {
                 let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
 
                 impls.push(quote! {

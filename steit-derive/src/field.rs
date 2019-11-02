@@ -2,7 +2,7 @@ use crate::{
     attr::{Attr, AttrValue},
     context::Context,
     derive::DeriveKind,
-    r#struct::StructVariant,
+    r#struct::Variant,
     util,
 };
 
@@ -169,7 +169,7 @@ impl<'a> IndexedField<'a> {
     pub fn to_setter(
         &self,
         struct_name: &syn::Ident,
-        variant: Option<&StructVariant>,
+        variant: Option<&Variant>,
     ) -> proc_macro2::TokenStream {
         let doc = format!(
             "Sets {}.",
