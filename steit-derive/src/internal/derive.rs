@@ -1,4 +1,4 @@
-use crate::{context::Context, r#struct::Struct, util};
+use crate::{context::Context, internal::r#struct::Struct, util};
 
 #[derive(PartialEq)]
 pub enum DeriveKind {

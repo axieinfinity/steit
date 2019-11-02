@@ -1,8 +1,7 @@
 use crate::{
     attr::{Attr, AttrValue},
     context::Context,
-    derive::DeriveKind,
-    r#struct::Variant,
+    internal::{derive::DeriveKind, r#struct::Variant},
     util,
 };
 

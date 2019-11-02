@@ -3,8 +3,10 @@ use std::collections::HashSet;
 use crate::{
     attr::{Attr, AttrValue},
     context::Context,
-    derive::DeriveKind,
-    field::{IndexedField, RuntimeField},
+    internal::{
+        derive::DeriveKind,
+        field::{IndexedField, RuntimeField},
+    },
     util,
 };
 
