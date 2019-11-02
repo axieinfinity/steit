@@ -105,7 +105,7 @@ mod tests {
         Runtime,
         #[steit(tag = 0, default = "7")] i32,
         #[steit(tag = 1, default = "10")] i32,
-    ); */
+    );
 
     #[derive(Serialize, Deserialize)]
     struct What {
@@ -173,5 +173,45 @@ mod tests {
         segment.set_2_with(Point::new);
         debug(&segment);
         check(&segment, &mut Segment::new(Runtime::new()));
+    } */
+
+    #[derive(State)]
+    struct Well {
+        runtime: Runtime,
+        #[steit(tag = 0)]
+        well: i32,
+    }
+
+    #[derive(Debug, State)]
+    enum Test {
+        Foo {
+            runtime: Runtime,
+            #[steit(tag = 0)]
+            foo: i32,
+        },
+        Bar {
+            runtime: Runtime,
+            #[steit(tag = 0)]
+            bar: u16,
+        },
+    }
+
+    struct Qux(i32);
+
+    #[test]
+    fn test() {
+        let root = Runtime::new();
+        let nested = root.nested(0);
+
+        let mut test = Test::Foo {
+            runtime: nested,
+            foo: 10,
+        };
+
+        test.set_foo_foo(20);
+        println!("{:?}", test);
+
+        test.set_bar_bar(10);
+        println!("{:?}", test);
     }
 }

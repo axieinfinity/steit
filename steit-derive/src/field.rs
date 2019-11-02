@@ -2,6 +2,7 @@ use crate::{
     attr::{Attr, AttrValue},
     context::Context,
     derive::DeriveKind,
+    util,
 };
 
 // Note that we intentionally exclude some unsupported primitive types
@@ -164,7 +165,11 @@ impl<'a> IndexedField<'a> {
         get_init(&self.name, self.index, value)
     }
 
-    pub fn to_setter(&self, runtime: &RuntimeField<'_>) -> proc_macro2::TokenStream {
+    pub fn to_setter(
+        &self,
+        struct_name: &syn::Ident,
+        variant: Option<&syn::Ident>,
+    ) -> proc_macro2::TokenStream {
         let doc = format!(
             "Sets {}.",
             match &self.name {
@@ -177,31 +182,54 @@ impl<'a> IndexedField<'a> {
         let tag = *self.tag.get();
         let access = get_access(&self.name, self.index);
 
-        let runtime = get_access(&runtime.name, runtime.index);
+        let (fn_name, setter) = if let Some(variant) = variant {
+            let qual = quote!(::#variant);
+            let variant = util::to_snake_case(&variant.to_string());
+            let new = format_ident!("new_{}", variant);
+
+            let setter = quote! {
+                if let #struct_name #qual { ref mut #access, .. } = self {
+                    *#access = value;
+                } else {
+                    *self = Self::#new(self.runtime().parent());
+
+                    if let #struct_name #qual { ref mut #access, .. } = self {
+                        *#access = value;
+                    }
+                }
+            };
+
+            let fn_name = format_ident!("set_{}_{}", variant, access.to_string());
+
+            (fn_name, setter)
+        } else {
+            let fn_name = format_ident!("set_{}", access.to_string());
+            let setter = quote!(self.#access = value;);
+            (fn_name, setter)
+        };
 
         match self.kind {
             FieldKind::Primitive { .. } => {
-                let name = format_ident!("set_{}", access.to_string());
-
                 quote! {
                     #[doc = #doc]
-                    pub fn #name(&mut self, value: #ty) -> &mut Self {
-                        self.#runtime.log_update(#tag, &value).unwrap();
-                        self.#access = value;
+                    pub fn #fn_name(&mut self, value: #ty) -> &mut Self {
+                        self.runtime().log_update(#tag, &value).unwrap();
+                        #setter
                         self
                     }
                 }
             }
 
             FieldKind::State => {
-                let name = format_ident!("set_{}_with", access.to_string());
+                let fn_name = format_ident!("{}_with", fn_name);
 
                 quote! {
                     #[doc = #doc]
-                    pub fn #name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
-                        let value = get_value(self.#runtime.nested(#tag));
-                        self.#runtime.log_update(#tag, &value).unwrap();
-                        self.#access = value;
+                    pub fn #fn_name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                        let runtime = self.runtime();
+                        let value = get_value(runtime.nested(#tag));
+                        runtime.log_update(#tag, &value).unwrap();
+                        #setter
                         self
                     }
                 }
@@ -275,6 +303,10 @@ impl<'a> RuntimeField<'a> {
 
     pub fn to_init(&self) -> proc_macro2::TokenStream {
         get_init(&self.name, self.index, quote!(runtime))
+    }
+
+    pub fn get_access(&self) -> proc_macro2::TokenStream {
+        get_access(&self.name, self.index)
     }
 }
 

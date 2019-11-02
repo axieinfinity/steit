@@ -13,21 +13,18 @@ pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::
 
     let output = match input.data {
         syn::Data::Enum(ref data) => impl_enum(&context, kind, &input, data),
-        syn::Data::Struct(ref data) => impl_struct(
-            &context,
-            kind,
-            &input,
-            &data.struct_token,
-            &data.fields,
-            None,
-        ),
+
+        syn::Data::Struct(ref data) => {
+            impl_struct(&context, kind, &input, &data.struct_token, &data.fields)
+        }
+
         syn::Data::Union(ref data) => impl_union(&context, kind, &input, data),
     };
 
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(kind, &input.ident, output)
+        wrap_in_const(kind, &input.ident, output.unwrap_or_default())
     };
 
     output.into()
@@ -38,47 +35,91 @@ fn impl_enum(
     kind: &DeriveKind,
     input: &syn::DeriveInput,
     data: &syn::DataEnum,
-) -> proc_macro2::TokenStream {
+) -> Result<proc_macro2::TokenStream, ()> {
     if data.variants.is_empty() {
-        return context.error(&data.variants, "cannot derive for enums with zero variants");
+        context.error(&data.variants, "cannot derive for enums with zero variants");
+        return Err(());
     }
 
-    let impls = data.variants.iter().map(|variant| {
-        if variant.discriminant.is_some() {
-            return context.error(&data.variants, "cannot derive for enums with discriminants");
-        }
+    data.variants
+        .iter()
+        .map(|variant| {
+            if variant.discriminant.is_some() {
+                context.error(&data.variants, "cannot derive for enums with discriminants");
+                return Err(());
+            }
 
-        impl_struct(
-            context,
-            kind,
-            input,
-            &variant.ident,
-            &variant.fields,
-            Some(&variant.ident),
-        )
-    });
+            parse_struct(
+                context,
+                kind,
+                input,
+                &variant.ident,
+                &variant.fields,
+                Some(&variant.ident),
+            )
+        })
+        .collect::<Result<Vec<_>, _>>()
+        .map(|variants| {
+            if kind == &DeriveKind::State {
+                let name = &input.ident;
+                let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-    quote!(#(#impls)*)
+                let matches = variants.iter().map(|r#struct| {
+                    let qual = r#struct.qual();
+
+                    let runtime = r#struct
+                        .runtime()
+                        .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
+                    quote!(#name #qual { #runtime: ref runtime, .. } => runtime,)
+                });
+
+                quote! {
+                    impl #impl_generics #name #ty_generics #where_clause {
+                        fn runtime(&self) -> &Runtime {
+                            match self {
+                                #(#matches)*
+                            }
+                        }
+                    }
+
+                    #(#variants)*
+                }
+            } else {
+                quote!(#(#variants)*)
+            }
+        })
 }
 
-fn impl_struct<O: quote::ToTokens>(
+fn impl_struct<'a, O: quote::ToTokens>(
     context: &Context,
     kind: &DeriveKind,
-    input: &syn::DeriveInput,
+    input: &'a syn::DeriveInput,
     object: O,
-    fields: &syn::Fields,
-    variant: Option<&syn::Ident>,
-) -> proc_macro2::TokenStream {
-    let r#impl = |fields: &syn::punctuated::Punctuated<_, _>| {
-        let r#struct = Struct::parse(&context, kind, &input, &object, fields, variant).ok();
-        quote!(#r#struct)
-    };
+    fields: &'a syn::Fields,
+) -> Result<proc_macro2::TokenStream, ()> {
+    parse_struct(context, kind, input, object, fields, None).map(|r#struct| {
+        if kind == &DeriveKind::State {
+            let name = &input.ident;
+            let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-    match *fields {
-        syn::Fields::Named(ref fields) => r#impl(&fields.named),
-        syn::Fields::Unnamed(ref fields) => r#impl(&fields.unnamed),
-        syn::Fields::Unit => context.error(object, "cannot derive for unit structs"),
-    }
+            let runtime = r#struct
+                .runtime()
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
+            quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    fn runtime(&self) -> &Runtime {
+                        &self.#runtime
+                    }
+                }
+
+                #r#struct
+            }
+        } else {
+            quote!(#r#struct)
+        }
+    })
 }
 
 fn impl_union(
@@ -86,8 +127,31 @@ fn impl_union(
     _kind: &DeriveKind,
     _input: &syn::DeriveInput,
     data: &syn::DataUnion,
-) -> proc_macro2::TokenStream {
-    context.error(data.union_token, "cannot derive for unions yet")
+) -> Result<proc_macro2::TokenStream, ()> {
+    context.error(data.union_token, "cannot derive for unions yet");
+    Err(())
+}
+
+fn parse_struct<'a, O: quote::ToTokens>(
+    context: &Context,
+    kind: &DeriveKind,
+    input: &'a syn::DeriveInput,
+    object: O,
+    fields: &'a syn::Fields,
+    variant: Option<&'a syn::Ident>,
+) -> Result<Struct<'a>, ()> {
+    let r#impl = |fields: &'a syn::punctuated::Punctuated<_, _>| {
+        Struct::parse(&context, kind, &input, &object, fields, variant)
+    };
+
+    match *fields {
+        syn::Fields::Named(ref fields) => r#impl(&fields.named),
+        syn::Fields::Unnamed(ref fields) => r#impl(&fields.unnamed),
+        syn::Fields::Unit => {
+            context.error(object, "cannot derive for unit structs");
+            Err(())
+        }
+    }
 }
 
 fn wrap_in_const(
@@ -95,6 +159,8 @@ fn wrap_in_const(
     name: &syn::Ident,
     tokens: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
+    println!("{}", tokens.to_string());
+
     let r#const = format_ident!(
         "_IMPL_{}_FOR_{}",
         match kind {
@@ -114,6 +180,7 @@ fn wrap_in_const(
             use steit::{
                 de::Deserialize,
                 iowrap,
+                runtime::Runtime,
                 ser::Serialize,
                 // We don't import directly
                 // to avoid confusing `serialize` and `deserialize` calls.

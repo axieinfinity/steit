@@ -11,22 +11,16 @@ impl Context {
         }
     }
 
-    pub fn error<O: quote::ToTokens, M: fmt::Display>(
-        &self,
-        object: O,
-        message: M,
-    ) -> proc_macro2::TokenStream {
-        self.syn_error(syn::Error::new_spanned(object.to_token_stream(), message))
+    pub fn error<O: quote::ToTokens, M: fmt::Display>(&self, object: O, message: M) {
+        self.syn_error(syn::Error::new_spanned(object.to_token_stream(), message));
     }
 
-    pub fn syn_error(&self, error: syn::Error) -> proc_macro2::TokenStream {
+    pub fn syn_error(&self, error: syn::Error) {
         self.errors
             .borrow_mut()
             .as_mut()
             .unwrap_or_else(|| unreachable!("expected list of errors to be defined"))
             .push(error);
-
-        quote!()
     }
 
     pub fn check(self) -> Result<(), Vec<syn::Error>> {

@@ -4,9 +4,10 @@ use crate::{
     context::Context,
     derive::DeriveKind,
     field::{IndexedField, RuntimeField},
+    util,
 };
 
-pub enum StructKind<'a> {
+pub enum StructDerive<'a> {
     Serialize,
     Deserialize,
     State { runtime: RuntimeField<'a> },
@@ -15,7 +16,7 @@ pub enum StructKind<'a> {
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
     variant: Option<&'a syn::Ident>,
-    kind: StructKind<'a>,
+    derive: StructDerive<'a>,
     indexed: Vec<IndexedField<'a>>,
 }
 
@@ -53,9 +54,9 @@ impl<'a> Struct<'a> {
             );
         };
 
-        let struct_kind = match kind {
-            DeriveKind::Serialize => Ok(StructKind::Serialize),
-            DeriveKind::Deserialize => Ok(StructKind::Deserialize),
+        let derive = match kind {
+            DeriveKind::Serialize => StructDerive::Serialize,
+            DeriveKind::Deserialize => StructDerive::Deserialize,
             DeriveKind::State => {
                 if runtimes.len() == 0 {
                     context.error(object, "expected exactly one `Runtime` field, got none");
@@ -71,20 +72,15 @@ impl<'a> Struct<'a> {
                     .map(|&(index, field)| RuntimeField::new(context, field, index))
                     .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
 
-                Ok(StructKind::State { runtime })
+                StructDerive::State { runtime }
             }
         };
 
-        // Run it right away to accumulate all possible errors
-        let indexed = Self::parse_indexed(context, kind, indexed);
-
-        struct_kind.and_then(|kind| {
-            indexed.map(|indexed| Self {
-                input,
-                variant,
-                kind,
-                indexed,
-            })
+        Self::parse_indexed(context, kind, indexed).map(|indexed| Self {
+            input,
+            variant,
+            derive,
+            indexed,
         })
     }
 
@@ -124,8 +120,20 @@ impl<'a> Struct<'a> {
         }
     }
 
+    pub fn qual(&self) -> Option<proc_macro2::TokenStream> {
+        self.variant.map(|variant| quote!(::#variant))
+    }
+
+    pub fn runtime(&self) -> Option<proc_macro2::TokenStream> {
+        if let StructDerive::State { runtime } = &self.derive {
+            Some(runtime.get_access())
+        } else {
+            None
+        }
+    }
+
     fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
-        if let StructKind::State { runtime } = &self.kind {
+        if let StructDerive::State { runtime } = &self.derive {
             vec![runtime.to_arg()]
         } else {
             Vec::new()
@@ -135,7 +143,7 @@ impl<'a> Struct<'a> {
     fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
         let mut inits: Vec<_> = collect_fields!(self, to_init);
 
-        if let StructKind::State { runtime } = &self.kind {
+        if let StructDerive::State { runtime } = &self.derive {
             inits.push(runtime.to_init());
         }
 
@@ -143,8 +151,8 @@ impl<'a> Struct<'a> {
     }
 
     fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
-        if let StructKind::State { runtime } = &self.kind {
-            collect_fields!(self, to_setter(runtime))
+        if let StructDerive::State { .. } = &self.derive {
+            collect_fields!(self, to_setter(&self.input.ident, self.variant))
         } else {
             Vec::new()
         }
@@ -154,20 +162,19 @@ impl<'a> Struct<'a> {
 impl<'a> quote::ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let name = &self.input.ident;
+        let qual = self.qual();
         let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
 
         let mut impls = Vec::new();
 
-        if let StructKind::State { .. } = self.kind {
-            let (new, qual, doc) = match self.variant {
+        if let StructDerive::State { .. } = self.derive {
+            let (new, doc) = match self.variant {
                 Some(variant) => (
-                    format_ident!("new_{}", to_snake_case(&variant.to_string())),
-                    quote!(::#variant),
+                    format_ident!("new_{}", util::to_snake_case(&variant.to_string())),
                     format!("Constructs a new `{}::{}`.", name, variant),
                 ),
                 None => (
                     format_ident!("new"),
-                    quote!(),
                     format!("Constructs a new `{}`.", name),
                 ),
             };
@@ -189,13 +196,13 @@ impl<'a> quote::ToTokens for Struct<'a> {
             })
         }
 
-        match self.kind {
-            StructKind::State { .. } | StructKind::Serialize => {
+        match self.derive {
+            StructDerive::State { .. } | StructDerive::Serialize => {
                 let sizers: Vec<_> = collect_fields!(self, to_sizer);
                 let serializers: Vec<_> = collect_fields!(self, to_serializer);
 
                 impls.push(quote! {
-                    impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                    /* impl #impl_generics Serialize for #name #ty_generics #where_clause {
                         fn size(&self) -> u32 {
                             let mut size = 0;
                             #(#sizers)*
@@ -207,19 +214,19 @@ impl<'a> quote::ToTokens for Struct<'a> {
                             #(#serializers)*
                             Ok(())
                         }
-                    }
+                    } */
                 })
             }
 
             _ => (),
         }
 
-        match self.kind {
-            StructKind::State { .. } | StructKind::Deserialize => {
+        match self.derive {
+            StructDerive::State { .. } | StructDerive::Deserialize => {
                 let deserializers: Vec<_> = collect_fields!(self, to_deserializer);
 
                 impls.push(quote! {
-                    impl #impl_generics Deserialize for #name #ty_generics #where_clause {
+                    /* impl #impl_generics Deserialize for #name #ty_generics #where_clause {
                         fn deserialize<R: io::Read>(&mut self, reader: &mut R) -> io::Result<()> {
                             let size = varint::deserialize(reader)?;
                             let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
@@ -261,7 +268,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
                             Ok(())
                         }
-                    }
+                    } */
                 });
             }
 

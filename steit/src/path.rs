@@ -15,6 +15,14 @@ impl<T> Node<T> {
         }
     }
 
+    pub fn parent(&self) -> Option<Rc<Self>> {
+        if let Node::Child { parent, .. } = self {
+            Some(parent.clone())
+        } else {
+            None
+        }
+    }
+
     fn push_values(&self, values: &mut Vec<T>)
     where
         T: Clone,
@@ -51,10 +59,15 @@ impl Path {
         }
     }
 
-    pub fn down(&self, tag: u16) -> Self {
+    pub fn child(&self, tag: u16) -> Self {
         Self {
             node: Rc::new(Node::child(&self.node, tag)),
         }
+    }
+
+    pub fn parent(&self) -> Self {
+        let node = self.node.parent().unwrap_or(Rc::new(Node::Root));
+        Self { node }
     }
 
     pub fn to_values(&self) -> Vec<u16> {
@@ -129,7 +142,7 @@ mod tests {
         let mut paths = vec![Path::root()];
 
         for segment in segments {
-            let path = paths.last().unwrap().down(*segment);
+            let path = paths.last().unwrap().child(*segment);
             paths.push(path);
         }
 

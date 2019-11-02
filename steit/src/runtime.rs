@@ -22,7 +22,14 @@ impl Runtime {
     pub fn nested(&self, tag: u16) -> Self {
         Self {
             logger: self.logger.clone(),
-            path: self.path.down(tag),
+            path: self.path.child(tag),
+        }
+    }
+
+    pub fn parent(&self) -> Self {
+        Self {
+            logger: self.logger.clone(),
+            path: self.path.parent(),
         }
     }
 
