@@ -2,6 +2,7 @@ use crate::{
     attr::{Attr, AttrValue},
     context::Context,
     derive::DeriveKind,
+    r#struct::StructVariant,
     util,
 };
 
@@ -66,20 +67,20 @@ impl<'a> IndexedField<'a> {
         is_primitive: bool,
     ) -> Result<(AttrValue<u16>, Option<AttrValue<proc_macro2::TokenStream>>), ()> {
         let mut tag_attr = Attr::new(context, "tag");
-        let mut default_attr = Attr::new(context, "default");
-
         let mut tag_encountered = false;
+
+        let mut default_attr = Attr::new(context, "default");
 
         for item in attrs
             .iter()
-            .flat_map(|attr| get_steit_meta_items(context, attr))
+            .flat_map(|attr| util::get_steit_meta_items(context, attr))
             .flatten()
         {
             match &item {
                 syn::NestedMeta::Meta(syn::Meta::NameValue(item)) if item.path.is_ident("tag") => {
                     tag_encountered = true;
 
-                    if let Ok(lit) = get_lit_int(context, "tag", &item.lit) {
+                    if let Ok(lit) = util::get_lit_int(context, "tag", &item.lit) {
                         if let Ok(tag) = lit.base10_parse() {
                             tag_attr.set(lit, tag);
                         } else {
@@ -98,7 +99,7 @@ impl<'a> IndexedField<'a> {
                         );
                     }
 
-                    if let Ok(lit) = get_lit_str(context, "default", &item.lit) {
+                    if let Ok(lit) = util::get_lit_str(context, "default", &item.lit) {
                         if let Ok(default) = lit.value().parse() {
                             default_attr.set(lit, default);
                         } else {
@@ -168,7 +169,7 @@ impl<'a> IndexedField<'a> {
     pub fn to_setter(
         &self,
         struct_name: &syn::Ident,
-        variant: Option<&syn::Ident>,
+        variant: Option<&StructVariant>,
     ) -> proc_macro2::TokenStream {
         let doc = format!(
             "Sets {}.",
@@ -182,37 +183,47 @@ impl<'a> IndexedField<'a> {
         let tag = *self.tag.get();
         let access = get_access(&self.name, self.index);
 
-        let (fn_name, setter) = if let Some(variant) = variant {
-            let qual = quote!(::#variant);
-            let variant = util::to_snake_case(&variant.to_string());
-            let new = format_ident!("new_{}", variant);
+        let (name, reset, setter) = match variant {
+            Some(variant) => {
+                let tag = variant.tag();
+                let variant = variant.ident();
 
-            let setter = quote! {
-                if let #struct_name #qual { ref mut #access, .. } = self {
-                    *#access = value;
-                } else {
-                    *self = Self::#new(self.runtime().parent());
+                let qual = quote!(::#variant);
+                let variant = util::to_snake_case(&variant.to_string());
+                let new = format_ident!("new_{}", variant);
 
-                    if let #struct_name #qual { ref mut #access, .. } = self {
-                        *#access = value;
-                    }
-                }
-            };
+                (
+                    format_ident!("set_{}_{}", variant, access.to_string()),
+                    quote! {
+                        if let #struct_name #qual { .. } = self {
+                        } else {
+                            let runtime = self.runtime().parent();
+                            let value = Self::#new(runtime);
+                            value.runtime().parent().log_update(#tag, &value).unwrap();
+                            *self = value;
+                        }
+                    },
+                    quote! {
+                        if let #struct_name #qual { ref mut #access, .. } = self {
+                            *#access = value;
+                        }
+                    },
+                )
+            }
 
-            let fn_name = format_ident!("set_{}_{}", variant, access.to_string());
-
-            (fn_name, setter)
-        } else {
-            let fn_name = format_ident!("set_{}", access.to_string());
-            let setter = quote!(self.#access = value;);
-            (fn_name, setter)
+            None => (
+                format_ident!("set_{}", access.to_string()),
+                quote!(),
+                quote!(self.#access = value;),
+            ),
         };
 
         match self.kind {
             FieldKind::Primitive { .. } => {
                 quote! {
                     #[doc = #doc]
-                    pub fn #fn_name(&mut self, value: #ty) -> &mut Self {
+                    pub fn #name(&mut self, value: #ty) -> &mut Self {
+                        #reset
                         self.runtime().log_update(#tag, &value).unwrap();
                         #setter
                         self
@@ -221,11 +232,12 @@ impl<'a> IndexedField<'a> {
             }
 
             FieldKind::State => {
-                let fn_name = format_ident!("{}_with", fn_name);
+                let name = format_ident!("{}_with", name);
 
                 quote! {
                     #[doc = #doc]
-                    pub fn #fn_name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                    pub fn #name<F: FnOnce(Runtime) -> #ty>(&mut self, get_value: F) -> &mut Self {
+                        #reset
                         let runtime = self.runtime();
                         let value = get_value(runtime.nested(#tag));
                         runtime.log_update(#tag, &value).unwrap();
@@ -301,70 +313,18 @@ impl<'a> RuntimeField<'a> {
         quote!(runtime: #ty)
     }
 
-    pub fn to_init(&self) -> proc_macro2::TokenStream {
-        get_init(&self.name, self.index, quote!(runtime))
+    pub fn to_init(&self, tag: Option<u16>) -> proc_macro2::TokenStream {
+        let value = if let Some(tag) = tag {
+            quote!(runtime.nested(#tag))
+        } else {
+            quote!(runtime)
+        };
+
+        get_init(&self.name, self.index, value)
     }
 
     pub fn get_access(&self) -> proc_macro2::TokenStream {
         get_access(&self.name, self.index)
-    }
-}
-
-fn get_steit_meta_items(
-    context: &Context,
-    attr: &syn::Attribute,
-) -> Result<Vec<syn::NestedMeta>, ()> {
-    if !attr.path.is_ident("steit") {
-        return Ok(Vec::new());
-    }
-
-    match attr.parse_meta() {
-        Ok(syn::Meta::List(meta)) => Ok(meta.nested.into_iter().collect()),
-        Ok(other) => {
-            context.error(other, "expected #[steit(...)]");
-            Err(())
-        }
-        Err(err) => {
-            context.syn_error(err);
-            Err(())
-        }
-    }
-}
-
-fn get_lit_str<'a>(
-    context: &Context,
-    name: &'static str,
-    lit: &'a syn::Lit,
-) -> Result<&'a syn::LitStr, ()> {
-    if let syn::Lit::Str(lit) = lit {
-        Ok(lit)
-    } else {
-        context.error(
-            lit,
-            format!(
-                "expected `{}` attribute to be represented by a string",
-                name
-            ),
-        );
-
-        Err(())
-    }
-}
-
-fn get_lit_int<'a>(
-    context: &Context,
-    name: &'static str,
-    lit: &'a syn::Lit,
-) -> Result<&'a syn::LitInt, ()> {
-    if let syn::Lit::Int(lit) = lit {
-        Ok(lit)
-    } else {
-        context.error(
-            lit,
-            format!("expected `{}` attribute to be represented by an int", name),
-        );
-
-        Err(())
     }
 }
 

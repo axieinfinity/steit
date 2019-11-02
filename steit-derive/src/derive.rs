@@ -55,7 +55,7 @@ fn impl_enum(
                 input,
                 &variant.ident,
                 &variant.fields,
-                Some(&variant.ident),
+                Some(variant),
             )
         })
         .collect::<Result<Vec<_>, _>>()
@@ -138,7 +138,7 @@ fn parse_struct<'a, O: quote::ToTokens>(
     input: &'a syn::DeriveInput,
     object: O,
     fields: &'a syn::Fields,
-    variant: Option<&'a syn::Ident>,
+    variant: Option<&'a syn::Variant>,
 ) -> Result<Struct<'a>, ()> {
     let r#impl = |fields: &'a syn::punctuated::Punctuated<_, _>| {
         Struct::parse(&context, kind, &input, &object, fields, variant)

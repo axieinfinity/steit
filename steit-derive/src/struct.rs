@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
 use crate::{
+    attr::{Attr, AttrValue},
     context::Context,
     derive::DeriveKind,
     field::{IndexedField, RuntimeField},
@@ -13,9 +14,24 @@ pub enum StructDerive<'a> {
     State { runtime: RuntimeField<'a> },
 }
 
+pub struct StructVariant<'a> {
+    variant: &'a syn::Variant,
+    tag: u16,
+}
+
+impl<'a> StructVariant<'a> {
+    pub fn ident(&self) -> &syn::Ident {
+        &self.variant.ident
+    }
+
+    pub fn tag(&self) -> u16 {
+        self.tag
+    }
+}
+
 pub struct Struct<'a> {
     input: &'a syn::DeriveInput,
-    variant: Option<&'a syn::Ident>,
+    variant: Option<StructVariant<'a>>,
     derive: StructDerive<'a>,
     indexed: Vec<IndexedField<'a>>,
 }
@@ -37,8 +53,19 @@ impl<'a> Struct<'a> {
         input: &'a syn::DeriveInput,
         object: O,
         fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
-        variant: Option<&'a syn::Ident>,
+        variant: Option<&'a syn::Variant>,
     ) -> Result<Self, ()> {
+        let variant = if let Some(variant) = variant {
+            Self::parse_attrs(context, &variant.ident, &variant.attrs).map(|tag| {
+                Some(StructVariant {
+                    variant,
+                    tag: *tag.get(),
+                })
+            })
+        } else {
+            Ok(None)
+        };
+
         let (runtimes, indexed): (Vec<_>, _) =
             fields.iter().enumerate().partition(|&(_index, field)| {
                 match type_name(context, &field.ty) {
@@ -76,12 +103,63 @@ impl<'a> Struct<'a> {
             }
         };
 
-        Self::parse_indexed(context, kind, indexed).map(|indexed| Self {
-            input,
-            variant,
-            derive,
-            indexed,
+        Self::parse_indexed(context, kind, indexed).and_then(|indexed| {
+            variant.map(|variant| Self {
+                input,
+                variant,
+                derive,
+                indexed,
+            })
         })
+    }
+
+    fn parse_attrs(
+        context: &Context,
+        variant: &syn::Ident,
+        attrs: &[syn::Attribute],
+    ) -> Result<(AttrValue<u16>), ()> {
+        let mut tag_attr = Attr::new(context, "tag");
+        let mut tag_encountered = false;
+
+        for item in attrs
+            .iter()
+            .flat_map(|attr| util::get_steit_meta_items(context, attr))
+            .flatten()
+        {
+            match &item {
+                syn::NestedMeta::Meta(syn::Meta::NameValue(item)) if item.path.is_ident("tag") => {
+                    tag_encountered = true;
+
+                    if let Ok(lit) = util::get_lit_int(context, "tag", &item.lit) {
+                        if let Ok(tag) = lit.base10_parse() {
+                            tag_attr.set(lit, tag);
+                        } else {
+                            context.error(lit, format!("unable to parse #[steit(tag = {})]", lit));
+                        }
+                    }
+                }
+
+                syn::NestedMeta::Meta(item) => {
+                    let path = item.path();
+                    let path = quote!(#path).to_string().replace(' ', "");
+                    context.error(item.path(), format!("unknown steit attribute `{}`", path));
+                }
+
+                syn::NestedMeta::Lit(lit) => {
+                    context.error(lit, "unexpected literal in steit attributes");
+                }
+            }
+        }
+
+        if let Some(tag) = tag_attr.value() {
+            Ok(tag)
+        } else {
+            if !tag_encountered {
+                context.error(variant, "expected a `tag` attribute #[steit(tag = ...)]");
+            }
+
+            Err(())
+        }
     }
 
     fn parse_indexed(
@@ -121,7 +199,10 @@ impl<'a> Struct<'a> {
     }
 
     pub fn qual(&self) -> Option<proc_macro2::TokenStream> {
-        self.variant.map(|variant| quote!(::#variant))
+        self.variant.as_ref().map(|variant| {
+            let variant = variant.ident();
+            quote!(::#variant)
+        })
     }
 
     pub fn runtime(&self) -> Option<proc_macro2::TokenStream> {
@@ -144,7 +225,7 @@ impl<'a> Struct<'a> {
         let mut inits: Vec<_> = collect_fields!(self, to_init);
 
         if let StructDerive::State { runtime } = &self.derive {
-            inits.push(runtime.to_init());
+            inits.push(runtime.to_init(self.variant.as_ref().map(|variant| variant.tag)));
         }
 
         inits
@@ -152,7 +233,8 @@ impl<'a> Struct<'a> {
 
     fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
         if let StructDerive::State { .. } = &self.derive {
-            collect_fields!(self, to_setter(&self.input.ident, self.variant))
+            let variant = self.variant.as_ref();
+            collect_fields!(self, to_setter(&self.input.ident, variant))
         } else {
             Vec::new()
         }
@@ -168,10 +250,10 @@ impl<'a> quote::ToTokens for Struct<'a> {
         let mut impls = Vec::new();
 
         if let StructDerive::State { .. } = self.derive {
-            let (new, doc) = match self.variant {
+            let (new, doc) = match &self.variant {
                 Some(variant) => (
-                    format_ident!("new_{}", util::to_snake_case(&variant.to_string())),
-                    format!("Constructs a new `{}::{}`.", name, variant),
+                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
+                    format!("Constructs a new `{}::{}`.", name, variant.ident()),
                 ),
                 None => (
                     format_ident!("new"),

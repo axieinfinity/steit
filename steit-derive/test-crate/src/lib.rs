@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use steit::runtime::Runtime;
+    use std::io;
+
+    use steit::{runtime::Runtime, ser::Serialize};
     use steit_derive::{Deserialize, Serialize, State};
 
     /* #[derive(State)]
@@ -184,34 +186,44 @@ mod tests {
 
     #[derive(Debug, State)]
     enum Test {
+        #[steit(tag = 27)]
         Foo {
             runtime: Runtime,
-            #[steit(tag = 0)]
+            #[steit(tag = 4)]
             foo: i32,
         },
+        #[steit(tag = 28)]
         Bar {
             runtime: Runtime,
-            #[steit(tag = 0)]
+            #[steit(tag = 5)]
             bar: u16,
         },
+    }
+
+    impl Serialize for Test {
+        fn size(&self) -> u32 {
+            1
+        }
+
+        fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
+            writer.write(&[88])?;
+            Ok(())
+        }
     }
 
     struct Qux(i32);
 
     #[test]
     fn test() {
-        let root = Runtime::new();
-        let nested = root.nested(0);
-
-        let mut test = Test::Foo {
-            runtime: nested,
-            foo: 10,
-        };
+        let mut test = Test::new_foo(Runtime::new().nested(16));
 
         test.set_foo_foo(20);
         println!("{:?}", test);
 
         test.set_bar_bar(10);
+        println!("{:?}", test);
+
+        test.set_foo_foo(50);
         println!("{:?}", test);
     }
 }
