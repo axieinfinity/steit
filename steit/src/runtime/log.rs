@@ -1,6 +1,8 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{path::Path, ser::Serialize};
+use crate::Serialize;
+
+use super::path::Path;
 
 pub enum EntryKind<'a, T: Serialize> {
     Update { tag: u16, value: &'a T },

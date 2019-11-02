@@ -1,9 +1,10 @@
 use std::{fmt, io};
 
-use crate::{
+use crate::Serialize;
+
+use super::{
     log::{Entry, EntryKind, Logger},
     path::Path,
-    ser::Serialize,
 };
 
 pub struct Runtime {

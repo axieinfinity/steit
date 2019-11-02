@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{de::Deserialize, runtime::Runtime, ser::Serialize};
+    use steit::{Deserialize, Runtime, Serialize};
     use steit_derive::{Deserialize, Serialize, State};
 
     /* #[derive(State)]

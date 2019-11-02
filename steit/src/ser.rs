@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::varint::Varint;
+use super::varint::Varint;
 
 pub trait Serialize {
     fn size(&self) -> u32;

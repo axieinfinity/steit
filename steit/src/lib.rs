@@ -1,12 +1,15 @@
-pub mod de;
-pub mod ser;
+mod de;
+pub use de::Deserialize;
+
+mod ser;
+pub use ser::Serialize;
 
 pub mod varint;
 
-mod log;
-mod path;
-pub mod runtime;
+mod runtime;
+pub use runtime::*;
 
 mod test_util;
 
+#[doc(hidden)]
 pub use iowrap;

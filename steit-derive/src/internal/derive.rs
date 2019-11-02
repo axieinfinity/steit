@@ -1,4 +1,6 @@
-use crate::{context::Context, internal::r#struct::Struct, util};
+use crate::{context::Context, util};
+
+use super::r#struct::Struct;
 
 #[derive(PartialEq)]
 pub enum DeriveKind {
@@ -343,10 +345,10 @@ fn wrap_in_const(
             use std::io::{self, Read};
 
             use steit::{
-                de::Deserialize,
+                Deserialize,
                 iowrap,
-                runtime::Runtime,
-                ser::Serialize,
+                Runtime,
+                Serialize,
                 // We don't import directly
                 // to avoid confusing `serialize` and `deserialize` calls.
                 varint,

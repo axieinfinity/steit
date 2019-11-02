@@ -3,11 +3,12 @@ use std::collections::HashSet;
 use crate::{
     attr::{Attr, AttrValue},
     context::Context,
-    internal::{
-        derive::DeriveKind,
-        field::{IndexedField, RuntimeField},
-    },
     util,
+};
+
+use super::{
+    derive::DeriveKind,
+    field::{IndexedField, RuntimeField},
 };
 
 pub enum Derive<'a> {

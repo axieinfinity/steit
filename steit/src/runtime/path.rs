@@ -1,6 +1,6 @@
 use std::{fmt, io, rc::Rc};
 
-use crate::{ser::Serialize, varint};
+use crate::{varint, Serialize};
 
 enum Node<T> {
     Root,
@@ -134,7 +134,7 @@ pub fn deserialize(reader: &mut impl io::Read) -> io::Result<Vec<u16>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{ser::Serialize, test_case};
+    use crate::{test_case, Serialize};
 
     use super::{deserialize, Path};
 
