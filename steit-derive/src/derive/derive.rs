@@ -344,15 +344,9 @@ fn wrap_in_const(
 
             use std::io::{self, Read};
 
-            use steit::{
-                Deserialize,
-                iowrap,
-                Runtime,
-                Serialize,
-                // We don't import directly
-                // to avoid confusing `serialize` and `deserialize` calls.
-                varint,
-            };
+            // We don't import `Varint` directly
+            // to avoid confusing `serialize` and `deserialize` calls.
+            use steit::{iowrap, varint, Deserialize, Runtime, Serialize};
 
             #tokens
         };
