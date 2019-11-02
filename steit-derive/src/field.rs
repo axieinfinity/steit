@@ -145,6 +145,20 @@ impl<'a> IndexedField<'a> {
         }
     }
 
+    pub fn get_access(&self) -> proc_macro2::TokenStream {
+        get_access(&self.name, self.index)
+    }
+
+    pub fn get_alias(&self) -> proc_macro2::TokenStream {
+        let alias = if let Some(name) = &self.name {
+            name.clone()
+        } else {
+            format_ident!("f_{}", self.index)
+        };
+
+        quote!(#alias)
+    }
+
     pub fn get_init(&self) -> proc_macro2::TokenStream {
         let value = match &self.kind {
             FieldKind::Primitive {
@@ -163,7 +177,22 @@ impl<'a> IndexedField<'a> {
             }
         };
 
-        get_init(&self.name, self.index, value)
+        get_init(self.get_access(), value)
+    }
+
+    pub fn get_field(&self, is_variant: bool) -> proc_macro2::TokenStream {
+        if is_variant {
+            self.get_alias()
+        } else {
+            let access = self.get_access();
+            quote!(self.#access)
+        }
+    }
+
+    pub fn get_destructuring(&self) -> proc_macro2::TokenStream {
+        let access = self.get_access();
+        let alias = self.get_alias();
+        quote!(#access: #alias)
     }
 
     pub fn get_setter(
@@ -181,11 +210,11 @@ impl<'a> IndexedField<'a> {
 
         let ty = self.ty;
         let tag = *self.tag.get();
-        let access = get_access(&self.name, self.index);
+        let access = self.get_access();
 
         let (name, reset, setter) = match variant {
             Some(variant) => {
-                let tag = variant.tag();
+                let variant_tag = variant.tag();
                 let variant = variant.ident();
 
                 let qual = quote!(::#variant);
@@ -199,7 +228,7 @@ impl<'a> IndexedField<'a> {
                         } else {
                             let runtime = self.runtime().parent();
                             let value = Self::#new(runtime);
-                            value.runtime().parent().log_update(#tag, &value).unwrap();
+                            value.runtime().parent().log_update(#variant_tag, &value).unwrap();
                             *self = value;
                         }
                     },
@@ -249,38 +278,38 @@ impl<'a> IndexedField<'a> {
         }
     }
 
-    pub fn get_sizer(&self) -> proc_macro2::TokenStream {
+    pub fn get_sizer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
         let wire_type = self.wire_type() as u32;
-        let access = get_access(&self.name, self.index);
+        let field = self.get_field(is_variant);
 
         let sizer = match self.kind {
             FieldKind::Primitive { .. } => quote!(),
-            FieldKind::State => quote!(size += self.#access.size().size();),
+            FieldKind::State => quote!(size += #field.size().size();),
         };
 
         quote! {
             size += (#tag << 3 | #wire_type).size();
             #sizer
-            size += self.#access.size();
+            size += #field.size();
         }
     }
 
-    pub fn get_serializer(&self) -> proc_macro2::TokenStream {
+    pub fn get_serializer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
         let wire_type = self.wire_type() as u32;
-        let access = get_access(&self.name, self.index);
+        let field = self.get_field(is_variant);
 
         quote! {
             (#tag << 3 | #wire_type).serialize(writer)?;
-            self.#access.serialize(writer)?;
+            #field.serialize(writer)?;
         }
     }
 
     pub fn get_deserializer(&self) -> proc_macro2::TokenStream {
         let tag = *self.tag.get();
         let wire_type = self.wire_type();
-        let access = get_access(&self.name, self.index);
+        let access = self.get_access();
 
         quote!(#tag if wire_type == #wire_type => {
             self.#access.deserialize(reader)?;
@@ -313,6 +342,10 @@ impl<'a> RuntimeField<'a> {
         quote!(runtime: #ty)
     }
 
+    pub fn get_access(&self) -> proc_macro2::TokenStream {
+        get_access(&self.name, self.index)
+    }
+
     pub fn get_init(&self, tag: Option<u16>) -> proc_macro2::TokenStream {
         let value = if let Some(tag) = tag {
             quote!(runtime.nested(#tag))
@@ -320,11 +353,7 @@ impl<'a> RuntimeField<'a> {
             quote!(runtime)
         };
 
-        get_init(&self.name, self.index, value)
-    }
-
-    pub fn get_access(&self) -> proc_macro2::TokenStream {
-        get_access(&self.name, self.index)
+        get_init(self.get_access(), value)
     }
 }
 
@@ -338,10 +367,8 @@ fn get_access(name: &Option<syn::Ident>, index: usize) -> proc_macro2::TokenStre
 }
 
 fn get_init(
-    name: &Option<syn::Ident>,
-    index: usize,
+    access: proc_macro2::TokenStream,
     value: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
-    let access = get_access(name, index);
     quote!(#access: #value)
 }

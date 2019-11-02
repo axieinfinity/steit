@@ -30,6 +30,16 @@ pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::
     output.into()
 }
 
+macro_rules! map_fields {
+    ($struct:ident, $method:ident) => {
+        $struct.indexed().iter().map(|field| field.$method())
+    };
+
+    ($struct:ident, $method:ident ($($rest:tt)*)) => {
+        $struct.indexed().iter().map(|field| field.$method($($rest)*))
+    };
+}
+
 fn impl_enum(
     context: &Context,
     kind: &DeriveKind,
@@ -60,16 +70,75 @@ fn impl_enum(
         })
         .collect::<Result<Vec<_>, _>>()
         .map(|variants| {
-            if kind == &DeriveKind::State {
-                let name = &input.ident;
-                let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+            let name = &input.ident;
+            let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
-                let matches = variants.iter().map(|r#struct| {
+            let ctors_and_setters = variants
+                .iter()
+                .map(|r#struct| r#struct.get_ctor_and_setters());
+
+            let sizer_matches = variants.iter().map(|r#struct| {
+                let qual = r#struct.qual();
+
+                let tag = r#struct
+                    .tag()
+                    .unwrap_or_else(|| unreachable!("expected a tag number"));
+
+                let destructuring = map_fields!(r#struct, get_destructuring);
+                let sizers = map_fields!(r#struct, get_sizer(true));
+
+                quote! {
+                    #name #qual { #(#destructuring)*, .. } => {
+                        size += #tag.size();
+                        #(#sizers)*
+                    },
+                }
+            });
+
+            let serializer_matches = variants.iter().map(|r#struct| {
+                let qual = r#struct.qual();
+
+                let tag = r#struct
+                    .tag()
+                    .unwrap_or_else(|| unreachable!("expected a tag number"));
+
+                let destructuring = map_fields!(r#struct, get_destructuring);
+                let serializers = map_fields!(r#struct, get_serializer(true));
+
+                quote! {
+                    #name #qual { #(#destructuring)*, .. } => {
+                        #tag.serialize(writer)?;
+                        #(#serializers)*
+                    },
+                }
+            });
+
+            let r#impl = quote! {
+                #(#ctors_and_setters)*
+
+                impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                    fn size(&self) -> u32 {
+                        let mut size = 0;
+                        match self { #(#sizer_matches)* }
+                        size
+                    }
+
+                    fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                        self.size().serialize(writer)?;
+                        match self { #(#serializer_matches)* }
+                        Ok(())
+                    }
+                }
+            };
+
+            if kind == &DeriveKind::State {
+                let runtime_matches = variants.iter().map(|r#struct| {
                     let qual = r#struct.qual();
 
                     let runtime = r#struct
                         .runtime()
-                        .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+                        .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
+                        .get_access();
 
                     quote!(#name #qual { #runtime: ref runtime, .. } => runtime,)
                 });
@@ -78,15 +147,15 @@ fn impl_enum(
                     impl #impl_generics #name #ty_generics #where_clause {
                         fn runtime(&self) -> &Runtime {
                             match self {
-                                #(#matches)*
+                                #(#runtime_matches)*
                             }
                         }
                     }
 
-                    #(#variants)*
+                    #r#impl
                 }
             } else {
-                quote!(#(#variants)*)
+                r#impl
             }
         })
 }
@@ -99,25 +168,55 @@ fn impl_struct<'a, O: quote::ToTokens>(
     fields: &'a syn::Fields,
 ) -> Result<proc_macro2::TokenStream, ()> {
     parse_struct(context, kind, input, object, fields, None).map(|r#struct| {
-        if kind == &DeriveKind::State {
-            let name = &input.ident;
-            let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
+        let name = &input.ident;
+        let (impl_generics, ty_generics, where_clause) = input.generics.split_for_impl();
 
+        let ctor_and_setters = r#struct.get_ctor_and_setters();
+
+        let sizer_and_serializer =
+            r#struct
+                .get_sizer_and_serializer()
+                .map(|(sizer, serializer)| {
+                    quote! {
+                        impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                            fn size(&self) -> u32 {
+                                let mut size = 0;
+                                #sizer
+                                size
+                            }
+
+                            fn serialize<W: io::Write>(&self, writer: &mut W) -> io::Result<()> {
+                                self.size().serialize(writer)?;
+                                #serializer
+                                Ok(())
+                            }
+                        }
+                    }
+                });
+
+        let r#impl = quote! {
+            #ctor_and_setters
+            #sizer_and_serializer
+        };
+
+        if kind == &DeriveKind::State {
             let runtime = r#struct
                 .runtime()
-                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
+                .get_access();
 
             quote! {
                 impl #impl_generics #name #ty_generics #where_clause {
+                    #[inline]
                     fn runtime(&self) -> &Runtime {
                         &self.#runtime
                     }
                 }
 
-                #r#struct
+                #r#impl
             }
         } else {
-            quote!(#r#struct)
+            r#impl
         }
     })
 }

@@ -200,22 +200,13 @@ mod tests {
         },
     }
 
-    impl Serialize for Test {
-        fn size(&self) -> u32 {
-            1
-        }
-
-        fn serialize<W: io::Write>(&self, writer: &mut W) -> Result<(), io::Error> {
-            writer.write(&[88])?;
-            Ok(())
-        }
-    }
-
     struct Qux(i32);
 
     #[test]
     fn test() {
         let mut test = Test::new_foo(Runtime::new().nested(16));
+
+        println!("size: {}", test.size());
 
         test.set_foo_foo(20);
         println!("{:?}", test);

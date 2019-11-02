@@ -205,12 +205,77 @@ impl<'a> Struct<'a> {
         })
     }
 
-    pub fn runtime(&self) -> Option<proc_macro2::TokenStream> {
+    pub fn tag(&self) -> Option<u16> {
+        self.variant.as_ref().map(|variant| variant.tag)
+    }
+
+    pub fn runtime(&self) -> Option<&RuntimeField<'_>> {
         if let Derive::State { runtime } = &self.derive {
-            Some(runtime.get_access())
+            Some(runtime)
         } else {
             None
         }
+    }
+
+    pub fn indexed(&self) -> &Vec<IndexedField<'_>> {
+        &self.indexed
+    }
+
+    pub fn get_ctor_and_setters(&self) -> Option<proc_macro2::TokenStream> {
+        if let Derive::State { .. } = self.derive {
+            let name = &self.input.ident;
+            let qual = self.qual();
+            let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
+
+            let (new, doc) = match &self.variant {
+                Some(variant) => (
+                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
+                    format!("Constructs a new `{}::{}`.", name, variant.ident()),
+                ),
+                None => (
+                    format_ident!("new"),
+                    format!("Constructs a new `{}`.", name),
+                ),
+            };
+
+            let args = self.get_ctor_args();
+            let qual = self.qual();
+            let inits = self.get_inits();
+
+            let setters: Vec<_> = self.get_setters();
+
+            Some(quote! {
+                impl #impl_generics #name #ty_generics #where_clause {
+                    #[doc = #doc]
+                    pub fn #new(#(#args),*) -> Self {
+                        #name #qual { #(#inits,)* }
+                    }
+
+                    #(#setters)*
+                }
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_sizer_and_serializer(
+        &self,
+    ) -> Option<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
+        match self.derive {
+            Derive::State { .. } | Derive::Serialize => {
+                let is_variant = self.variant.is_some();
+                let sizers = map_fields!(self, get_sizer(is_variant));
+                let serializers = map_fields!(self, get_serializer(is_variant));
+                Some((quote!(#(#sizers)*), quote!(#(#serializers)*)))
+            }
+
+            Derive::Deserialize => None,
+        }
+    }
+
+    pub fn get_deserializer(&self) -> Option<proc_macro2::TokenStream> {
+        None
     }
 
     fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
@@ -240,7 +305,7 @@ impl<'a> Struct<'a> {
     }
 }
 
-impl<'a> quote::ToTokens for Struct<'a> {
+/* impl<'a> quote::ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         let name = &self.input.ident;
         let qual = self.qual();
@@ -358,7 +423,7 @@ impl<'a> quote::ToTokens for Struct<'a> {
 
         tokens.extend(quote!(#(#impls)*));
     }
-}
+} */
 
 fn type_name<'a>(context: &Context, ty: &'a syn::Type) -> Option<&'a syn::Ident> {
     match ty {
