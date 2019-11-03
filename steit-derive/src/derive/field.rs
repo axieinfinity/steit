@@ -138,13 +138,6 @@ impl<'a> IndexedField<'a> {
         &self.tag
     }
 
-    pub fn wire_type(&self) -> u8 {
-        match self.kind {
-            FieldKind::Primitive { .. } => 0,
-            FieldKind::State => 2,
-        }
-    }
-
     pub fn get_access(&self) -> proc_macro2::TokenStream {
         get_access(&self.name, self.index)
     }
@@ -282,44 +275,31 @@ impl<'a> IndexedField<'a> {
 
     pub fn get_sizer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
-        let wire_type = self.wire_type() as u32;
         let field = self.get_field(is_variant);
 
-        let sizer = match self.kind {
-            FieldKind::Primitive { .. } => quote!(),
-            FieldKind::State => quote!(size += #field.size().size();),
-        };
-
         quote! {
-            size += (#tag << 3 | #wire_type).size();
-            #sizer
+            size += (#tag << 3 | #field.wire_type() as u32).size();
+            if (#field.wire_type() == 2) { size += #field.size().size(); }
             size += #field.size();
         }
     }
 
     pub fn get_serializer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get() as u32;
-        let wire_type = self.wire_type() as u32;
         let field = self.get_field(is_variant);
 
-        let size_serializer = match self.kind {
-            FieldKind::Primitive { .. } => quote!(),
-            FieldKind::State => quote!(#field.size().serialize(writer)?;),
-        };
-
         quote! {
-            (#tag << 3 | #wire_type).serialize(writer)?;
-            #size_serializer
+            (#tag << 3 | #field.wire_type() as u32).serialize(writer)?;
+            if (#field.wire_type() == 2) { #field.size().serialize(writer)?; }
             #field.serialize(writer)?;
         }
     }
 
     pub fn get_deserializer(&self, is_variant: bool) -> proc_macro2::TokenStream {
         let tag = *self.tag.get();
-        let wire_type = self.wire_type();
         let field = self.get_field(is_variant);
 
-        quote!(#tag if wire_type == #wire_type => {
+        quote!(#tag if wire_type == #field.wire_type() => {
             #field.deserialize(reader)?;
         })
     }

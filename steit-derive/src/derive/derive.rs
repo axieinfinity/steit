@@ -1,7 +1,10 @@
-use crate::{context::Context, util};
+use crate::{
+    attr::{Attr, AttrValue},
+    context::Context,
+    util,
+};
 
 use super::r#struct::Struct;
-use crate::attr::{Attr, AttrValue};
 
 #[derive(PartialEq)]
 pub enum DeriveKind {

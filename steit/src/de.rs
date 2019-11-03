@@ -1,6 +1,6 @@
 use std::io;
 
-use super::varint::Varint;
+use crate::varint::Varint;
 
 pub trait Deserialize: Sized {
     fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<()>;
