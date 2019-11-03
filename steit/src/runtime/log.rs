@@ -4,66 +4,40 @@ use crate::Serialize;
 
 use super::path::Path;
 
+#[derive(Serialize)]
+#[steit(own_crate)]
 pub enum EntryKind<'a, T: Serialize> {
-    Update { tag: u16, value: &'a T },
-    Add { item: &'a T },
-    Remove { tag: u16 },
+    #[steit(tag = 0)]
+    Update {
+        #[steit(tag = 0)]
+        tag: u16,
+        #[steit(tag = 1)]
+        value: &'a T,
+    },
+    #[steit(tag = 1)]
+    Add {
+        #[steit(tag = 1)]
+        item: &'a T,
+    },
+    #[steit(tag = 2)]
+    Remove {
+        #[steit(tag = 0)]
+        tag: u16,
+    },
 }
 
-impl<'a, T: Serialize> EntryKind<'a, T> {
-    pub fn code(&self) -> u8 {
-        match self {
-            EntryKind::Update { .. } => 0,
-            EntryKind::Add { .. } => 1,
-            EntryKind::Remove { .. } => 2,
-        }
-    }
-}
-
+#[derive(Serialize)]
+#[steit(own_crate)]
 pub struct Entry<'a, T: Serialize> {
+    #[steit(tag = 0)]
     path: &'a Path,
+    #[steit(tag = 1)]
     kind: EntryKind<'a, T>,
 }
 
 impl<'a, T: Serialize> Entry<'a, T> {
     pub fn new(path: &'a Path, kind: EntryKind<'a, T>) -> Self {
         Self { path, kind }
-    }
-}
-
-impl<'a, T: Serialize> Serialize for Entry<'a, T> {
-    fn size(&self) -> u32 {
-        1 + self.path.size().size()
-            + self.path.size()
-            + match self.kind {
-                EntryKind::Update { tag, value } => tag.size() + value.size(),
-                EntryKind::Add { item } => item.size(),
-                EntryKind::Remove { tag } => tag.size(),
-            }
-    }
-
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.size().serialize(writer)?;
-
-        self.kind.code().serialize(writer)?;
-        self.path.serialize(writer)?;
-
-        match self.kind {
-            EntryKind::Update { tag, value } => {
-                tag.serialize(writer)?;
-                value.serialize(writer)?;
-            }
-
-            EntryKind::Add { item } => {
-                item.serialize(writer)?;
-            }
-
-            EntryKind::Remove { tag } => {
-                tag.serialize(writer)?;
-            }
-        }
-
-        Ok(())
     }
 }
 
