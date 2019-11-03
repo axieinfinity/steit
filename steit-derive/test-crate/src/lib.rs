@@ -230,6 +230,20 @@ mod tests {
         test.set_foo_foo(50);
         back_and_forth(&mut test);
 
+        let mut reader: &[u8] = &[6];
+
+        test.process_log(&mut [28, 5].iter(), &RawEntryKind::Update, &mut reader)
+            .unwrap();
+
+        println!("{:?}", test);
+
+        let mut reader: &[u8] = &[3, 27, 32, 1];
+
+        test.process_log(&mut [].iter(), &RawEntryKind::Update, &mut reader)
+            .unwrap();
+
+        println!("{:?}", test);
+
         let mut well = Well {
             runtime: Runtime::new(),
             well: 27,

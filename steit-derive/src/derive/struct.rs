@@ -356,12 +356,12 @@ impl<'a> Struct<'a> {
 
                             RawEntryKind::Add => Err(io::Error::new(
                                 io::ErrorKind::InvalidData,
-                                format!("`add` is not supported for structs and enums"),
+                                format!("`add` is not supported for structs and variants"),
                             )),
 
                             RawEntryKind::Remove => Err(io::Error::new(
                                 io::ErrorKind::InvalidData,
-                                format!("`remove` is not supported for structs and enums"),
+                                format!("`remove` is not supported for structs and variants"),
                             )),
                         }
                     }

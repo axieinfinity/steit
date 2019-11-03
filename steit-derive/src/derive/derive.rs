@@ -219,10 +219,77 @@ fn impl_enum(
                     }
                 });
 
+            let log_processor = variants
+                .iter()
+                .map(|r#struct| {
+                    r#struct.get_log_processor().map(|log_processor| {
+                        let variant = r#struct
+                            .variant()
+                            .unwrap_or_else(|| unreachable!("expected variant"));
+
+                        let qual = variant.qual();
+                        let tag = variant.tag();
+
+                        let destructuring = map_fields!(r#struct, get_destructuring);
+
+                        quote! {
+                            #tag => {
+                                if let #name #qual { #(#destructuring)* .. } = self {
+                                    #log_processor
+                                } else {
+                                    Err(io::Error::new(
+                                        io::ErrorKind::InvalidData,
+                                        format!("expected variant with tag {}, got another", tag),
+                                    ))
+                                }
+                            }
+                        }
+                    })
+                })
+                .collect::<Option<Vec<_>>>()
+                .map(|log_processor_matches| {
+                    quote! {
+                        impl #impl_generics State for #name #ty_generics #where_clause {
+                            fn process_log<'a>(
+                                &mut self,
+                                path: &mut impl Iterator<Item = &'a u16>,
+                                kind: &RawEntryKind,
+                                reader: &mut impl io::Read,
+                            ) -> io::Result<()> {
+                                if let Some(tag) = path.next() {
+                                    match tag {
+                                        #(#log_processor_matches)*
+
+                                        _ => Err(io::Error::new(
+                                            io::ErrorKind::InvalidData,
+                                            format!("unexpected variant tag {}", tag),
+                                        )),
+                                    }
+                                } else {
+                                    match kind {
+                                        RawEntryKind::Update => self.deserialize(reader),
+
+                                        RawEntryKind::Add => Err(io::Error::new(
+                                            io::ErrorKind::InvalidData,
+                                            format!("`add` is not supported for enums"),
+                                        )),
+
+                                        RawEntryKind::Remove => Err(io::Error::new(
+                                            io::ErrorKind::InvalidData,
+                                            format!("`remove` is not supported for enums"),
+                                        )),
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+
             let r#impl = quote! {
                 #(#ctors_and_setters)*
                 #sizer_and_serializer
                 #deserializer
+                #log_processor
             };
 
             if kind == &DeriveKind::State {
