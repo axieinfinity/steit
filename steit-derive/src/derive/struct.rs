@@ -75,12 +75,13 @@ impl<'a> Struct<'a> {
         };
 
         let (runtimes, indexed): (Vec<_>, _) =
-            fields.iter().enumerate().partition(|&(_index, field)| {
-                match type_name(context, &field.ty) {
+            fields
+                .iter()
+                .enumerate()
+                .partition(|&(_index, field)| match type_name(&field.ty) {
                     Some(ident) if ident == "Runtime" => true,
                     _ => false,
-                }
-            });
+                });
 
         if kind != &DeriveKind::State && runtimes.len() > 0 {
             context.error(
@@ -348,20 +349,16 @@ impl<'a> Struct<'a> {
     }
 }
 
-fn type_name<'a>(context: &Context, ty: &'a syn::Type) -> Option<&'a syn::Ident> {
+fn type_name(ty: &syn::Type) -> Option<&syn::Ident> {
     match ty {
         syn::Type::Path(syn::TypePath { ref path, .. }) => {
             if let Some(segment) = path.segments.last() {
                 Some(&segment.ident)
             } else {
-                context.error(ty, "expected a non-empty type path");
                 None
             }
         }
 
-        _ => {
-            context.error(ty, "expected a type path");
-            None
-        }
+        _ => None,
     }
 }
