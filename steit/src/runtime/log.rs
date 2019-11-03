@@ -1,6 +1,6 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::Serialize;
+use crate::{Deserialize, Serialize};
 
 use super::path::Path;
 
@@ -48,4 +48,35 @@ impl Logger {
     pub fn log_entry(&self, entry: Entry<impl Serialize>) -> io::Result<()> {
         entry.serialize(&mut *self.buf.borrow_mut())
     }
+}
+
+#[derive(Deserialize)]
+#[steit(own_crate)]
+pub enum RawEntryKind {
+    #[steit(tag = 0)]
+    Update,
+    #[steit(tag = 1)]
+    Add,
+    #[steit(tag = 2)]
+    Remove,
+}
+
+impl RawEntryKind {
+    pub fn new() -> Self {
+        Self::new_update()
+    }
+
+    #[inline]
+    pub fn wire_type(&self) -> u8 {
+        6
+    }
+}
+
+#[derive(Deserialize)]
+#[steit(own_crate)]
+pub struct RawEntry {
+    #[steit(tag = 0)]
+    path: Vec<u16>,
+    #[steit(tag = 1)]
+    kind: RawEntryKind,
 }
