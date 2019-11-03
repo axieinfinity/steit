@@ -9,6 +9,9 @@ pub use ser::Serialize;
 mod runtime;
 pub use runtime::*;
 
+mod state;
+pub use state::State;
+
 mod test_util;
 
 pub use steit_derive::*;
