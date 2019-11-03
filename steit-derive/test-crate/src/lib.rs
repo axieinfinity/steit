@@ -197,6 +197,8 @@ mod tests {
             #[steit(tag = 5)]
             bar: u16,
         },
+        #[steit(tag = 29)]
+        Qux { runtime: Runtime },
     }
 
     struct Qux(i32);

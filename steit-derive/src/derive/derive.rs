@@ -134,7 +134,6 @@ fn impl_enum(
                             }
 
                             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                                self.size().serialize(writer)?;
                                 match self { #(#serializer_matches)* }
                                 Ok(())
                             }

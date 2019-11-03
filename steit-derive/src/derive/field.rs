@@ -302,8 +302,14 @@ impl<'a> IndexedField<'a> {
         let wire_type = self.wire_type() as u32;
         let field = self.get_field(is_variant);
 
+        let size_serializer = match self.kind {
+            FieldKind::Primitive { .. } => quote!(),
+            FieldKind::State => quote!(#field.size().serialize(writer)?;),
+        };
+
         quote! {
             (#tag << 3 | #wire_type).serialize(writer)?;
+            #size_serializer
             #field.serialize(writer)?;
         }
     }

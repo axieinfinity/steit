@@ -112,7 +112,6 @@ impl Serialize for Path {
     }
 
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.size().serialize(writer)?;
         Self::serialize(&self.node, writer)
     }
 }
