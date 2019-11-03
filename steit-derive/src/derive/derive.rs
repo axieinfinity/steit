@@ -1,6 +1,7 @@
 use crate::{context::Context, util};
 
 use super::r#struct::Struct;
+use crate::attr::{Attr, AttrValue};
 
 #[derive(PartialEq)]
 pub enum DeriveKind {
@@ -23,10 +24,15 @@ pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::
         syn::Data::Union(ref data) => impl_union(&context, kind, &input, data),
     };
 
+    let own_crate = match parse_attrs(&context, &input.attrs) {
+        Ok(Some(attr)) => *attr.get(),
+        Ok(None) | Err(_) => false,
+    };
+
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(kind, &input.ident, false, output.unwrap_or_default())
+        wrap_in_const(kind, &input.ident, own_crate, output.unwrap_or_default())
     };
 
     output.into()
@@ -79,109 +85,131 @@ fn impl_enum(
                 .iter()
                 .map(|r#struct| r#struct.get_ctor_and_setters());
 
-            let sizer_matches = variants.iter().map(|r#struct| {
-                let variant = r#struct
-                    .variant()
-                    .unwrap_or_else(|| unreachable!("expected variant"));
+            let sizer_and_serializer = match kind {
+                DeriveKind::Serialize | DeriveKind::State => {
+                    let sizer_matches = variants.iter().map(|r#struct| {
+                        let variant = r#struct
+                            .variant()
+                            .unwrap_or_else(|| unreachable!("expected variant"));
 
-                let qual = variant.qual();
-                let tag = variant.tag();
+                        let qual = variant.qual();
+                        let tag = variant.tag();
 
-                let destructuring = map_fields!(r#struct, get_destructuring);
-                let sizers = map_fields!(r#struct, get_sizer(true));
+                        let destructuring = map_fields!(r#struct, get_destructuring);
+                        let sizers = map_fields!(r#struct, get_sizer(true));
 
-                quote! {
-                    #name #qual { #(#destructuring)*, .. } => {
-                        size += #tag.size();
-                        #(#sizers)*
-                    }
-                }
-            });
-
-            let serializer_matches = variants.iter().map(|r#struct| {
-                let variant = r#struct
-                    .variant()
-                    .unwrap_or_else(|| unreachable!("expected variant"));
-
-                let qual = variant.qual();
-                let tag = variant.tag();
-
-                let destructuring = map_fields!(r#struct, get_destructuring);
-                let serializers = map_fields!(r#struct, get_serializer(true));
-
-                quote! {
-                    #name #qual { #(#destructuring)*, .. } => {
-                        #tag.serialize(writer)?;
-                        #(#serializers)*
-                    }
-                }
-            });
-
-            let deserializer_matches = variants.iter().map(|r#struct| {
-                let variant = r#struct
-                    .variant()
-                    .unwrap_or_else(|| unreachable!("expected variant"));
-
-                let qual = variant.qual();
-                let tag = variant.tag();
-
-                let new =
-                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string()));
-
-                let destructuring = map_fields!(r#struct, get_destructuring);
-                let deserializer = r#struct.get_deserializer();
-
-                quote! {
-                    #tag => {
-                        if let #name #qual { .. } = self {
-                        } else {
-                            *self = Self::#new(self.runtime().parent());
+                        quote! {
+                            #name #qual { #(#destructuring)* .. } => {
+                                size += #tag.size();
+                                #(#sizers)*
+                            }
                         }
+                    });
 
-                        if let #name #qual { #(#destructuring)*, .. } = self {
-                            #deserializer
+                    let serializer_matches = variants.iter().map(|r#struct| {
+                        let variant = r#struct
+                            .variant()
+                            .unwrap_or_else(|| unreachable!("expected variant"));
+
+                        let qual = variant.qual();
+                        let tag = variant.tag();
+
+                        let destructuring = map_fields!(r#struct, get_destructuring);
+                        let serializers = map_fields!(r#struct, get_serializer(true));
+
+                        quote! {
+                            #name #qual { #(#destructuring)* .. } => {
+                                #tag.serialize(writer)?;
+                                #(#serializers)*
+                            }
+                        }
+                    });
+
+                    Some(quote! {
+                        impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                            fn size(&self) -> u32 {
+                                let mut size = 0;
+                                match self { #(#sizer_matches)* }
+                                size
+                            }
+
+                            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                                self.size().serialize(writer)?;
+                                match self { #(#serializer_matches)* }
+                                Ok(())
+                            }
+                        }
+                    })
+                }
+
+                DeriveKind::Deserialize => None,
+            };
+
+            let deserializer = variants
+                .iter()
+                .map(|r#struct| {
+                    r#struct.get_deserializer().map(|deserializer| {
+                        let variant = r#struct
+                            .variant()
+                            .unwrap_or_else(|| unreachable!("expected variant"));
+
+                        let qual = variant.qual();
+                        let tag = variant.tag();
+
+                        let new = format_ident!(
+                            "new_{}",
+                            util::to_snake_case(&variant.ident().to_string()),
+                        );
+
+                        let destructuring = map_fields!(r#struct, get_destructuring);
+
+                        quote! {
+                            #tag => {
+                                if let #name #qual { .. } = self {
+                                } else {
+                                    *self = Self::#new(self.runtime().parent());
+                                }
+
+                                if let #name #qual { #(#destructuring)* .. } = self {
+                                    #deserializer
+                                }
+                            }
+                        }
+                    })
+                })
+                .collect::<Option<Vec<_>>>()
+                .map(|deserializer_matches| {
+                    quote! {
+                        impl #impl_generics Deserialize for #name #ty_generics #where_clause {
+                            fn deserialize(
+                                &mut self,
+                                reader: &mut impl io::Read,
+                            ) -> io::Result<()> {
+                                let size = varint::deserialize(reader)?;
+                                let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
+                                let tag: u16 = varint::deserialize(reader)?;
+
+                                match tag {
+                                    #(#deserializer_matches)*
+
+                                    _ => {
+                                        return Err(io::Error::new(
+                                            io::ErrorKind::InvalidData,
+                                            format!("unexpected variant tag {}", tag),
+                                        ));
+                                    }
+                                }
+
+                                Ok(())
+                            }
                         }
                     }
-                }
-            });
+                });
 
             let r#impl = quote! {
                 #(#ctors_and_setters)*
-
-                impl #impl_generics Serialize for #name #ty_generics #where_clause {
-                    fn size(&self) -> u32 {
-                        let mut size = 0;
-                        match self { #(#sizer_matches)* }
-                        size
-                    }
-
-                    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                        self.size().serialize(writer)?;
-                        match self { #(#serializer_matches)* }
-                        Ok(())
-                    }
-                }
-
-                impl #impl_generics Deserialize for #name #ty_generics #where_clause {
-                    fn deserialize(&mut self, reader: &mut impl io::Read) -> io::Result<()> {
-                        let size = varint::deserialize(reader)?;
-                        let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
-                        let tag: u16 = varint::deserialize(reader)?;
-
-                        match tag {
-                            #(#deserializer_matches)*
-
-                            _ => {
-                                return Err(io::Error::new(
-                                    io::ErrorKind::InvalidData,
-                                    format!("unexpected variant tag {}", tag),
-                                ));
-                            }
-                        }
-
-                        Ok(())
-                    }
-                }
+                #sizer_and_serializer
+                #deserializer
             };
 
             if kind == &DeriveKind::State {
@@ -321,6 +349,37 @@ fn parse_struct<'a, O: quote::ToTokens>(
             Err(())
         }
     }
+}
+
+fn parse_attrs(
+    context: &Context,
+    attrs: &[syn::Attribute],
+) -> Result<(Option<AttrValue<bool>>), ()> {
+    let mut own_crate_attr = Attr::new(context, "own_crate");
+
+    for item in attrs
+        .iter()
+        .flat_map(|attr| util::get_steit_meta_items(context, attr))
+        .flatten()
+    {
+        match &item {
+            syn::NestedMeta::Meta(syn::Meta::Path(path)) if path.is_ident("own_crate") => {
+                own_crate_attr.set(path, true);
+            }
+
+            syn::NestedMeta::Meta(item) => {
+                let path = item.path();
+                let path = quote!(#path).to_string().replace(' ', "");
+                context.error(item.path(), format!("unknown steit attribute `{}`", path));
+            }
+
+            syn::NestedMeta::Lit(lit) => {
+                context.error(lit, "unexpected literal in steit attributes");
+            }
+        }
+    }
+
+    Ok(own_crate_attr.value())
 }
 
 fn wrap_in_const(
