@@ -251,11 +251,11 @@ fn impl_enum(
         })
 }
 
-fn impl_struct<'a, O: quote::ToTokens>(
+fn impl_struct<'a>(
     context: &Context,
     kind: &DeriveKind,
     input: &'a syn::DeriveInput,
-    object: O,
+    object: impl quote::ToTokens,
     fields: &'a syn::Fields,
 ) -> Result<proc_macro2::TokenStream, ()> {
     parse_struct(context, kind, input, object, fields, None).map(|r#struct| {
@@ -336,11 +336,11 @@ fn impl_union(
     Err(())
 }
 
-fn parse_struct<'a, O: quote::ToTokens>(
+fn parse_struct<'a>(
     context: &Context,
     kind: &DeriveKind,
     input: &'a syn::DeriveInput,
-    object: O,
+    object: impl quote::ToTokens,
     fields: &'a syn::Fields,
     variant: Option<&'a syn::Variant>,
 ) -> Result<Struct<'a>, ()> {
