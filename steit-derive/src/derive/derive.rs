@@ -339,16 +339,19 @@ fn parse_struct<'a, O: quote::ToTokens>(
     fields: &'a syn::Fields,
     variant: Option<&'a syn::Variant>,
 ) -> Result<Struct<'a>, ()> {
-    let r#impl = |fields: &'a syn::punctuated::Punctuated<_, _>| {
-        Struct::parse(&context, kind, &input, &object, fields, variant)
-    };
+    let r#impl =
+        |fields: Option<_>| Struct::parse(&context, kind, &input, &object, fields, variant);
 
     match *fields {
-        syn::Fields::Named(ref fields) => r#impl(&fields.named),
-        syn::Fields::Unnamed(ref fields) => r#impl(&fields.unnamed),
+        syn::Fields::Named(ref fields) => r#impl(Some(&fields.named)),
+        syn::Fields::Unnamed(ref fields) => r#impl(Some(&fields.unnamed)),
         syn::Fields::Unit => {
-            context.error(object, "cannot derive for unit structs");
-            Err(())
+            if kind == &DeriveKind::State {
+                context.error(object, "cannot derive for unit structs");
+                return Err(());
+            }
+
+            r#impl(None)
         }
     }
 }

@@ -60,7 +60,7 @@ impl<'a> Struct<'a> {
         kind: &DeriveKind,
         input: &'a syn::DeriveInput,
         object: impl quote::ToTokens,
-        fields: &'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>,
+        fields: Option<&'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>>,
         variant: Option<&'a syn::Variant>,
     ) -> Result<Self, ()> {
         let variant = if let Some(variant) = variant {
@@ -74,18 +74,21 @@ impl<'a> Struct<'a> {
             Ok(None)
         };
 
-        let (runtimes, indexed): (Vec<_>, _) =
+        let (runtimes, indexed) = if let Some(fields) = fields {
             fields
                 .iter()
                 .enumerate()
                 .partition(|&(_index, field)| match type_name(&field.ty) {
                     Some(ident) if ident == "Runtime" => true,
                     _ => false,
-                });
+                })
+        } else {
+            (Vec::new(), Vec::new())
+        };
 
         if kind != &DeriveKind::State && runtimes.len() > 0 {
             context.error(
-                fields,
+                fields.unwrap_or_else(|| unreachable!("expected fields")),
                 "unexpected `Runtime` field, as it's only allowed in #[derive(State)])",
             );
         };
@@ -100,7 +103,10 @@ impl<'a> Struct<'a> {
                 }
 
                 if runtimes.len() > 1 {
-                    context.error(fields, "expected exactly one `Runtime` field, got multiple");
+                    context.error(
+                        fields.unwrap_or_else(|| unreachable!("expected fields")),
+                        "expected exactly one `Runtime` field, got multiple",
+                    );
                 }
 
                 let runtime = runtimes
