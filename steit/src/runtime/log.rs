@@ -8,22 +8,13 @@ use super::path::Path;
 #[steit(own_crate)]
 pub enum EntryKind<'a, T: Serialize> {
     #[steit(tag = 0)]
-    Update {
-        #[steit(tag = 0)]
-        tag: u16,
-        #[steit(tag = 1)]
-        value: &'a T,
-    },
+    Update(#[steit(tag = 0)] &'a T),
+
     #[steit(tag = 1)]
-    Add {
-        #[steit(tag = 1)]
-        item: &'a T,
-    },
+    Add(#[steit(tag = 0)] &'a T),
+
     #[steit(tag = 2)]
-    Remove {
-        #[steit(tag = 0)]
-        tag: u16,
-    },
+    Remove,
 }
 
 #[derive(Serialize)]

@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let mut test = Test::new_foo(Runtime::new().nested(16));
+        let mut test = Test::new_foo(Runtime::new());
 
         println!("size: {}", test.size());
         println!();

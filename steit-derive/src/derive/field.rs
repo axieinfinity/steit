@@ -212,7 +212,6 @@ impl<'a> IndexedField<'a> {
 
         let (name, reset, setter) = match variant {
             Some(variant) => {
-                let variant_tag = variant.tag();
                 let qual = variant.qual();
                 let variant = util::to_snake_case(&variant.ident().to_string());
                 let new = format_ident!("new_{}", variant);
@@ -223,7 +222,7 @@ impl<'a> IndexedField<'a> {
                         if let #struct_name #qual { .. } = self {
                         } else {
                             let value = Self::#new(self.runtime().parent());
-                            value.runtime().parent().log_update(#variant_tag, &value).unwrap();
+                            value.runtime().parent().log_update_in_place(&value).unwrap();
                             *self = value;
                         }
                     },

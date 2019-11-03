@@ -37,19 +37,25 @@ impl Runtime {
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new(&self.path, EntryKind::Update { tag, value }))
+            .log_entry(Entry::new(&self.path.child(tag), EntryKind::Update(value)))
+    }
+
+    #[inline]
+    pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::new(&self.path, EntryKind::Update(value)))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new(&self.path, EntryKind::Add { item }))
+            .log_entry(Entry::new(&self.path, EntryKind::Add(item)))
     }
 
     #[inline]
     pub fn log_remove<T: Serialize>(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new(&self.path, EntryKind::Remove::<T> { tag }))
+            .log_entry(Entry::new(&self.path, EntryKind::Remove::<T>))
     }
 }
 
