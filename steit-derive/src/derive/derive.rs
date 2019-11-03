@@ -130,6 +130,11 @@ fn impl_enum(
 
                     Some(quote! {
                         impl #impl_generics Serialize for #name #ty_generics #where_clause {
+                            #[inline]
+                            fn wire_type(&self) -> u8 {
+                                6
+                            }
+
                             fn size(&self) -> u32 {
                                 let mut size = 0;
                                 match self { #(#sizer_matches)* }

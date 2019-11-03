@@ -302,7 +302,7 @@ impl<'a> Struct<'a> {
                                     let _: u8 = varint::deserialize(reader)?;
                                 }
 
-                                2 => {
+                                2 | 6 => {
                                     let size = varint::deserialize(reader)?;
                                     let mut buf = Vec::new();
 

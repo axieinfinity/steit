@@ -1,9 +1,9 @@
 use std::io;
 
 use crate::varint::Varint;
-use std::io::{Error, Write};
 
 pub trait Serialize {
+    #[inline]
     fn wire_type(&self) -> u8 {
         2
     }
@@ -13,6 +13,7 @@ pub trait Serialize {
 }
 
 impl<T: Varint> Serialize for T {
+    #[inline]
     fn wire_type(&self) -> u8 {
         0
     }

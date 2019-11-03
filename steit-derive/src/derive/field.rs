@@ -278,7 +278,11 @@ impl<'a> IndexedField<'a> {
 
         quote! {
             size += (#tag << 3 | #field.wire_type() as u32).size();
-            if (#field.wire_type() == 2) { size += #field.size().size(); }
+
+            if (#field.wire_type() == 2 || #field.wire_type() == 6) {
+                size += #field.size().size();
+            }
+
             size += #field.size();
         }
     }
@@ -289,7 +293,11 @@ impl<'a> IndexedField<'a> {
 
         quote! {
             (#tag << 3 | #field.wire_type() as u32).serialize(writer)?;
-            if (#field.wire_type() == 2) { #field.size().serialize(writer)?; }
+
+            if (#field.wire_type() == 2 || #field.wire_type() == 6) {
+                #field.size().serialize(writer)?;
+            }
+
             #field.serialize(writer)?;
         }
     }
