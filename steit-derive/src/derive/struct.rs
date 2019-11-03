@@ -322,7 +322,7 @@ impl<'a> Struct<'a> {
                                 _ => {
                                     return Err(io::Error::new(
                                         io::ErrorKind::InvalidData,
-                                        format!("unexpected wire type {}", wire_type),
+                                        format!("unexpected tag {} or wire type {}", tag, wire_type),
                                     ));
                                 }
                             },
@@ -332,6 +332,43 @@ impl<'a> Struct<'a> {
             }
 
             Derive::Serialize => None,
+        }
+    }
+
+    pub fn get_log_processor(&self) -> Option<proc_macro2::TokenStream> {
+        match self.derive {
+            Derive::State { .. } => {
+                let log_processors = map_fields!(self, get_log_processor(self.variant.is_some()));
+
+                Some(quote! {
+                    if let Some(tag) = path.next() {
+                        match tag {
+                            #(#log_processors,)*
+
+                            _ => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected tag {}", tag),
+                            )),
+                        }
+                    } else {
+                        match kind {
+                            RawEntryKind::Update => self.deserialize(reader),
+
+                            RawEntryKind::Add => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("`add` is not supported for structs and enums"),
+                            )),
+
+                            RawEntryKind::Remove => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("`remove` is not supported for structs and enums"),
+                            )),
+                        }
+                    }
+                })
+            }
+
+            Derive::Serialize | Derive::Deserialize => None,
         }
     }
 

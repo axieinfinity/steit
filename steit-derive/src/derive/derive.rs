@@ -304,10 +304,26 @@ fn impl_struct<'a>(
             }
         });
 
+        let log_processor = r#struct.get_log_processor().map(|log_processor| {
+            quote! {
+                impl #impl_generics State for #name #ty_generics #where_clause {
+                    fn process_log<'a>(
+                        &mut self,
+                        path: &mut impl Iterator<Item = &'a u16>,
+                        kind: &RawEntryKind,
+                        reader: &mut impl io::Read,
+                    ) -> Result<(), io::Error> {
+                        #log_processor
+                    }
+                }
+            }
+        });
+
         let r#impl = quote! {
             #ctor_and_setters
             #sizer_and_serializer
             #deserializer
+            #log_processor
         };
 
         if kind == &DeriveKind::State {
@@ -433,7 +449,7 @@ fn wrap_in_const(
 
             // We don't import `Varint` directly
             // to avoid confusing `serialize` and `deserialize` calls.
-            use #krate::{iowrap, varint, Deserialize, Runtime, Serialize};
+            use #krate::{iowrap, varint, Deserialize, RawEntryKind, Runtime, Serialize};
 
             #tokens
         };

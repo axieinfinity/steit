@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{Deserialize, Runtime, Serialize, State};
+    use steit::{Deserialize, RawEntryKind, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -176,7 +176,7 @@ mod tests {
         check(&segment, &mut Segment::new(Runtime::new()));
     } */
 
-    #[derive(State)]
+    #[derive(Debug, State)]
     struct Well {
         runtime: Runtime,
         #[steit(tag = 0)]
@@ -229,5 +229,26 @@ mod tests {
 
         test.set_foo_foo(50);
         back_and_forth(&mut test);
+
+        let mut well = Well {
+            runtime: Runtime::new(),
+            well: 27,
+        };
+
+        println!("{:?}", well);
+
+        let mut reader: &[u8] = &[78];
+
+        well.process_log(&mut [0].iter(), &RawEntryKind::Update, &mut reader)
+            .unwrap();
+
+        println!("{:?}", well);
+
+        let mut reader: &[u8] = &[2, 0, 63];
+
+        well.process_log(&mut [].iter(), &RawEntryKind::Update, &mut reader)
+            .unwrap();
+
+        println!("{:?}", well);
     }
 }

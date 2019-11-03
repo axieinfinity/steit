@@ -319,6 +319,12 @@ impl<'a> IndexedField<'a> {
             #field.deserialize(reader)?;
         })
     }
+
+    pub fn get_log_processor(&self, is_variant: bool) -> proc_macro2::TokenStream {
+        let tag = *self.tag.get();
+        let field = self.get_field(is_variant);
+        quote!(#tag => #field.process_log(path, kind, reader))
+    }
 }
 
 pub struct RuntimeField<'a> {
