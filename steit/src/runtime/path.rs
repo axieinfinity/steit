@@ -121,14 +121,14 @@ pub fn deserialize(reader: &mut impl io::Read) -> io::Result<Vec<u16>> {
 
     let size = varint::deserialize(reader)?;
     let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
-    let mut segments = Vec::new();
+    let mut path = Vec::new();
 
     while !reader.eof()? {
-        let segment = varint::deserialize(reader)?;
-        segments.push(segment);
+        let tag = varint::deserialize(reader)?;
+        path.push(tag);
     }
 
-    Ok(segments)
+    Ok(path)
 }
 
 #[cfg(test)]
