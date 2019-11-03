@@ -57,7 +57,7 @@ macro_rules! map_fields {
 impl<'a> Struct<'a> {
     pub fn parse(
         context: &Context,
-        kind: &DeriveKind,
+        kind: &'a DeriveKind,
         input: &'a syn::DeriveInput,
         object: impl quote::ToTokens,
         fields: Option<&'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>>,
@@ -179,7 +179,7 @@ impl<'a> Struct<'a> {
 
     fn parse_indexed(
         context: &Context,
-        kind: &DeriveKind,
+        kind: &'a DeriveKind,
         indexed: Vec<(usize, &'a syn::Field)>,
     ) -> Result<Vec<IndexedField<'a>>, ()> {
         let mut result = Vec::with_capacity(indexed.len());
@@ -230,39 +230,46 @@ impl<'a> Struct<'a> {
     }
 
     pub fn get_ctor_and_setters(&self) -> Option<proc_macro2::TokenStream> {
-        if let Derive::State { .. } = self.derive {
-            let name = &self.input.ident;
-            let (impl_generics, ty_generics, where_clause) = self.input.generics.split_for_impl();
+        match self.derive {
+            Derive::State { .. } | Derive::Deserialize => {
+                let name = &self.input.ident;
+                let (impl_generics, ty_generics, where_clause) =
+                    self.input.generics.split_for_impl();
 
-            let (new, doc) = match &self.variant {
-                Some(variant) => (
-                    format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
-                    format!("Constructs a new `{}::{}`.", name, variant.ident()),
-                ),
-                None => (
-                    format_ident!("new"),
-                    format!("Constructs a new `{}`.", name),
-                ),
-            };
+                let (new, doc) = match &self.variant {
+                    Some(variant) => (
+                        format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
+                        format!("Constructs a new `{}::{}`.", name, variant.ident()),
+                    ),
+                    None => (
+                        format_ident!("new"),
+                        format!("Constructs a new `{}`.", name),
+                    ),
+                };
 
-            let args = self.get_ctor_args();
-            let qual = self.variant().map(|variant| variant.qual());
-            let inits = self.get_inits();
+                let args = self.get_ctor_args();
+                let qual = self.variant().map(|variant| variant.qual());
+                let inits = self.get_inits();
 
-            let setters: Vec<_> = self.get_setters();
+                let setters: Vec<_> = if let Derive::State { .. } = self.derive {
+                    self.get_setters()
+                } else {
+                    Vec::new()
+                };
 
-            Some(quote! {
-                impl #impl_generics #name #ty_generics #where_clause {
-                    #[doc = #doc]
-                    pub fn #new(#(#args),*) -> Self {
-                        #name #qual { #(#inits,)* }
+                Some(quote! {
+                    impl #impl_generics #name #ty_generics #where_clause {
+                        #[doc = #doc]
+                        pub fn #new(#(#args),*) -> Self {
+                            #name #qual { #(#inits,)* }
+                        }
+
+                        #(#setters)*
                     }
+                })
+            }
 
-                    #(#setters)*
-                }
-            })
-        } else {
-            None
+            Derive::Serialize => None,
         }
     }
 

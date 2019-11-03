@@ -168,13 +168,19 @@ fn impl_enum(
                             util::to_snake_case(&variant.ident().to_string()),
                         );
 
+                        let ctor_args = if kind == &DeriveKind::State {
+                            quote!(self.runtime().parent())
+                        } else {
+                            quote!()
+                        };
+
                         let destructuring = map_fields!(r#struct, get_destructuring);
 
                         quote! {
                             #tag => {
                                 if let #name #qual { .. } = self {
                                 } else {
-                                    *self = Self::#new(self.runtime().parent());
+                                    *self = Self::#new(#ctor_args);
                                 }
 
                                 if let #name #qual { #(#destructuring)* .. } = self {
@@ -338,7 +344,7 @@ fn impl_union(
 
 fn parse_struct<'a>(
     context: &Context,
-    kind: &DeriveKind,
+    kind: &'a DeriveKind,
     input: &'a syn::DeriveInput,
     object: impl quote::ToTokens,
     fields: &'a syn::Fields,

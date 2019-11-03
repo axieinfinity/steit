@@ -20,6 +20,7 @@ pub enum FieldKind {
 pub struct IndexedField<'a> {
     name: Option<syn::Ident>,
     ty: &'a syn::Type,
+    derive: &'a DeriveKind,
     index: usize,
     tag: AttrValue<u16>,
     kind: FieldKind,
@@ -28,7 +29,7 @@ pub struct IndexedField<'a> {
 impl<'a> IndexedField<'a> {
     pub fn parse(
         context: &Context,
-        kind: &DeriveKind,
+        derive: &'a DeriveKind,
         field: &'a syn::Field,
         index: usize,
     ) -> Result<Self, ()> {
@@ -36,7 +37,7 @@ impl<'a> IndexedField<'a> {
         let full_type_name = quote!(#ty).to_string();
         let is_primitive = PRIMITIVE_TYPES.contains(&&*full_type_name);
 
-        if kind == &DeriveKind::State {
+        if derive == &DeriveKind::State {
             if let syn::Visibility::Inherited = field.vis {
             } else {
                 context.error(&field.vis, "expected field to be private");
@@ -53,6 +54,7 @@ impl<'a> IndexedField<'a> {
             Self {
                 name: field.ident.clone(),
                 ty,
+                derive,
                 index,
                 tag,
                 kind,
@@ -165,8 +167,15 @@ impl<'a> IndexedField<'a> {
 
             FieldKind::State => {
                 let ty = self.ty;
-                let tag = *self.tag.get();
-                quote!(<#ty>::new(runtime.nested(#tag)))
+
+                let ctor_args = if self.derive == &DeriveKind::State {
+                    let tag = *self.tag.get();
+                    quote!(runtime.nested(#tag))
+                } else {
+                    quote!()
+                };
+
+                quote!(<#ty>::new(#ctor_args))
             }
         };
 
