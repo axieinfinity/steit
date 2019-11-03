@@ -26,3 +26,18 @@ impl<T: Varint> Serialize for T {
         Varint::serialize(self, writer)
     }
 }
+
+impl<T: Varint> Serialize for Vec<T> {
+    fn size(&self) -> u32 {
+        self.iter()
+            .fold(0, |size, item| size + Varint::size(item) as u32)
+    }
+
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        for item in self {
+            Varint::serialize(item, writer)?;
+        }
+
+        Ok(())
+    }
+}
