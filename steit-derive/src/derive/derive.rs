@@ -26,7 +26,7 @@ pub fn derive(kind: &DeriveKind, input: proc_macro::TokenStream) -> proc_macro::
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(kind, &input.ident, output.unwrap_or_default())
+        wrap_in_const(kind, &input.ident, false, output.unwrap_or_default())
     };
 
     output.into()
@@ -326,6 +326,7 @@ fn parse_struct<'a, O: quote::ToTokens>(
 fn wrap_in_const(
     kind: &DeriveKind,
     name: &syn::Ident,
+    is_in_steit: bool,
     tokens: proc_macro2::TokenStream,
 ) -> proc_macro2::TokenStream {
     let r#const = format_ident!(
@@ -338,15 +339,26 @@ fn wrap_in_const(
         util::to_snake_case(&name.to_string()).to_uppercase()
     );
 
+    let (extern_crate, krate) = if is_in_steit {
+        (quote!(), quote!(crate))
+    } else {
+        (
+            quote!(
+                extern crate steit;
+            ),
+            quote!(steit),
+        )
+    };
+
     quote! {
         const #r#const: () = {
-            extern crate steit;
+            #extern_crate
 
             use std::io::{self, Read};
 
             // We don't import `Varint` directly
             // to avoid confusing `serialize` and `deserialize` calls.
-            use steit::{iowrap, varint, Deserialize, Runtime, Serialize};
+            use #krate::{iowrap, varint, Deserialize, Runtime, Serialize};
 
             #tokens
         };
