@@ -55,7 +55,7 @@ impl Runtime {
     #[inline]
     pub fn log_remove<T: Serialize>(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new(&self.path, EntryKind::Remove::<T>))
+            .log_entry(Entry::new(&self.path.child(tag), EntryKind::Remove::<T>))
     }
 }
 
