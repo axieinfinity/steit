@@ -193,10 +193,10 @@ impl<'a> IndexedField<'a> {
         let access = self.get_access();
 
         if self.name.is_some() {
-            quote!(#access)
+            quote!(#access,)
         } else {
             let alias = self.get_alias();
-            quote!(#access: #alias)
+            quote!(#access: #alias,)
         }
     }
 
