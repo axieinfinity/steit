@@ -121,6 +121,15 @@ impl Runtime {
     }
 }
 
+impl PartialEq for Runtime {
+    #[inline]
+    fn eq(&self, _other: &Self) -> bool {
+        true
+    }
+}
+
+impl Eq for Runtime {}
+
 impl WireType for Runtime {
     const WIRE_TYPE: u8 = <Node<Child, Root> as WireType>::WIRE_TYPE;
 }
