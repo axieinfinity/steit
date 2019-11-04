@@ -1,8 +1,10 @@
-use std::{io, rc::Rc};
+use std::{io, ops, rc::Rc};
+
+use iowrap::Eof;
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Serialize2,
+    Deserialize2, Serialize2,
 };
 
 use super::{cached_size::CachedSize, node::Node};
@@ -143,6 +145,43 @@ impl Serialize2 for Runtime {
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.node.serialize(writer)
+    }
+}
+
+#[derive(Default)]
+pub struct Path {
+    path: Vec<u16>,
+}
+
+impl Path {
+    #[inline]
+    pub fn new() -> Self {
+        Default::default()
+    }
+}
+
+impl ops::Deref for Path {
+    type Target = <Vec<u16> as ops::Deref>::Target;
+
+    #[inline]
+    fn deref(&self) -> &Self::Target {
+        &self.path
+    }
+}
+
+impl WireType for Path {
+    const WIRE_TYPE: u8 = <Runtime as WireType>::WIRE_TYPE;
+}
+
+impl Deserialize2 for Path {
+    #[inline]
+    fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+        while !reader.eof()? {
+            let tag = u16::deserialize(reader)?;
+            self.path.push(tag);
+        }
+
+        Ok(())
     }
 }
 
