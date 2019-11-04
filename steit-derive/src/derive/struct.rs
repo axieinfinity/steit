@@ -401,14 +401,7 @@ impl<'a> Struct<'a> {
 
 fn type_name(ty: &syn::Type) -> Option<&syn::Ident> {
     match ty {
-        syn::Type::Path(syn::TypePath { ref path, .. }) => {
-            if let Some(segment) = path.segments.last() {
-                Some(&segment.ident)
-            } else {
-                None
-            }
-        }
-
+        syn::Type::Path(syn::TypePath { path, .. }) => path.segments.last().map(|s| &s.ident),
         _ => None,
     }
 }
