@@ -1,5 +1,7 @@
 use std::{fmt, io, rc::Rc};
 
+use iowrap::Eof;
+
 use crate::{varint, Serialize};
 
 enum Node<T> {
@@ -47,8 +49,9 @@ impl<T> Node<T> {
 }
 
 pub struct Path {
-    // We don't use borrow and lifetime here
-    // since we don't want users to add more complexity from our side to their state objects.
+    // We don't use borrow and lifetime here bacause:
+    // 1. We don't want users to add more complexity from our side to their state objects.
+    // 2. That would cause a circular reference from nested state objects to their parents.
     node: Rc<Node<u16>>,
 }
 
@@ -74,23 +77,21 @@ impl Path {
         self.node.to_values()
     }
 
-    fn size(node: &Rc<Node<u16>>) -> u32 {
-        match node.as_ref() {
+    fn size(node: &Node<u16>) -> u32 {
+        match node {
             Node::Root => 0,
             Node::Child { parent, value } => value.size() + Self::size(&parent),
         }
     }
 
-    fn serialize(node: &Rc<Node<u16>>, writer: &mut impl io::Write) -> io::Result<()> {
-        match node.as_ref() {
-            Node::Root => {}
+    fn serialize(node: &Node<u16>, writer: &mut impl io::Write) -> io::Result<()> {
+        match node {
+            Node::Root => Ok(()),
             Node::Child { parent, value } => {
                 Self::serialize(&parent, writer)?;
-                value.serialize(writer)?;
+                value.serialize(writer)
             }
         }
-
-        Ok(())
     }
 }
 
@@ -116,11 +117,7 @@ impl Serialize for Path {
     }
 }
 
-pub fn deserialize(reader: &mut impl io::Read) -> io::Result<Vec<u16>> {
-    use io::Read;
-
-    let size = varint::deserialize(reader)?;
-    let reader = &mut iowrap::Eof::new(reader.by_ref().take(size));
+pub fn deserialize(reader: &mut Eof<impl io::Read>) -> io::Result<Vec<u16>> {
     let mut path = Vec::new();
 
     while !reader.eof()? {
@@ -133,24 +130,22 @@ pub fn deserialize(reader: &mut impl io::Read) -> io::Result<Vec<u16>> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{test_case, Serialize};
+    use crate::{test_case, Eof, Serialize};
 
     use super::{deserialize, Path};
 
-    fn assert_back_and_forth(segments: &[u16]) {
-        let mut paths = vec![Path::root()];
+    fn assert_back_and_forth(tags: &[u16]) {
+        let mut path = Path::root();
 
-        for segment in segments {
-            let path = paths.last().unwrap().child(*segment);
-            paths.push(path);
+        for tag in tags {
+            path = path.child(*tag);
         }
 
-        let path = paths.last().unwrap();
         let mut bytes = Vec::new();
 
-        Serialize::serialize(path, &mut bytes).unwrap();
+        path.serialize(&mut bytes).unwrap();
 
-        assert_eq!(deserialize(&mut &*bytes).unwrap(), segments);
+        assert_eq!(deserialize(&mut Eof::new(&*bytes)).unwrap(), tags);
     }
 
     test_case!(back_and_forth_01: assert_back_and_forth; &[0]);
