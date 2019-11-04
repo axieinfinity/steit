@@ -49,7 +49,7 @@ impl<T> Node<T> {
 }
 
 pub struct Path {
-    // We don't use borrow and lifetime here bacause:
+    // We don't use borrow and lifetime here because:
     // 1. We don't want users to add more complexity from our side to their state objects.
     // 2. That would cause a circular reference from nested state objects to their parents.
     node: Rc<Node<u16>>,
