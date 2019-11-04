@@ -187,35 +187,67 @@ impl Deserialize2 for Path {
 
 #[cfg(test)]
 mod tests {
-    use crate::Serialize2;
-
-    use super::{Node, Runtime};
+    use super::{Deserialize2, Eof, Node, Path, Runtime, Serialize2};
 
     #[test]
-    fn test() {
-        let runtime = Runtime::new();
-        println!("{:?}", runtime);
-
-        let runtime = runtime.nested(10);
-        println!("{:?}", runtime);
-
+    fn serialization() {
+        let runtime = Runtime::new().nested(10).nested(20);
         let mut bytes = Vec::new();
 
         runtime.serialize(&mut bytes).unwrap();
-        println!("{:?}", runtime);
-        println!("{:?}", bytes);
 
-        println!("{}", runtime.size());
-        println!("{:?}", runtime);
+        let path = Path::deserialize(&mut Eof::new(&*bytes)).unwrap();
 
+        assert_eq!(&*path, &[10, 20]);
+    }
+
+    #[test]
+    fn clear_cached_size_branch() {
+        // 2 level deep `Runtime`
+        let runtime = Runtime::new().nested(2);
+
+        // Set cached sizes of both `Runtime` nodes
         match &*runtime.node {
-            Node::Root { inner } => inner.value().cached_size.set(6),
-            Node::Child { inner, .. } => inner.value().cached_size.set(7),
+            Node::Root { .. } => assert!(false),
+            Node::Child { parent, inner } => {
+                inner.value().cached_size.set(7);
+
+                match &**parent {
+                    Node::Root { inner } => inner.value().cached_size.set(6),
+                    Node::Child { .. } => assert!(false),
+                }
+            }
         }
 
-        println!("{:?}", runtime);
+        runtime.parent().clear_cached_size();
+
+        match &*runtime.node {
+            Node::Root { .. } => assert!(false),
+            Node::Child { parent, inner } => {
+                // Cached size of the leaf `Runtime` is still set.
+                assert!(inner.value().cached_size.is_set());
+
+                match &**parent {
+                    // Cached size of the root `Runtime` has been cleared.
+                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
+                    Node::Child { .. } => assert!(false),
+                }
+            }
+        };
 
         runtime.clear_cached_size();
-        println!("{:?}", runtime);
+
+        match &*runtime.node {
+            Node::Root { .. } => assert!(false),
+            Node::Child { parent, inner } => {
+                // Now cached size of the leaf runtime has also been cleared.
+                assert!(!inner.value().cached_size.is_set());
+
+                match &**parent {
+                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
+                    Node::Child { .. } => assert!(false),
+                }
+            }
+        };
     }
 }
