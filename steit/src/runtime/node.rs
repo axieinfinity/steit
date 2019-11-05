@@ -1,7 +1,7 @@
 use std::{io, rc::Rc};
 
 use crate::{
-    wire_type::{WireType, WIRE_TYPE_SIZED},
+    wire_type::{WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
     Serialize2,
 };
 
@@ -83,17 +83,16 @@ impl<Child: Serialize2, Root: Serialize2> Serialize2 for Node<Child, Root> {
     fn size(&self) -> u32 {
         match self {
             Node::Root { inner } => inner.cached_size.get_or_set_from(|| {
+                let value = &inner.value;
                 let mut size = 0;
 
                 // TODO: Refactor this into a common utility
-                if Root::WIRE_TYPE == WIRE_TYPE_SIZED {
-                    if inner.value.size() > 0 {
-                        size += inner.value.size().size();
-                        size += inner.value.size();
+                if value.non_empty() {
+                    if Root::WIRE_TYPE == WIRE_TYPE_SIZED {
+                        size += value.size().size();
                     }
-                } else {
-                    // TODO: Check for default varint value
-                    size += inner.value.size();
+
+                    size += value.size();
                 }
 
                 size
@@ -101,14 +100,15 @@ impl<Child: Serialize2, Root: Serialize2> Serialize2 for Node<Child, Root> {
 
             Node::Child { parent, inner } => inner.cached_size.get_or_set_from(|| {
                 let mut size = parent.size();
+                // This is moved down to save a very tiny bit of our lil' stack.
+                let value = &inner.value;
 
-                if Child::WIRE_TYPE == WIRE_TYPE_SIZED {
-                    if inner.value.size() > 0 {
-                        size += inner.value.size().size();
-                        size += inner.value.size();
+                if value.non_empty() {
+                    if Child::WIRE_TYPE == WIRE_TYPE_SIZED {
+                        size += value.size().size();
                     }
-                } else {
-                    size += inner.value.size();
+
+                    size += value.size();
                 }
 
                 size
@@ -119,26 +119,52 @@ impl<Child: Serialize2, Root: Serialize2> Serialize2 for Node<Child, Root> {
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
             Node::Root { inner } => {
-                if Root::WIRE_TYPE == WIRE_TYPE_SIZED {
-                    if inner.value.size() > 0 {
-                        inner.value.size().serialize(writer)?;
-                        inner.value.serialize(writer)?;
+                let value = &inner.value;
+
+                if value.non_empty() {
+                    match Root::WIRE_TYPE {
+                        WIRE_TYPE_VARINT => {
+                            value.serialize(writer)?;
+                        }
+
+                        WIRE_TYPE_SIZED => {
+                            value.size().serialize(writer)?;
+                            value.serialize(writer)?;
+                        }
+
+                        wire_type => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected wire type {}", wire_type),
+                            ));
+                        }
                     }
-                } else {
-                    inner.value.serialize(writer)?;
                 }
             }
 
             Node::Child { parent, inner, .. } => {
                 parent.serialize(writer)?;
 
-                if Child::WIRE_TYPE == WIRE_TYPE_SIZED {
-                    if inner.value.size() > 0 {
-                        inner.value.size().serialize(writer)?;
-                        inner.value.serialize(writer)?;
+                let value = &inner.value;
+
+                if value.non_empty() {
+                    match Root::WIRE_TYPE {
+                        WIRE_TYPE_VARINT => {
+                            value.serialize(writer)?;
+                        }
+
+                        WIRE_TYPE_SIZED => {
+                            value.size().serialize(writer)?;
+                            value.serialize(writer)?;
+                        }
+
+                        wire_type => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected wire type {}", wire_type),
+                            ));
+                        }
                     }
-                } else {
-                    inner.value.serialize(writer)?;
                 }
             }
         }
