@@ -31,8 +31,8 @@ pub fn get_steit_meta_items(
             context.error(other, "expected #[steit(...)]");
             Err(())
         }
-        Err(err) => {
-            context.syn_error(err);
+        Err(error) => {
+            context.syn_error(error);
             Err(())
         }
     }

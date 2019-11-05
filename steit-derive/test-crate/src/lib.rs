@@ -176,7 +176,7 @@ mod tests {
         check(&segment, &mut Segment::new(Runtime::new()));
     } */
 
-    #[derive(Debug, State)]
+    /* #[derive(Debug, State)]
     struct Well {
         runtime: Runtime,
         #[steit(tag = 0)]
@@ -264,5 +264,26 @@ mod tests {
             .unwrap();
 
         println!("{:?}", well);
+    } */
+
+    #[steit::serialize2]
+    enum Test {
+        #[steit(tag = 27)]
+        Foo {
+            #[steit(tag = 4)]
+            foo: i32,
+        },
+        #[steit(tag = 28)]
+        Bar {
+            #[steit(tag = 5)]
+            bar: u16,
+        },
+        #[steit(tag = 29)]
+        Qux,
+    }
+
+    #[test]
+    fn test2() {
+        let _ = Test::Foo { foo: -1 };
     }
 }

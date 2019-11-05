@@ -73,9 +73,9 @@ impl Attr<'_, bool> {
     }
 }
 
-pub fn parse(
-    attrs: &mut Vec<syn::Attribute>,
+pub fn parse_attrs(
     context: &Context,
+    attrs: &mut Vec<syn::Attribute>,
     f: &mut impl FnMut(&syn::Meta) -> bool,
 ) {
     // Retain only non-steit attributes
@@ -98,21 +98,28 @@ pub fn parse(
             }
         };
 
-        for meta in &meta_list {
-            match meta {
-                syn::NestedMeta::Meta(meta) if f(meta) => (),
-
-                syn::NestedMeta::Meta(item) => {
-                    let path = item.path().to_token_stream().to_string().replace(' ', "");
-                    context.error(item.path(), format!("unknown steit attribute `{}`", path));
-                }
-
-                syn::NestedMeta::Lit(lit) => {
-                    context.error(lit, "unexpected literal in steit attributes")
-                }
-            }
-        }
-
+        parse_meta_list(context, meta_list, f);
         false
     })
+}
+
+pub fn parse_meta_list<'a>(
+    context: &Context,
+    meta_list: impl IntoIterator<Item = syn::NestedMeta>,
+    f: &mut impl FnMut(&syn::Meta) -> bool,
+) {
+    for ref meta in meta_list {
+        match meta {
+            syn::NestedMeta::Meta(meta) if f(meta) => (),
+
+            syn::NestedMeta::Meta(item) => {
+                let path = item.path().to_token_stream().to_string().replace(' ', "");
+                context.error(item.path(), format!("unknown steit attribute `{}`", path));
+            }
+
+            syn::NestedMeta::Lit(lit) => {
+                context.error(lit, "unexpected literal in steit attributes")
+            }
+        }
+    }
 }
