@@ -266,7 +266,10 @@ mod tests {
         println!("{:?}", well);
     } */
 
-    #[steit::serialize2]
+    #[steit::serialize]
+    struct Test {}
+
+    /* #[steit::serialize2]
     enum Test {
         #[steit(tag = 27)]
         Foo {
@@ -280,10 +283,10 @@ mod tests {
         },
         #[steit(tag = 29)]
         Qux,
-    }
+    } */
 
     #[test]
     fn test2() {
-        let _ = Test::Foo { foo: -1 };
+        let _ = Test {};
     }
 }

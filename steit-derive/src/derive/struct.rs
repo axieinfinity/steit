@@ -401,7 +401,9 @@ impl<'a> Struct<'a> {
 
 fn type_name(ty: &syn::Type) -> Option<&syn::Ident> {
     match ty {
-        syn::Type::Path(syn::TypePath { path, .. }) => path.segments.last().map(|s| &s.ident),
+        syn::Type::Path(syn::TypePath { path, .. }) => {
+            path.segments.last().map(|segment| &segment.ident)
+        }
         _ => None,
     }
 }

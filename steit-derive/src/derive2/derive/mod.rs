@@ -1,26 +1,35 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::util;
-
-use super::{
+use crate::derive2::{
     attr::{self, Attr},
     ctx::Context,
-    r#impl::{r#enum, union, variant, ImplInput},
+    r#impl::Impl,
+    string,
 };
 
-pub enum Derive {
+mod r#enum;
+mod r#struct;
+mod union;
+mod variant;
+
+use r#enum::Enum;
+use r#struct::Struct;
+use union::Union;
+
+pub type Result<T> = std::result::Result<T, ()>;
+
+pub enum DeriveKind {
     Serialize,
     Deserialize,
     State,
 }
 
-#[derive(Debug)]
-pub struct InputAttrs {
+struct DeriveAttrs {
     own_crate: bool,
 }
 
-impl InputAttrs {
+impl DeriveAttrs {
     pub fn parse(context: &Context, args: syn::AttributeArgs) -> Self {
         let mut own_crate = Attr::new(context, "own_crate");
 
@@ -36,29 +45,38 @@ impl InputAttrs {
     }
 }
 
-pub fn derive(derive: Derive, args: syn::AttributeArgs, input: syn::DeriveInput) -> TokenStream {
+pub fn derive(
+    derive: DeriveKind,
+    args: syn::AttributeArgs,
+    mut input: syn::DeriveInput,
+) -> TokenStream {
     let context = Context::new();
-    let attrs = InputAttrs::parse(&context, args);
+    let attrs = DeriveAttrs::parse(&context, args);
+    let r#impl = Impl::new(&input);
 
-    let syn::DeriveInput {
-        ident,
-        generics,
-        data,
-        ..
-    } = input;
+    let output = match &mut input.data {
+        syn::Data::Enum(data) => Enum::new(&derive, &context, &r#impl, data).into_token_stream(),
 
-    let input = ImplInput::new(&derive, &context, &ident, &generics);
+        syn::Data::Struct(data) => {
+            Struct::parse(&derive, &context, &r#impl, &mut data.fields, None)
+                .ok()
+                .into_token_stream()
+        }
 
-    let output = match data {
-        syn::Data::Enum(data) => r#enum::r#impl(input, data).into_token_stream(),
-        syn::Data::Struct(data) => variant::r#impl(input, data.fields).into_token_stream(),
-        syn::Data::Union(data) => union::r#impl(input, data).into_token_stream(),
+        syn::Data::Union(data) => {
+            Union::parse(&derive, &context, &r#impl, data).into_token_stream()
+        }
     };
 
     if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(&derive, &ident, attrs.own_crate, output)
+        let output = wrap_in_const(&derive, &input.ident, attrs.own_crate, output);
+
+        quote! {
+            #input
+            #output
+        }
     }
 }
 
@@ -68,19 +86,21 @@ fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {
 }
 
 fn wrap_in_const(
-    derive: &Derive,
+    derive: &DeriveKind,
     name: &syn::Ident,
     own_crate: bool,
     tokens: TokenStream,
 ) -> TokenStream {
+    println!("{}", tokens.to_string());
+
     let dummy_const = format_ident!(
         "_IMPL_{}_FOR_{}",
         match derive {
-            Derive::Serialize => "SERIALIZE",
-            Derive::Deserialize => "DESERIALIZE",
-            Derive::State => "STATE",
+            DeriveKind::Serialize => "SERIALIZE",
+            DeriveKind::Deserialize => "DESERIALIZE",
+            DeriveKind::State => "STATE",
         },
-        util::to_snake_case(&name.to_string()).to_uppercase()
+        string::to_snake_case(&name.to_string()).to_uppercase()
     );
 
     let (extern_crate, krate) = if own_crate {

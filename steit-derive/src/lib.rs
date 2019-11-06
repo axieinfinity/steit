@@ -12,33 +12,24 @@ mod derive;
 mod derive2;
 mod util;
 
-use crate::{
-    derive::DeriveKind,
-    derive2::{derive2, Derive},
-};
+use derive::DeriveKind;
 
 #[proc_macro_derive(Serialize, attributes(steit))]
-pub fn serialize(input: TokenStream) -> TokenStream {
+pub fn serialize_old(input: TokenStream) -> TokenStream {
     derive::derive(&DeriveKind::Serialize, input)
 }
 
 #[proc_macro_derive(Deserialize, attributes(steit))]
-pub fn deserialize(input: TokenStream) -> TokenStream {
+pub fn deserialize_old(input: TokenStream) -> TokenStream {
     derive::derive(&DeriveKind::Deserialize, input)
 }
 
 #[proc_macro_derive(State, attributes(steit))]
-pub fn state(input: TokenStream) -> TokenStream {
+pub fn state_old(input: TokenStream) -> TokenStream {
     derive::derive(&DeriveKind::State, input)
 }
 
 #[proc_macro_attribute]
-pub fn serialize2(args: TokenStream, input: TokenStream) -> TokenStream {
-    derive(Derive::Serialize, args, input)
-}
-
-fn derive(derive: Derive, args: TokenStream, input: TokenStream) -> TokenStream {
-    let args = syn::parse_macro_input!(args as syn::AttributeArgs);
-    let input = syn::parse_macro_input!(input as syn::DeriveInput);
-    derive2(derive, args, input).into()
+pub fn serialize(args: TokenStream, input: TokenStream) -> TokenStream {
+    derive2::derive(derive2::DeriveKind::Serialize, args, input)
 }

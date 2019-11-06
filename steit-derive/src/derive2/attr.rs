@@ -13,26 +13,6 @@ pub struct Attr<'a, T> {
 }
 
 impl<'a, T> Attr<'a, T> {
-    pub fn parse_name_value(
-        &mut self,
-        meta: &syn::MetaNameValue,
-        f: &mut impl FnMut(&syn::Lit) -> Result<T, &'a str>,
-    ) -> bool {
-        if meta.path.is_ident(self.name) {
-            match f(&meta.lit) {
-                Ok(value) => self.set(meta, value),
-                Err(ty) => self.context.error(
-                    &meta.lit,
-                    format!("expected `{}` attribute to be {}", self.name, ty),
-                ),
-            }
-
-            true
-        } else {
-            false
-        }
-    }
-
     pub fn new(context: &'a Context, name: &'static str) -> Self {
         Self {
             context,
@@ -54,6 +34,26 @@ impl<'a, T> Attr<'a, T> {
 
     pub fn get(self) -> Option<T> {
         self.value
+    }
+
+    pub fn parse_name_value(
+        &mut self,
+        meta: &syn::MetaNameValue,
+        f: &mut impl FnMut(&syn::Lit) -> Result<T, &'a str>,
+    ) -> bool {
+        if meta.path.is_ident(self.name) {
+            match f(&meta.lit) {
+                Ok(value) => self.set(meta, value),
+                Err(ty) => self.context.error(
+                    &meta.lit,
+                    format!("expected `{}` attribute to be {}", self.name, ty),
+                ),
+            }
+
+            true
+        } else {
+            false
+        }
     }
 }
 
