@@ -1,6 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
+use std::{fmt, str::FromStr};
+
 use crate::derive2::ctx::Context;
 
 pub struct Attr<'a, T> {
@@ -69,6 +71,19 @@ impl Attr<'_, bool> {
         self.parse_name_value(meta, &mut |lit| match lit {
             syn::Lit::Bool(lit) => Ok(lit.value),
             _ => Err("a bool"),
+        })
+    }
+}
+
+impl<T> Attr<'_, T>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    pub fn parse_int(&mut self, meta: &syn::MetaNameValue) -> bool {
+        self.parse_name_value(meta, &mut |lit| match lit {
+            syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an int"),
+            _ => Err("an int"),
         })
     }
 }
