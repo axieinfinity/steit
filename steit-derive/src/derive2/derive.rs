@@ -1,10 +1,12 @@
 use proc_macro2::TokenStream;
+use quote::ToTokens;
 
 use crate::util;
 
 use super::{
     attr::{self, Attr},
     ctx::Context,
+    r#impl::{r#enum, union, variant, ImplInput},
 };
 
 pub enum Derive {
@@ -38,12 +40,25 @@ pub fn derive(derive: Derive, args: syn::AttributeArgs, input: syn::DeriveInput)
     let context = Context::new();
     let attrs = InputAttrs::parse(&context, args);
 
-    let output = quote!(#input);
+    let syn::DeriveInput {
+        ident,
+        generics,
+        data,
+        ..
+    } = input;
+
+    let input = ImplInput::new(&derive, &context, &ident, &generics);
+
+    let output = match data {
+        syn::Data::Enum(data) => r#enum::r#impl(input, data).into_token_stream(),
+        syn::Data::Struct(data) => variant::r#impl(input, data.fields).into_token_stream(),
+        syn::Data::Union(data) => union::r#impl(input, data).into_token_stream(),
+    };
 
     if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(&derive, &input.ident, attrs.own_crate, output)
+        wrap_in_const(&derive, &ident, attrs.own_crate, output)
     }
 }
 
