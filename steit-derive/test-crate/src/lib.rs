@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{Deserialize, RawEntryKind, Runtime, Serialize, State};
+    use steit::{Deserialize, RawEntryKind, Runtime, Runtime2, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -267,7 +267,12 @@ mod tests {
     } */
 
     #[steit::serialize]
-    struct Test {}
+    struct Test {
+        #[steit(tag = 0)]
+        x: i32,
+        #[steit(tag = 1)]
+        y: i32,
+    }
 
     /* #[steit::serialize2]
     enum Test {
@@ -287,6 +292,17 @@ mod tests {
 
     #[test]
     fn test2() {
-        let _ = Test {};
+        let test = Test {
+            runtime: Runtime2::new(),
+            x: 17,
+            y: -223,
+        };
+
+        let mut bytes = Vec::new();
+
+        test.serialize(&mut bytes);
+
+        println!("{}", test.size());
+        println!("{:?}", bytes);
     }
 }

@@ -30,3 +30,4 @@ pub use de2::Deserialize as Deserialize2;
 pub use runtime::Runtime2;
 pub use ser2::Serialize as Serialize2;
 pub use state2::State as State2;
+pub use wire_type::WireType;
