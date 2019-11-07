@@ -7,7 +7,18 @@ use crate::derive2::{ctx::Context, derive, r#impl::Impl};
 
 use super::{r#struct::Struct, variant::Variant, DeriveKind};
 
+macro_rules! map_fields {
+    ($struct:ident, $method:ident) => {
+        $struct.fields().iter().map(|field| field.$method())
+    };
+
+    ($struct:ident, $method:ident ($($rest:tt)*)) => {
+        $struct.fields().iter().map(|field| field.$method($($rest)*))
+    };
+}
+
 pub struct Enum<'a> {
+    r#impl: &'a Impl<'a>,
     variants: Vec<Struct<'a>>,
 }
 
@@ -24,7 +35,7 @@ impl<'a> Enum<'a> {
         }
 
         Self::parse_variants(derive, context, r#impl, &mut data.variants)
-            .map(|variants| Self { variants })
+            .map(|variants| Self { r#impl, variants })
     }
 
     fn parse_variants(
@@ -85,8 +96,78 @@ impl<'a> Enum<'a> {
             Err(())
         }
     }
+
+    fn impl_wire_type(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "WireType",
+            quote! {
+                const WIRE_TYPE: u8 = 2;
+            },
+        )
+    }
+
+    fn impl_serialize(&self) -> TokenStream {
+        let name = self.r#impl.name();
+
+        let sizers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected variant"));
+
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let destructure = map_fields!(r#struct, destructure);
+            let sizers = map_fields!(r#struct, sizer(true));
+
+            quote! {
+                #name #qual { #(#destructure,)* .. } => {
+                    size += #tag.size();
+                    #(#sizers)*
+                }
+            }
+        });
+
+        let serializers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected variant"));
+
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let destructure = map_fields!(r#struct, destructure);
+            let serializers = map_fields!(r#struct, serializer(true));
+
+            quote! {
+                #name #qual { #(#destructure,)* .. } => {
+                    #tag.serialize(writer)?;
+                    #(#serializers)*
+                }
+            }
+        });
+
+        self.r#impl.impl_for(
+            "Serialize2",
+            quote! {
+                fn size(&self) -> u32 {
+                    let mut size = 0;
+                    match self { #(#sizers)* }
+                    size
+                }
+
+                fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                    match self { #(#serializers)* }
+                    Ok(())
+                }
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Enum<'a> {
-    fn to_tokens(&self, _tokens: &mut TokenStream) {}
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.impl_wire_type());
+        tokens.extend(self.impl_serialize());
+    }
 }

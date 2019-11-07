@@ -9,6 +9,7 @@ pub trait Serialize: WireType {
     fn size(&self) -> u32;
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
 
+    #[inline]
     fn key(tag: u16) -> u32 {
         (tag as u32) << 3 | Self::WIRE_TYPE as u32
     }
