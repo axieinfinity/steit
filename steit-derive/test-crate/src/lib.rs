@@ -274,8 +274,8 @@ mod tests {
         y: i32,
     }
 
-    /* #[steit::serialize2]
-    enum Test {
+    #[steit::serialize]
+    enum TestTest {
         #[steit(tag = 27)]
         Foo {
             #[steit(tag = 4)]
@@ -288,7 +288,7 @@ mod tests {
         },
         #[steit(tag = 29)]
         Qux,
-    } */
+    }
 
     #[test]
     fn test2() {

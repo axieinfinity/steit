@@ -24,7 +24,7 @@ impl StructAttrs {
     pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
-        attrs.parse(context, &mut |meta| match meta {
+        attrs.parse(context, true, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
             _ => false,
         });

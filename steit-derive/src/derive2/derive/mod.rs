@@ -34,7 +34,7 @@ impl DeriveAttrs {
     pub fn parse(context: &Context, args: syn::AttributeArgs) -> Self {
         let mut own_crate = Attr::new(context, "own_crate");
 
-        args.parse(context, &mut |meta| match meta {
+        args.parse(context, true, &mut |meta| match meta {
             syn::Meta::Path(path) if own_crate.parse_path(path) => true,
             syn::Meta::NameValue(meta) if own_crate.parse_bool(meta) => true,
             _ => false,
@@ -82,14 +82,13 @@ pub fn derive(
         wrap_in_const(&derive, &input.ident, attrs.own_crate, output)
     };
 
-    let result = quote! {
+    let derived = quote! {
         #input
         #output
     };
 
-    println!("{}", result.to_string());
-
-    result
+    println!("{}", derived.to_string());
+    derived
 }
 
 fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {

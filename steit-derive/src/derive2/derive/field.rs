@@ -10,21 +10,21 @@ use crate::derive2::{
 use super::DeriveKind;
 
 struct FieldAttrs {
-    tag_tokens: TokenStream,
     tag: u16,
+    tag_tokens: TokenStream,
 }
 
 impl FieldAttrs {
     pub fn parse(context: &Context, field: &mut syn::Field) -> derive::Result<Self> {
         let mut tag = Attr::new(context, "tag");
 
-        (&mut field.attrs).parse(context, &mut |meta| match meta {
+        (&mut field.attrs).parse(context, true, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
             _ => false,
         });
 
-        if let Some((tag_tokens, tag)) = tag.get_with_tokens() {
-            Ok(Self { tag_tokens, tag })
+        if let Some((tag, tag_tokens)) = tag.get_with_tokens() {
+            Ok(Self { tag, tag_tokens })
         } else {
             context.error(field, "expected a valid tag #[steit(tag = ...)]");
             Err(())
