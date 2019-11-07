@@ -1,7 +1,7 @@
+use std::{fmt, str::FromStr};
+
 use proc_macro2::TokenStream;
 use quote::ToTokens;
-
-use std::{fmt, str::FromStr};
 
 use crate::derive2::ctx::Context;
 
@@ -70,7 +70,7 @@ impl Attr<'_, bool> {
     pub fn parse_bool(&mut self, meta: &syn::MetaNameValue) -> bool {
         self.parse_name_value(meta, &mut |lit| match lit {
             syn::Lit::Bool(lit) => Ok(lit.value),
-            _ => Err("a bool"),
+            _ => Err("a boolean"),
         })
     }
 }
@@ -83,7 +83,16 @@ where
     pub fn parse_int(&mut self, meta: &syn::MetaNameValue) -> bool {
         self.parse_name_value(meta, &mut |lit| match lit {
             syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an int"),
-            _ => Err("an int"),
+            _ => Err("an integer"),
+        })
+    }
+}
+
+impl Attr<'_, String> {
+    pub fn parse_str(&mut self, meta: &syn::MetaNameValue) -> bool {
+        self.parse_name_value(meta, &mut |lit| match lit {
+            syn::Lit::Str(lit) => Ok(lit.value()),
+            _ => Err("a string"),
         })
     }
 }
