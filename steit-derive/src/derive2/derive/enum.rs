@@ -11,9 +11,18 @@ impl Enum {
     pub fn parse(
         _derive: &DeriveKind,
         context: &Context,
-        _impl: &Impl,
+        _impl: &Impl<'_>,
         data: &mut syn::DataEnum,
     ) -> derive::Result<Self> {
+        /* let variant = if let Some(variant) = variant.into() {
+            match Variant::parse(context, variant) {
+                Ok(variant) => Some(variant),
+                Err(error) => return Err(error),
+            }
+        } else {
+            None
+        }; */
+
         context.error(data.enum_token, "cannot derive for enums yet");
         Err(())
     }

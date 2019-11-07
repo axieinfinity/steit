@@ -1,5 +1,5 @@
 use crate::derive2::{
-    attr::{self, Attr},
+    attr::{Attr, AttrParse},
     ctx::Context,
     derive,
 };
@@ -12,7 +12,7 @@ impl VariantAttrs {
     pub fn parse(context: &Context, attrs: &mut Vec<syn::Attribute>) -> derive::Result<Self> {
         let mut tag = Attr::new(context, "tag");
 
-        attr::parse_attrs(context, attrs, &mut |meta| match meta {
+        attrs.parse(context, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
             _ => false,
         });
@@ -27,14 +27,14 @@ impl VariantAttrs {
 
 pub struct Variant {
     ident: syn::Ident,
-    tag: u16,
+    attrs: VariantAttrs,
 }
 
 impl Variant {
     pub fn parse(context: &Context, variant: &mut syn::Variant) -> derive::Result<Self> {
         VariantAttrs::parse(context, &mut variant.attrs).map(|attrs| Self {
             ident: variant.ident.clone(),
-            tag: attrs.tag,
+            attrs,
         })
     }
 }

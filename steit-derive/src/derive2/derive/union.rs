@@ -11,7 +11,7 @@ impl Union {
     pub fn parse(
         _derive: &DeriveKind,
         context: &Context,
-        _impl: &Impl,
+        _impl: &Impl<'_>,
         data: &mut syn::DataUnion,
     ) -> derive::Result<Self> {
         context.error(data.union_token, "cannot derive for unions yet");
