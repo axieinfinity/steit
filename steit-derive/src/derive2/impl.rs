@@ -1,21 +1,18 @@
 use proc_macro2::TokenStream;
 
-pub struct Impl {
-    ident: syn::Ident,
-    generics: syn::Generics,
+pub struct Impl<'a> {
+    ident: &'a syn::Ident,
+    generics: &'a syn::Generics,
 }
 
-impl Impl {
-    pub fn new(input: &syn::DeriveInput) -> Self {
-        Self {
-            ident: input.ident.clone(),
-            generics: input.generics.clone(),
-        }
+impl<'a> Impl<'a> {
+    pub fn new(ident: &'a syn::Ident, generics: &'a syn::Generics) -> Self {
+        Self { ident, generics }
     }
 
-    pub fn impl_for<'a>(
+    pub fn impl_for<'b>(
         &self,
-        r#trait: impl Into<Option<&'a str>>,
+        r#trait: impl Into<Option<&'b str>>,
         tokens: TokenStream,
     ) -> TokenStream {
         let name = &self.ident;
