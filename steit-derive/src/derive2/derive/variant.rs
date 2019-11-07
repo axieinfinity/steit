@@ -33,7 +33,7 @@ impl VariantAttrs {
 }
 
 pub struct Variant {
-    ident: syn::Ident,
+    name: syn::Ident,
     attrs: VariantAttrs,
 }
 
@@ -45,7 +45,7 @@ impl Variant {
         VariantAttrs::parse(context, variant).map(|(attrs, unknown_attrs)| {
             (
                 Self {
-                    ident: variant.ident.clone(),
+                    name: variant.ident.clone(),
                     attrs,
                 },
                 unknown_attrs,
@@ -53,7 +53,16 @@ impl Variant {
         })
     }
 
+    pub fn tag(&self) -> u16 {
+        self.attrs.tag
+    }
+
     pub fn tag_with_tokens(&self) -> (u16, &TokenStream) {
         (self.attrs.tag, &self.attrs.tag_tokens)
+    }
+
+    pub fn qual(&self) -> TokenStream {
+        let name = &self.name;
+        quote!(::#name)
     }
 }

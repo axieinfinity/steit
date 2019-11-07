@@ -146,6 +146,14 @@ impl<'a> Struct<'a> {
         }
     }
 
+    pub fn fields(&self) -> &[Field<'a>] {
+        &self.fields
+    }
+
+    pub fn variant(&self) -> Option<&Variant> {
+        self.variant.as_ref()
+    }
+
     fn impl_wire_type(&self) -> TokenStream {
         self.r#impl.impl_for(
             "WireType",
@@ -172,7 +180,7 @@ impl<'a> Struct<'a> {
         let serializer = self.serializer();
 
         self.r#impl.impl_for(
-            "Serialize",
+            "Serialize2",
             quote! {
                 fn size(&self) -> u32 {
                     let mut size = 0;

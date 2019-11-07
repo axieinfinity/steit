@@ -56,6 +56,10 @@ impl<'a> Field<'a> {
         })
     }
 
+    pub fn tag(&self) -> u16 {
+        self.attrs.tag
+    }
+
     pub fn tag_with_tokens(&self) -> (u16, &TokenStream) {
         (self.attrs.tag, &self.attrs.tag_tokens)
     }
