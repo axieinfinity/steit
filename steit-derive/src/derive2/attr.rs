@@ -36,6 +36,13 @@ impl<'a, T> Attr<'a, T> {
         self.value
     }
 
+    pub fn get_with_tokens(self) -> Option<(TokenStream, T)> {
+        match self.value {
+            Some(v) => Some((self.tokens, v)),
+            None => None,
+        }
+    }
+
     pub fn parse_name_value(
         &mut self,
         meta: &syn::MetaNameValue,
