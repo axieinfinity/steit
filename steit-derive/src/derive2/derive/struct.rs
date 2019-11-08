@@ -173,6 +173,7 @@ impl<'a> Struct<'a> {
         let default = self.default();
 
         quote! {
+            #[inline]
             pub fn #name() -> Self {
                 #default
             }
@@ -183,6 +184,7 @@ impl<'a> Struct<'a> {
         // Interestingly this doesn't use the method `ctor` above,
         // which is only used in `Enum`.
         self.r#impl.r#impl(quote! {
+            #[inline]
             pub fn new() -> Self {
                 Default::default()
             }
@@ -195,6 +197,7 @@ impl<'a> Struct<'a> {
         self.r#impl.impl_for(
             "Default",
             quote! {
+                #[inline]
                 fn default() -> Self {
                     #default
                 }

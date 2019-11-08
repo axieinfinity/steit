@@ -107,6 +107,7 @@ impl<'a> Enum<'a> {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
         self.r#impl.r#impl(quote! {
+            #[inline]
             pub fn new() -> Self {
                 Default::default()
             }
@@ -132,6 +133,7 @@ impl<'a> Enum<'a> {
             self.r#impl.impl_for(
                 "Default",
                 quote! {
+                    #[inline]
                     fn default() -> Self {
                         #default
                     }
