@@ -107,7 +107,7 @@ impl<'a> Enum<'a> {
         let default = self.variants.iter().find_map(|r#struct| {
             let variant = r#struct
                 .variant()
-                .unwrap_or_else(|| unreachable!("expected variant"));
+                .unwrap_or_else(|| unreachable!("expected a variant"));
 
             if variant.tag() == 0 {
                 Some(r#struct.default())
@@ -152,7 +152,7 @@ impl<'a> Enum<'a> {
         let sizers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
                 .variant()
-                .unwrap_or_else(|| unreachable!("expected variant"));
+                .unwrap_or_else(|| unreachable!("expected a variant"));
 
             let qual = variant.qual();
             let tag = variant.tag();
@@ -171,7 +171,7 @@ impl<'a> Enum<'a> {
         let serializers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
                 .variant()
-                .unwrap_or_else(|| unreachable!("expected variant"));
+                .unwrap_or_else(|| unreachable!("expected a variant"));
 
             let qual = variant.qual();
             let tag = variant.tag();

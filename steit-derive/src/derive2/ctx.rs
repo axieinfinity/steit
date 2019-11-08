@@ -21,7 +21,7 @@ impl Context {
         self.errors
             .borrow_mut()
             .as_mut()
-            .unwrap_or_else(|| unreachable!("expected list of errors to be defined"))
+            .unwrap_or_else(|| unreachable!("expected the list of errors to be defined"))
             .push(error);
     }
 
@@ -30,7 +30,7 @@ impl Context {
             .errors
             .borrow_mut()
             .take()
-            .unwrap_or_else(|| unreachable!("expected list of errors to be defined"));
+            .unwrap_or_else(|| unreachable!("expected the list of errors to be defined"));
 
         match errors.len() {
             0 => Ok(()),
