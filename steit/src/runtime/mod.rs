@@ -7,6 +7,7 @@ mod runtime;
 pub use runtime::Runtime;
 
 mod cached_size;
+mod log2;
 mod node;
 mod runtime2;
 

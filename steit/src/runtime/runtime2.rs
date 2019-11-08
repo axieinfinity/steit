@@ -7,13 +7,17 @@ use crate::{
     Deserialize2, Serialize2,
 };
 
-use super::{cached_size::CachedSize, node::Node};
+use super::{
+    cached_size::CachedSize,
+    log2::{Entry, EntryKind, Logger},
+    node::Node,
+};
 
 #[derive(Debug)]
 struct Child {
     tag: u16,
     /// Cached size of the serialized object
-    /// which the current `Runtime` object attaches to
+    /// which the current `Runtime` attaches to
     cached_size: CachedSize,
 }
 
@@ -46,7 +50,7 @@ impl Serialize2 for Child {
 #[derive(Debug)]
 struct Root {
     /// Cached size of the serialized object
-    /// which the current `Runtime` object attaches to
+    /// which the current `Runtime` attaches to
     cached_size: CachedSize,
 }
 
@@ -84,6 +88,7 @@ impl Serialize2 for Root {
 
 #[derive(Default, Debug)]
 pub struct Runtime {
+    logger: Logger,
     node: Rc<Node<Child, Root>>,
 }
 
@@ -96,6 +101,7 @@ impl Runtime {
     #[inline]
     pub fn nested(&self, tag: u16) -> Self {
         Self {
+            logger: self.logger.clone(),
             node: Rc::new(Node::child(&self.node, Child::new(tag))),
         }
     }
@@ -103,8 +109,31 @@ impl Runtime {
     #[inline]
     pub fn parent(&self) -> Self {
         Self {
+            logger: self.logger.clone(),
             node: self.node.parent().expect("expect a parent `Runtime`"),
         }
+    }
+
+    #[inline]
+    pub fn log_update(&self, tag: u16, value: &impl Serialize2) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::new_update(&self.nested(tag), value))
+    }
+
+    #[inline]
+    pub fn log_update_in_place(&self, value: &impl Serialize2) -> io::Result<()> {
+        self.logger.log_entry(Entry::new_update(self, value))
+    }
+
+    #[inline]
+    pub fn log_add(&self, item: &impl Serialize2) -> io::Result<()> {
+        self.logger.log_entry(Entry::new_add(self, item))
+    }
+
+    #[inline]
+    pub fn log_remove<T: Serialize2>(&self, tag: u16) -> io::Result<()> {
+        self.logger
+            .log_entry(Entry::<T>::new_remove(&self.nested(tag)))
     }
 
     #[inline]

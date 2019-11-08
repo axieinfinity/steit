@@ -373,7 +373,7 @@ mod tests {
         println!("{:?}", bytes);
         println!("check size {:#?}", test_test);
 
-        let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
+        /* let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
         println!("{:#?}", test);
 
         let default = TestTest::default();
@@ -400,6 +400,6 @@ mod tests {
 
         println!("{} {}", hello.size(), bytes.len());
         println!("{:?}", bytes);
-        println!("check size {:#?}", hello);
+        println!("check size {:#?}", hello); */
     }
 }

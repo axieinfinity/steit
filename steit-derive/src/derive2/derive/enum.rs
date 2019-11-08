@@ -304,11 +304,11 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(self.impl_ctors());
+        // tokens.extend(self.impl_ctors());
         tokens.extend(self.impl_runtime());
-        tokens.extend(self.impl_default());
+        // tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
-        tokens.extend(self.impl_deserialize());
+        // tokens.extend(self.impl_deserialize());
     }
 }

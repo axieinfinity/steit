@@ -303,11 +303,11 @@ impl<'a> ToTokens for Struct<'a> {
             return;
         }
 
-        tokens.extend(self.impl_ctor());
+        // tokens.extend(self.impl_ctor());
         tokens.extend(self.impl_runtime());
-        tokens.extend(self.impl_default());
+        // tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
-        tokens.extend(self.impl_deserialize());
+        // tokens.extend(self.impl_deserialize());
     }
 }
