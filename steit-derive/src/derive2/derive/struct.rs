@@ -163,9 +163,13 @@ impl<'a> Struct<'a> {
 
     pub fn ctor(&self) -> TokenStream {
         let ctor_name = self.ctor_name();
-
         let name = self.r#impl.name();
+
         let qual = self.variant.as_ref().map(|variant| variant.qual());
+        let runtime = self.variant.as_ref().map(|variant| {
+            let tag = variant.tag();
+            quote! { let runtime = runtime.nested(#tag); }
+        });
 
         let mut inits: Vec<_> = map_fields!(self, init).collect();
         inits.push(self.runtime.init());
@@ -173,6 +177,7 @@ impl<'a> Struct<'a> {
         quote! {
             #[inline]
             pub fn #ctor_name(runtime: Runtime2) -> Self {
+                #runtime
                 #name #qual { #(#inits,)* }
             }
         }
@@ -260,6 +265,11 @@ impl<'a> Struct<'a> {
         self.r#impl.impl_for(
             "Deserialize2",
             quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime2) -> Self {
+                    Self::new(runtime)
+                }
+
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     #merger
                     Ok(())

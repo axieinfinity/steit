@@ -175,6 +175,11 @@ impl WireType for Path {
 
 impl Deserialize2 for Path {
     #[inline]
+    fn with_runtime(_runtime: Runtime) -> Self {
+        Self::new()
+    }
+
+    #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             let tag = u16::deserialize(reader)?;

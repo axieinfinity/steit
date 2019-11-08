@@ -251,6 +251,11 @@ impl<'a> Enum<'a> {
         self.r#impl.impl_for(
             "Deserialize2",
             quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime2) -> Self {
+                    Self::new(runtime)
+                }
+
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     // TODO: Remove `as Deserialize` after refactoring `Varint`
                     let tag = <u16 as Deserialize2>::deserialize(reader)?;

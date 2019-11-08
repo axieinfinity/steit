@@ -97,7 +97,12 @@ impl<'a> Field<'a> {
     }
 
     pub fn init(&self) -> TokenStream {
-        init(self.access(), quote!(Default::default()))
+        let tag = self.tag();
+
+        init(
+            self.access(),
+            quote!(Deserialize2::with_runtime(runtime.nested(#tag))),
+        )
     }
 
     pub fn sizer(&self, is_variant: bool) -> TokenStream {

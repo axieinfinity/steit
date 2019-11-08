@@ -294,6 +294,32 @@ mod tests {
         Qux,
     }
 
+    #[steit::state]
+    #[derive(Debug)]
+    enum TestTest2 {
+        #[steit(tag = 0)]
+        Foo {
+            #[steit(tag = 4)]
+            foo: i32,
+            #[steit(tag = 7)]
+            test: Test,
+        },
+        #[steit(tag = 28)]
+        Bar {
+            #[steit(tag = 5)]
+            bar: u16,
+        },
+        #[steit(tag = 29)]
+        Qux,
+    }
+
+    #[steit::state]
+    #[derive(Debug)]
+    struct Hello {
+        #[steit(tag = 10)]
+        test_test: TestTest2,
+    }
+
     #[test]
     fn test2() {
         let test = Test {
@@ -338,19 +364,31 @@ mod tests {
         println!("{:?}", bytes);
 
         let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
-        println!("{:?}", test);
+        println!("{:#?}", test);
+
+        let default = TestTest::default();
+        println!("{:#?}", default);
 
         let foo = TestTest::new_foo(Runtime2::new());
-        println!("{:?}", foo);
+        println!("{:#?}", foo);
 
         let bar = TestTest::new_bar(Runtime2::new());
-        println!("{:?}", bar);
+        println!("{:#?}", bar);
 
         let test_test = TestTest::deserialize(&mut Eof::new(
             [27, 32, 43, 58, 5, 0, 34, 8, 189, 3].as_ref(),
         ))
         .unwrap();
+        println!("{:#?}", test_test);
 
-        println!("{:?}", test_test);
+        let hello = Hello::new(Runtime2::new());
+        println!("{:#?}", hello);
+
+        let mut bytes = Vec::new();
+
+        hello.serialize(&mut bytes).unwrap();
+
+        println!("{} {}", hello.size(), bytes.len());
+        println!("{:?}", bytes);
     }
 }
