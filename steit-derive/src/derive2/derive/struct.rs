@@ -195,6 +195,39 @@ impl<'a> Struct<'a> {
             },
         )
     }
+
+    pub fn merger(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let mergers = map_fields!(self, merger(is_variant));
+        quote!(#(#mergers)*)
+    }
+
+    fn impl_deserialize(&self) -> TokenStream {
+        let merger = self.merger();
+
+        self.r#impl.impl_for(
+            "Deserialize2",
+            quote! {
+                fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+                    while !reader.eof()? {
+                        // TODO: Remove `as Deserialize` after refactoring `Varint`
+                        let key = <u32 as Deserialize2>::deserialize(reader)?;
+                        let (tag, wire_type) = wire_type::split_key(key);
+
+                        match tag {
+                            #merger
+
+                            _ => {
+                                de2::exhaust_nested(tag, wire_type, reader)?;
+                            },
+                        }
+                    }
+
+                    Ok(())
+                }
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Struct<'a> {
@@ -205,5 +238,6 @@ impl<'a> ToTokens for Struct<'a> {
 
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
+        tokens.extend(self.impl_deserialize());
     }
 }

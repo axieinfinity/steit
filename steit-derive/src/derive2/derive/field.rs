@@ -107,6 +107,17 @@ impl<'a> Field<'a> {
         let field = self.field(is_variant);
         quote! { #field.serialize_nested(#tag, writer)?; }
     }
+
+    pub fn merger(&self, is_variant: bool) -> TokenStream {
+        let tag = self.attrs.tag;
+        let field = self.field(is_variant);
+
+        quote! {
+            #tag if wire_type == #field.wire_type() => {
+                #field.merge_nested(reader)?;
+            }
+        }
+    }
 }
 
 pub struct Runtime {

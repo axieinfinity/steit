@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{Deserialize, RawEntryKind, Runtime, Runtime2, Serialize2, State};
+    use steit::{Deserialize2, Eof, RawEntryKind, Runtime, Runtime2, Serialize2, State};
 
     /* #[derive(State)]
     struct Good {
@@ -267,6 +267,7 @@ mod tests {
     } */
 
     #[steit::serialize]
+    #[derive(Default, Debug)]
     struct Test {
         #[steit(tag = 0)]
         x: i32,
@@ -275,6 +276,7 @@ mod tests {
     }
 
     #[steit::serialize]
+    #[derive(Debug)]
     enum TestTest {
         #[steit(tag = 27)]
         Foo {
@@ -292,6 +294,17 @@ mod tests {
         Qux,
     }
 
+    impl Default for TestTest {
+        #[inline]
+        fn default() -> Self {
+            TestTest::Foo {
+                runtime: Default::default(),
+                foo: Default::default(),
+                test: Default::default(),
+            }
+        }
+    }
+
     #[test]
     fn test2() {
         let test = Test {
@@ -307,7 +320,7 @@ mod tests {
         println!("{} {}", test.size(), bytes.len());
         println!("{:?}", bytes);
 
-        let test_test = TestTest::Foo {
+        let mut test_test = TestTest::Foo {
             runtime: Runtime2::new(),
             foo: -22,
             test,
@@ -319,5 +332,26 @@ mod tests {
 
         println!("{} {}", test_test.size(), bytes.len());
         println!("{:?}", bytes);
+
+        if let TestTest::Foo { ref mut test, .. } = test_test {
+            *test = Test {
+                runtime: Runtime2::new(),
+                x: 0,
+                y: 0,
+            };
+        }
+
+        let mut bytes = Vec::new();
+
+        test_test.serialize(&mut bytes);
+
+        println!("{} {}", test_test.size(), bytes.len());
+        println!("{:?}", bytes);
+
+        let test = Test::deserialize(&mut Eof::new(&mut [0, 34, 8, 189, 3].as_ref())).unwrap();
+        println!("{:?}", test);
+
+        /* let test_test = TestTest::deserialize(&mut [27, 32, 43, 58, 5, 0, 34, 8, 189, 3]).unwrap();
+        println!("{:?}", test_test); */
     }
 }
