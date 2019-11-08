@@ -1,6 +1,5 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, fmt};
 
-#[derive(Debug)]
 pub struct CachedSize {
     size: RefCell<u32>,
 }
@@ -48,5 +47,14 @@ impl CachedSize {
     #[inline]
     pub fn clear(&self) {
         self.set(Self::UNSET)
+    }
+}
+
+impl fmt::Debug for CachedSize {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.get() {
+            Self::UNSET => write!(f, "<unset>"),
+            size => write!(f, "{}", self.get()),
+        }
     }
 }
