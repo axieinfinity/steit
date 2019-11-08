@@ -21,10 +21,10 @@ pub use iowrap;
 
 pub use iowrap::Eof;
 
-mod de2;
-mod ser2;
-mod state2;
-mod wire_type;
+pub mod de2;
+pub mod ser2;
+pub mod state2;
+pub mod wire_type;
 
 pub use de2::Deserialize as Deserialize2;
 pub use runtime::Runtime2;
