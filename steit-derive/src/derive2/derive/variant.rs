@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use crate::derive2::{
     attr::{Attr, AttrParse},
     ctx::Context,
-    derive,
+    derive, string,
 };
 
 struct VariantAttrs {
@@ -53,10 +53,6 @@ impl Variant {
         })
     }
 
-    pub fn name(&self) -> &syn::Ident {
-        &self.name
-    }
-
     pub fn tag(&self) -> u16 {
         self.attrs.tag
     }
@@ -68,5 +64,10 @@ impl Variant {
     pub fn qual(&self) -> TokenStream {
         let name = &self.name;
         quote!(::#name)
+    }
+
+    pub fn ctor_name(&self) -> syn::Ident {
+        let name = string::to_snake_case(&self.name.to_string());
+        format_ident!("new_{}", name)
     }
 }

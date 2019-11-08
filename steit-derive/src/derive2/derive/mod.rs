@@ -16,7 +16,6 @@ mod variant;
 
 use r#enum::Enum;
 use r#struct::Struct;
-use syn::spanned::Spanned;
 use union::Union;
 
 pub type Result<T> = std::result::Result<T, ()>;

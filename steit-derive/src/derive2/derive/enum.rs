@@ -166,8 +166,8 @@ impl<'a> Enum<'a> {
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
-            let qual = variant.qual();
             let tag = variant.tag();
+            let qual = variant.qual();
 
             let destructure = map_fields!(r#struct, destructure);
             let sizers = map_fields!(r#struct, sizer(true));
@@ -185,8 +185,8 @@ impl<'a> Enum<'a> {
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
-            let qual = variant.qual();
             let tag = variant.tag();
+            let qual = variant.qual();
 
             let destructure = map_fields!(r#struct, destructure);
             let serializers = map_fields!(r#struct, serializer(true));
@@ -215,6 +215,59 @@ impl<'a> Enum<'a> {
             },
         )
     }
+
+    fn impl_deserialize(&self) -> TokenStream {
+        let name = self.r#impl.name();
+
+        let mergers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let tag = variant.tag();
+            let qual = variant.qual();
+            let ctor_name = variant.ctor_name();
+
+            let destructure = map_fields!(r#struct, destructure);
+            let merger = r#struct.merger();
+
+            quote! {
+                #tag => {
+                    if let #name #qual { .. } = self {
+                    } else {
+                        *self = Self::#ctor_name();
+                    }
+
+                    if let #name #qual { #(#destructure,)* .. } = self {
+                        #merger
+                    }
+                }
+            }
+        });
+
+        self.r#impl.impl_for(
+            "Deserialize2",
+            quote! {
+                fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+                    // TODO: Remove `as Deserialize` after refactoring `Varint`
+                    let tag = <u16 as Deserialize2>::deserialize(reader)?;
+
+                    match tag {
+                        #(#mergers)*
+
+                        _ => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected variant tag {}", tag),
+                            ));
+                        }
+                    }
+
+                    Ok(())
+                }
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Enum<'a> {
@@ -223,5 +276,6 @@ impl<'a> ToTokens for Enum<'a> {
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
+        tokens.extend(self.impl_deserialize());
     }
 }

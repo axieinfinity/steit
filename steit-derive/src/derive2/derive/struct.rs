@@ -8,7 +8,6 @@ use crate::derive2::{
     ctx::Context,
     derive,
     r#impl::Impl,
-    string,
 };
 
 use super::{
@@ -166,11 +165,9 @@ impl<'a> Struct<'a> {
     }
 
     pub fn ctor(&self) -> TokenStream {
-        let name = if let Some(variant) = &self.variant {
-            let name = string::to_snake_case(&variant.name().to_string());
-            format_ident!("new_{}", name)
-        } else {
-            format_ident!("new")
+        let name = match &self.variant {
+            Some(variant) => variant.ctor_name(),
+            None => format_ident!("new"),
         };
 
         let default = self.default();
@@ -250,7 +247,19 @@ impl<'a> Struct<'a> {
     pub fn merger(&self) -> TokenStream {
         let is_variant = self.variant.is_some();
         let mergers = map_fields!(self, merger(is_variant));
-        quote!(#(#mergers)*)
+
+        quote! {
+            while !reader.eof()? {
+                // TODO: Remove `as Deserialize` after refactoring `Varint`
+                let key = <u32 as Deserialize2>::deserialize(reader)?;
+                let (tag, wire_type) = wire_type::split_key(key);
+
+                match tag {
+                    #(#mergers)*
+                    _ => { de2::exhaust_nested(tag, wire_type, reader)?; }
+                }
+            }
+        }
     }
 
     fn impl_deserialize(&self) -> TokenStream {
@@ -260,17 +269,7 @@ impl<'a> Struct<'a> {
             "Deserialize2",
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-                    while !reader.eof()? {
-                        // TODO: Remove `as Deserialize` after refactoring `Varint`
-                        let key = <u32 as Deserialize2>::deserialize(reader)?;
-                        let (tag, wire_type) = wire_type::split_key(key);
-
-                        match tag {
-                            #merger
-                            _ => { de2::exhaust_nested(tag, wire_type, reader)?; }
-                        }
-                    }
-
+                    #merger
                     Ok(())
                 }
             },

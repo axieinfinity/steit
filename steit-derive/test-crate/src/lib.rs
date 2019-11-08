@@ -346,7 +346,11 @@ mod tests {
         let bar = TestTest::new_bar();
         println!("{:?}", bar);
 
-        /* let test_test = TestTest::deserialize(&mut Eof::new([27, 32, 43, 58, 5, 0, 34, 8, 189, 3].as_ref()).unwrap();
-        println!("{:?}", test_test); */
+        let test_test = TestTest::deserialize(&mut Eof::new(
+            [27, 32, 43, 58, 5, 0, 34, 8, 189, 3].as_ref(),
+        ))
+        .unwrap();
+
+        println!("{:?}", test_test);
     }
 }
