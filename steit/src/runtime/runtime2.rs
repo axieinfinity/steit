@@ -108,6 +108,14 @@ impl Runtime {
     }
 
     #[inline]
+    pub fn get_or_set_cached_size_from(&self, f: impl FnOnce() -> u32) -> u32 {
+        match &*self.node {
+            Node::Root { inner } => inner.value().cached_size.get_or_set_from(f),
+            Node::Child { inner, .. } => inner.value().cached_size.get_or_set_from(f),
+        }
+    }
+
+    #[inline]
     pub fn clear_cached_size(&self) {
         Self::clear_cached_size_branch(&self.node);
     }

@@ -191,6 +191,17 @@ impl<'a> Struct<'a> {
         self.r#impl.r#impl(self.ctor())
     }
 
+    fn impl_runtime(&self) -> TokenStream {
+        let runtime = self.runtime.access();
+
+        self.r#impl.r#impl(quote! {
+            #[inline]
+            fn runtime(&self) -> &Runtime2 {
+                &self.#runtime
+            }
+        })
+    }
+
     fn impl_default(&self) -> TokenStream {
         self.r#impl.impl_for(
             "Default",
@@ -232,9 +243,11 @@ impl<'a> Struct<'a> {
             "Serialize2",
             quote! {
                 fn size(&self) -> u32 {
-                    let mut size = 0;
-                    #sizer
-                    size
+                    self.runtime().get_or_set_cached_size_from(|| {
+                        let mut size = 0;
+                        #sizer
+                        size
+                    })
                 }
 
                 fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
@@ -291,6 +304,7 @@ impl<'a> ToTokens for Struct<'a> {
         }
 
         tokens.extend(self.impl_ctor());
+        tokens.extend(self.impl_runtime());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());

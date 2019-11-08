@@ -228,9 +228,11 @@ impl<'a> Enum<'a> {
             "Serialize2",
             quote! {
                 fn size(&self) -> u32 {
-                    let mut size = 0;
-                    match self { #(#sizers)* }
-                    size
+                    self.runtime().get_or_set_cached_size_from(|| {
+                        let mut size = 0;
+                        match self { #(#sizers)* }
+                        size
+                    })
                 }
 
                 fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {

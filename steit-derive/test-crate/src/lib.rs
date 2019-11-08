@@ -334,6 +334,7 @@ mod tests {
 
         println!("{} {}", test.size(), bytes.len());
         println!("{:?}", bytes);
+        println!("check size {:#?}", test);
 
         let mut test_test = TestTest::Foo {
             runtime: Runtime2::new(),
@@ -347,10 +348,18 @@ mod tests {
 
         println!("{} {}", test_test.size(), bytes.len());
         println!("{:?}", bytes);
+        println!("check size {:#?}", test_test);
 
-        if let TestTest::Foo { ref mut test, .. } = test_test {
+        if let TestTest::Foo {
+            ref mut test,
+            ref runtime,
+            ..
+        } = test_test
+        {
+            test.runtime.clear_cached_size();
+
             *test = Test {
-                runtime: Runtime2::new(),
+                runtime: runtime.nested(27).nested(7),
                 x: 0,
                 y: 0,
             };
@@ -362,6 +371,7 @@ mod tests {
 
         println!("{} {}", test_test.size(), bytes.len());
         println!("{:?}", bytes);
+        println!("check size {:#?}", test_test);
 
         let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
         println!("{:#?}", test);
@@ -390,5 +400,6 @@ mod tests {
 
         println!("{} {}", hello.size(), bytes.len());
         println!("{:?}", bytes);
+        println!("check size {:#?}", hello);
     }
 }
