@@ -9,7 +9,11 @@ use crate::{
 };
 
 pub trait Deserialize: Default + WireType {
-    fn with_runtime(runtime: Runtime2) -> Self;
+    #[inline]
+    fn with_runtime(runtime: Runtime2) -> Self {
+        Default::default()
+    }
+
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()>;
 
     #[inline]
@@ -34,11 +38,6 @@ pub trait Deserialize: Default + WireType {
 }
 
 impl<T: Default + Varint + WireType> Deserialize for T {
-    #[inline]
-    fn with_runtime(runtime: Runtime2) -> Self {
-        Default::default()
-    }
-
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         *self = Varint::deserialize(reader)?;

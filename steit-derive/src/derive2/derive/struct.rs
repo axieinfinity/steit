@@ -150,6 +150,10 @@ impl<'a> Struct<'a> {
         &self.fields
     }
 
+    pub fn runtime(&self) -> &Runtime {
+        &self.runtime
+    }
+
     pub fn variant(&self) -> Option<&Variant> {
         self.variant.as_ref()
     }

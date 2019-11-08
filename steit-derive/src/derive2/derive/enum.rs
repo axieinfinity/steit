@@ -140,6 +140,28 @@ impl<'a> Enum<'a> {
             })
     }
 
+    fn impl_runtime(&self) -> TokenStream {
+        let name = self.r#impl.name();
+
+        let runtimes = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let qual = variant.qual();
+            // Technically we can use `destructure` and `init` interchangeably here.
+            let destructure = r#struct.runtime().init();
+
+            quote!(#name #qual { #destructure, .. } => runtime)
+        });
+
+        self.r#impl.r#impl(quote! {
+            fn runtime(&self) -> &Runtime2 {
+                match self { #(#runtimes,)*}
+            }
+        })
+    }
+
     fn impl_default(&self) -> TokenStream {
         self.r#impl.impl_for(
             "Default",
@@ -238,7 +260,7 @@ impl<'a> Enum<'a> {
                 #tag => {
                     if let #name #qual { .. } = self {
                     } else {
-                        *self = Self::#ctor_name(Default::default());
+                        *self = Self::#ctor_name(self.runtime().parent());
                     }
 
                     if let #name #qual { #(#destructure,)* .. } = self {
@@ -281,6 +303,7 @@ impl<'a> Enum<'a> {
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctors());
+        tokens.extend(self.impl_runtime());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());

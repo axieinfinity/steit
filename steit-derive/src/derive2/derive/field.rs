@@ -68,6 +68,15 @@ impl<'a> Field<'a> {
         access(&self.name, self.index)
     }
 
+    pub fn init(&self) -> TokenStream {
+        let tag = self.tag();
+
+        init(
+            self.access(),
+            quote!(Deserialize2::with_runtime(runtime.nested(#tag))),
+        )
+    }
+
     pub fn alias(&self) -> TokenStream {
         match &self.name {
             Some(name) => name.to_token_stream(),
@@ -94,15 +103,6 @@ impl<'a> Field<'a> {
             let access = self.access();
             quote!(self.#access)
         }
-    }
-
-    pub fn init(&self) -> TokenStream {
-        let tag = self.tag();
-
-        init(
-            self.access(),
-            quote!(Deserialize2::with_runtime(runtime.nested(#tag))),
-        )
     }
 
     pub fn sizer(&self, is_variant: bool) -> TokenStream {
