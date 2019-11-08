@@ -63,7 +63,7 @@ impl<'a, T: Serialize2> Entry<'a, T> {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Logger {
     buf: Rc<RefCell<Vec<u8>>>,
 }
@@ -83,12 +83,5 @@ impl Logger {
         println!("=== entry: {:?}", self.buf.borrow());
         self.buf.borrow_mut().clear();
         Ok(())
-    }
-}
-
-impl Default for Logger {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
     }
 }

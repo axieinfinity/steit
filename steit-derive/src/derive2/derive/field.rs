@@ -143,7 +143,7 @@ impl Runtime {
     }
 
     pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
-        if let Some(name) = &self.name {
+        if let Some(ref name) = self.name {
             let fields: syn::FieldsNamed = syn::parse_quote!({ #name: Runtime2 });
             fields.named
         } else {

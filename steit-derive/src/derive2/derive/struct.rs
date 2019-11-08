@@ -300,7 +300,7 @@ impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         // This case is up to `Enum` to handle.
         if self.variant.is_some() {
-            return;
+            panic!("unexpected variant");
         }
 
         // tokens.extend(self.impl_ctor());
