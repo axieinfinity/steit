@@ -5,6 +5,11 @@ pub const WIRE_TYPE_SIZED: u8 = 2;
 
 pub trait WireType {
     const WIRE_TYPE: u8;
+
+    #[inline]
+    fn wire_type(&self) -> u8 {
+        Self::WIRE_TYPE
+    }
 }
 
 impl<T: Varint> WireType for T {
@@ -12,6 +17,13 @@ impl<T: Varint> WireType for T {
 }
 
 #[inline]
-pub fn wire_type<T: WireType>(_: &T) -> u8 {
-    T::WIRE_TYPE
+pub fn key(tag: u16, wire_type: u8) -> u32 {
+    (tag as u32) << 3 | wire_type as u32
+}
+
+#[inline]
+pub fn split_key(key: u32) -> (u16, u8) {
+    let tag = (key >> 3) as u16;
+    let wire_type = (key & 7) as u8;
+    (tag, wire_type)
 }

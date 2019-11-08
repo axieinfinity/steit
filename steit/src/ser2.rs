@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{
     varint,
-    wire_type::{WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
+    wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
 };
 
 pub trait Serialize: WireType {
@@ -11,7 +11,7 @@ pub trait Serialize: WireType {
 
     #[inline]
     fn key(tag: u16) -> u32 {
-        (tag as u32) << 3 | Self::WIRE_TYPE as u32
+        wire_type::key(tag, Self::WIRE_TYPE)
     }
 
     #[inline]
