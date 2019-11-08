@@ -104,51 +104,52 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_ctors(&self) -> TokenStream {
-        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
-
-        self.r#impl.r#impl(quote! {
-            #[inline]
-            pub fn new() -> Self {
-                Default::default()
-            }
-
-            #(#ctors)*
-        })
-    }
-
-    fn impl_default(&self) -> TokenStream {
-        let default = self.variants.iter().find_map(|r#struct| {
+        let default_ctor_name = self.variants.iter().find_map(|r#struct| {
             let variant = r#struct
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
             if variant.tag() == 0 {
-                Some(r#struct.default())
+                Some(r#struct.ctor_name())
             } else {
                 None
             }
         });
 
-        if let Some(default) = default {
-            self.r#impl.impl_for(
-                "Default",
+        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+
+        self.r#impl
+            .r#impl(if let Some(default_ctor_name) = default_ctor_name {
                 quote! {
                     #[inline]
-                    fn default() -> Self {
-                        #default
+                    pub fn new(runtime: Runtime2) -> Self {
+                        Self::#default_ctor_name(runtime)
                     }
-                },
-            )
-        } else {
-            if self.derive == &DeriveKind::Deserialize || self.derive == &DeriveKind::State {
-                self.context.error(
-                    self.r#impl.name(),
-                    "expected a variant with tag 0 as the default variant of this enum",
-                );
-            }
 
-            TokenStream::new()
-        }
+                    #(#ctors)*
+                }
+            } else {
+                if self.derive == &DeriveKind::Deserialize || self.derive == &DeriveKind::State {
+                    self.context.error(
+                        self.r#impl.name(),
+                        "expected a variant with tag 0 as the default variant of this enum",
+                    );
+                }
+
+                quote!(#(#ctors)*)
+            })
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "Default",
+            quote! {
+                #[inline]
+                fn default() -> Self {
+                    Self::new(Default::default())
+                }
+            },
+        )
     }
 
     fn impl_wire_type(&self) -> TokenStream {
@@ -237,7 +238,7 @@ impl<'a> Enum<'a> {
                 #tag => {
                     if let #name #qual { .. } = self {
                     } else {
-                        *self = Self::#ctor_name();
+                        *self = Self::#ctor_name(Default::default());
                     }
 
                     if let #name #qual { #(#destructure,)* .. } = self {

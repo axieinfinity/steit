@@ -340,10 +340,10 @@ mod tests {
         let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
         println!("{:?}", test);
 
-        let foo = TestTest::new_foo();
+        let foo = TestTest::new_foo(Runtime2::new());
         println!("{:?}", foo);
 
-        let bar = TestTest::new_bar();
+        let bar = TestTest::new_bar(Runtime2::new());
         println!("{:?}", bar);
 
         let test_test = TestTest::deserialize(&mut Eof::new(

@@ -154,52 +154,41 @@ impl<'a> Struct<'a> {
         self.variant.as_ref()
     }
 
-    pub fn default(&self) -> TokenStream {
+    pub fn ctor_name(&self) -> syn::Ident {
+        match &self.variant {
+            Some(variant) => variant.ctor_name(),
+            None => format_ident!("new"),
+        }
+    }
+
+    pub fn ctor(&self) -> TokenStream {
+        let ctor_name = self.ctor_name();
+
         let name = self.r#impl.name();
         let qual = self.variant.as_ref().map(|variant| variant.qual());
 
         let mut inits: Vec<_> = map_fields!(self, init).collect();
         inits.push(self.runtime.init());
 
-        quote!(#name #qual { #(#inits,)* })
-    }
-
-    pub fn ctor(&self) -> TokenStream {
-        let name = match &self.variant {
-            Some(variant) => variant.ctor_name(),
-            None => format_ident!("new"),
-        };
-
-        let default = self.default();
-
         quote! {
             #[inline]
-            pub fn #name() -> Self {
-                #default
+            pub fn #ctor_name(runtime: Runtime2) -> Self {
+                #name #qual { #(#inits,)* }
             }
         }
     }
 
     fn impl_ctor(&self) -> TokenStream {
-        // Interestingly this doesn't use the method `ctor` above,
-        // which is only used in `Enum`.
-        self.r#impl.r#impl(quote! {
-            #[inline]
-            pub fn new() -> Self {
-                Default::default()
-            }
-        })
+        self.r#impl.r#impl(self.ctor())
     }
 
     fn impl_default(&self) -> TokenStream {
-        let default = self.default();
-
         self.r#impl.impl_for(
             "Default",
             quote! {
                 #[inline]
                 fn default() -> Self {
-                    #default
+                    Self::new(Default::default())
                 }
             },
         )

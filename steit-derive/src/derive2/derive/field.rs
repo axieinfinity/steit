@@ -152,7 +152,13 @@ impl Runtime {
     }
 
     pub fn init(&self) -> TokenStream {
-        init(self.access(), quote!(Default::default()))
+        let access = self.access();
+
+        if &access.to_string() != "runtime" {
+            init(self.access(), quote!(runtime))
+        } else {
+            quote!(runtime)
+        }
     }
 }
 
