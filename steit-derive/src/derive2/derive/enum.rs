@@ -18,6 +18,8 @@ macro_rules! map_fields {
 }
 
 pub struct Enum<'a> {
+    derive: &'a DeriveKind,
+    context: &'a Context,
     r#impl: &'a Impl<'a>,
     variants: Vec<Struct<'a>>,
 }
@@ -34,8 +36,12 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
-        Self::parse_variants(derive, context, r#impl, &mut data.variants)
-            .map(|variants| Self { r#impl, variants })
+        Self::parse_variants(derive, context, r#impl, &mut data.variants).map(|variants| Self {
+            derive,
+            context,
+            r#impl,
+            variants,
+        })
     }
 
     fn parse_variants(
@@ -94,6 +100,40 @@ impl<'a> Enum<'a> {
             Ok(parsed)
         } else {
             Err(())
+        }
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        let default = self.variants.iter().find_map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected variant"));
+
+            if variant.tag() == 0 {
+                Some(r#struct.default())
+            } else {
+                None
+            }
+        });
+
+        if let Some(default) = default {
+            self.r#impl.impl_for(
+                "Default",
+                quote! {
+                    fn default() -> Self {
+                        #default
+                    }
+                },
+            )
+        } else {
+            if self.derive == &DeriveKind::Deserialize || self.derive == &DeriveKind::State {
+                self.context.error(
+                    self.r#impl.name(),
+                    "expected a variant with tag 0 as the default variant of this enum",
+                );
+            }
+
+            TokenStream::new()
         }
     }
 
@@ -167,6 +207,7 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
     }

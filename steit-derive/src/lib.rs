@@ -33,3 +33,13 @@ pub fn state_old(input: TokenStream) -> TokenStream {
 pub fn serialize(args: TokenStream, input: TokenStream) -> TokenStream {
     derive2::derive(derive2::DeriveKind::Serialize, args, input)
 }
+
+#[proc_macro_attribute]
+pub fn deserialize(args: TokenStream, input: TokenStream) -> TokenStream {
+    derive2::derive(derive2::DeriveKind::Deserialize, args, input)
+}
+
+#[proc_macro_attribute]
+pub fn state(args: TokenStream, input: TokenStream) -> TokenStream {
+    derive2::derive(derive2::DeriveKind::State, args, input)
+}

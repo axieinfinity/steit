@@ -16,10 +16,12 @@ mod variant;
 
 use r#enum::Enum;
 use r#struct::Struct;
+use syn::spanned::Spanned;
 use union::Union;
 
 pub type Result<T> = std::result::Result<T, ()>;
 
+#[derive(PartialEq)]
 pub enum DeriveKind {
     Serialize,
     Deserialize,
@@ -79,7 +81,12 @@ pub fn derive(
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(&derive, &input.ident, attrs.own_crate, output)
+        wrap_in_const(
+            &derive,
+            &input.ident,
+            attrs.own_crate,
+            output.into_token_stream(),
+        )
     };
 
     let derived = quote! {

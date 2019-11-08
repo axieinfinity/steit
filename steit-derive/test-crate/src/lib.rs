@@ -275,7 +275,7 @@ mod tests {
         y: i32,
     }
 
-    #[steit::serialize]
+    #[steit::state]
     #[derive(Debug)]
     enum TestTest {
         #[steit(tag = 27)]
@@ -290,19 +290,8 @@ mod tests {
             #[steit(tag = 5)]
             bar: u16,
         },
-        #[steit(tag = 29)]
+        #[steit(tag = 0)]
         Qux,
-    }
-
-    impl Default for TestTest {
-        #[inline]
-        fn default() -> Self {
-            TestTest::Foo {
-                runtime: Default::default(),
-                foo: Default::default(),
-                test: Default::default(),
-            }
-        }
     }
 
     #[test]
@@ -315,7 +304,7 @@ mod tests {
 
         let mut bytes = Vec::new();
 
-        test.serialize(&mut bytes);
+        test.serialize(&mut bytes).unwrap();
 
         println!("{} {}", test.size(), bytes.len());
         println!("{:?}", bytes);
@@ -328,7 +317,7 @@ mod tests {
 
         let mut bytes = Vec::new();
 
-        test_test.serialize(&mut bytes);
+        test_test.serialize(&mut bytes).unwrap();
 
         println!("{} {}", test_test.size(), bytes.len());
         println!("{:?}", bytes);
@@ -343,15 +332,15 @@ mod tests {
 
         let mut bytes = Vec::new();
 
-        test_test.serialize(&mut bytes);
+        test_test.serialize(&mut bytes).unwrap();
 
         println!("{} {}", test_test.size(), bytes.len());
         println!("{:?}", bytes);
 
-        let test = Test::deserialize(&mut Eof::new(&mut [0, 34, 8, 189, 3].as_ref())).unwrap();
+        let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
         println!("{:?}", test);
 
-        /* let test_test = TestTest::deserialize(&mut [27, 32, 43, 58, 5, 0, 34, 8, 189, 3]).unwrap();
+        /* let test_test = TestTest::deserialize(&mut Eof::new([27, 32, 43, 58, 5, 0, 34, 8, 189, 3].as_ref()).unwrap();
         println!("{:?}", test_test); */
     }
 }
