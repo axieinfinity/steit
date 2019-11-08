@@ -8,6 +8,7 @@ use crate::derive2::{
     ctx::Context,
     derive,
     r#impl::Impl,
+    string,
 };
 
 use super::{
@@ -164,6 +165,33 @@ impl<'a> Struct<'a> {
         quote!(#name #qual { #(#inits,)* })
     }
 
+    pub fn ctor(&self) -> TokenStream {
+        let name = if let Some(variant) = &self.variant {
+            let name = string::to_snake_case(&variant.name().to_string());
+            format_ident!("new_{}", name)
+        } else {
+            format_ident!("new")
+        };
+
+        let default = self.default();
+
+        quote! {
+            pub fn #name() -> Self {
+                #default
+            }
+        }
+    }
+
+    fn impl_ctor(&self) -> TokenStream {
+        // Interestingly this doesn't use the method `ctor` above,
+        // which is only used in `Enum`.
+        self.r#impl.r#impl(quote! {
+            pub fn new() -> Self {
+                Default::default()
+            }
+        })
+    }
+
     fn impl_default(&self) -> TokenStream {
         let default = self.default();
 
@@ -257,6 +285,7 @@ impl<'a> ToTokens for Struct<'a> {
             return;
         }
 
+        tokens.extend(self.impl_ctor());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());

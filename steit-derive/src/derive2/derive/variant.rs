@@ -53,6 +53,10 @@ impl Variant {
         })
     }
 
+    pub fn name(&self) -> &syn::Ident {
+        &self.name
+    }
+
     pub fn tag(&self) -> u16 {
         self.attrs.tag
     }

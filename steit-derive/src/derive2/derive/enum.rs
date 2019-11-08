@@ -103,6 +103,18 @@ impl<'a> Enum<'a> {
         }
     }
 
+    fn impl_ctors(&self) -> TokenStream {
+        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+
+        self.r#impl.r#impl(quote! {
+            pub fn new() -> Self {
+                Default::default()
+            }
+
+            #(#ctors)*
+        })
+    }
+
     fn impl_default(&self) -> TokenStream {
         let default = self.variants.iter().find_map(|r#struct| {
             let variant = r#struct
@@ -207,6 +219,7 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.impl_ctors());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
