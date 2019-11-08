@@ -267,7 +267,7 @@ mod tests {
     } */
 
     #[steit::serialize]
-    #[derive(Default, Debug)]
+    #[derive(Debug)]
     struct Test {
         #[steit(tag = 0)]
         x: i32,

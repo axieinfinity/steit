@@ -96,6 +96,10 @@ impl<'a> Field<'a> {
         }
     }
 
+    pub fn init(&self) -> TokenStream {
+        init(self.access(), quote!(Default::default()))
+    }
+
     pub fn sizer(&self, is_variant: bool) -> TokenStream {
         let tag = self.attrs.tag;
         let field = self.field(is_variant);
@@ -142,6 +146,14 @@ impl Runtime {
             fields.unnamed
         }
     }
+
+    pub fn access(&self) -> TokenStream {
+        access(&self.name, self.index)
+    }
+
+    pub fn init(&self) -> TokenStream {
+        init(self.access(), quote!(Default::default()))
+    }
 }
 
 fn access(name: &Option<syn::Ident>, index: usize) -> TokenStream {
@@ -149,4 +161,8 @@ fn access(name: &Option<syn::Ident>, index: usize) -> TokenStream {
         Some(name) => name.to_token_stream(),
         None => syn::Index::from(index).into_token_stream(),
     }
+}
+
+fn init(access: TokenStream, value: TokenStream) -> TokenStream {
+    quote!(#access: #value)
 }

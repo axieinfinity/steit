@@ -154,6 +154,29 @@ impl<'a> Struct<'a> {
         self.variant.as_ref()
     }
 
+    pub fn default(&self) -> TokenStream {
+        let name = self.r#impl.name();
+        let qual = self.variant.as_ref().map(|variant| variant.qual());
+
+        let mut inits: Vec<_> = map_fields!(self, init).collect();
+        inits.push(self.runtime.init());
+
+        quote!(#name #qual { #(#inits,)* })
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        let default = self.default();
+
+        self.r#impl.impl_for(
+            "Default",
+            quote! {
+                fn default() -> Self {
+                    #default
+                }
+            },
+        )
+    }
+
     fn impl_wire_type(&self) -> TokenStream {
         self.r#impl.impl_for(
             "WireType",
@@ -216,10 +239,7 @@ impl<'a> Struct<'a> {
 
                         match tag {
                             #merger
-
-                            _ => {
-                                de2::exhaust_nested(tag, wire_type, reader)?;
-                            },
+                            _ => { de2::exhaust_nested(tag, wire_type, reader)?; }
                         }
                     }
 
@@ -232,10 +252,12 @@ impl<'a> Struct<'a> {
 
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        // This case is up to `Enum` to handle.
         if self.variant.is_some() {
             return;
         }
 
+        tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
         tokens.extend(self.impl_serialize());
         tokens.extend(self.impl_deserialize());
