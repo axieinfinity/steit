@@ -1,409 +1,316 @@
 use std::collections::HashSet;
 
+use proc_macro2::TokenStream;
+use quote::ToTokens;
+
 use crate::{
-    attr::{Attr, AttrValue},
-    context::Context,
-    util,
+    attr::{Attr, AttrParse},
+    ctx::Context,
+    derive,
+    r#impl::Impl,
 };
 
 use super::{
-    derive::DeriveKind,
-    field::{IndexedField, RuntimeField},
+    field::{Field, Runtime},
+    variant::Variant,
+    DeriveKind,
 };
 
-pub enum Derive<'a> {
-    Serialize,
-    Deserialize,
-    State { runtime: RuntimeField<'a> },
+struct StructAttrs {
+    runtime_renamed: Option<String>,
 }
 
-pub struct Variant<'a> {
-    variant: &'a syn::Variant,
-    tag: u16,
-}
+impl StructAttrs {
+    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
+        let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
-impl<'a> Variant<'a> {
-    pub fn ident(&self) -> &syn::Ident {
-        &self.variant.ident
+        attrs.parse(context, true, &mut |meta| match meta {
+            syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
+            _ => false,
+        });
+
+        Self {
+            runtime_renamed: runtime_renamed.get(),
+        }
     }
-
-    pub fn qual(&self) -> proc_macro2::TokenStream {
-        let ident = self.ident();
-        quote!(::#ident)
-    }
-
-    pub fn tag(&self) -> u16 {
-        self.tag
-    }
-}
-
-pub struct Struct<'a> {
-    input: &'a syn::DeriveInput,
-    variant: Option<Variant<'a>>,
-    derive: Derive<'a>,
-    indexed: Vec<IndexedField<'a>>,
 }
 
 macro_rules! map_fields {
-    ($self:ident, $method:ident) => {
-        $self.indexed.iter().map(|field| field.$method())
+    ($struct:ident, $method:ident) => {
+        $struct.fields.iter().map(|field| field.$method())
     };
 
-    ($self:ident, $method:ident ($($rest:tt)*)) => {
-        $self.indexed.iter().map(|field| field.$method($($rest)*))
+    ($struct:ident, $method:ident ($($rest:tt)*)) => {
+        $struct.fields.iter().map(|field| field.$method($($rest)*))
     };
+}
+
+pub struct Struct<'a> {
+    derive: &'a DeriveKind,
+    context: &'a Context,
+    r#impl: &'a Impl<'a>,
+    fields: Vec<Field<'a>>,
+    runtime: Runtime,
+    variant: Option<Variant>,
 }
 
 impl<'a> Struct<'a> {
     pub fn parse(
-        context: &Context,
-        kind: &'a DeriveKind,
-        input: &'a syn::DeriveInput,
-        object: impl quote::ToTokens,
-        fields: Option<&'a syn::punctuated::Punctuated<syn::Field, syn::Token![,]>>,
-        variant: Option<&'a syn::Variant>,
-    ) -> Result<Self, ()> {
-        let variant = if let Some(variant) = variant {
-            Self::parse_attrs(context, &variant.ident, &variant.attrs).map(|tag| {
-                Some(Variant {
-                    variant,
-                    tag: *tag.get(),
-                })
-            })
-        } else {
-            Ok(None)
-        };
+        derive: &'a DeriveKind,
+        context: &'a Context,
+        r#impl: &'a Impl<'a>,
+        attrs: impl AttrParse,
+        fields: &'a mut syn::Fields,
+        variant: impl Into<Option<Variant>>,
+    ) -> derive::Result<Self> {
+        let attrs = StructAttrs::parse(context, attrs);
 
-        let (runtimes, indexed) = if let Some(fields) = fields {
-            fields
-                .iter()
-                .enumerate()
-                .partition(|&(_index, field)| match type_name(&field.ty) {
-                    Some(ident) if ident == "Runtime" => true,
-                    _ => false,
-                })
-        } else {
-            (Vec::new(), Vec::new())
-        };
-
-        if kind != &DeriveKind::State && runtimes.len() > 0 {
-            context.error(
-                fields.unwrap_or_else(|| unreachable!("expected fields")),
-                "unexpected `Runtime` field, as it's only allowed in #[derive(State)])",
-            );
-        };
-
-        let derive = match kind {
-            DeriveKind::Serialize => Derive::Serialize,
-            DeriveKind::Deserialize => Derive::Deserialize,
-            DeriveKind::State => {
-                if runtimes.len() == 0 {
-                    context.error(object, "expected exactly one `Runtime` field, got none");
-                    return Err(());
-                }
-
-                if runtimes.len() > 1 {
-                    context.error(
-                        fields.unwrap_or_else(|| unreachable!("expected fields")),
-                        "expected exactly one `Runtime` field, got multiple",
-                    );
-                }
-
-                let runtime = runtimes
-                    .first()
-                    .map(|&(index, field)| RuntimeField::new(context, field, index))
-                    .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
-
-                Derive::State { runtime }
+        Self::parse_fields(derive, context, fields).and_then(|parsed| {
+            if let syn::Fields::Unit = fields {
+                *fields = syn::Fields::Named(syn::parse_quote!({}));
             }
-        };
 
-        Self::parse_indexed(context, kind, indexed).and_then(|indexed| {
-            variant.map(|variant| Self {
-                input,
-                variant,
+            let runtime = match fields {
+                syn::Fields::Named(fields) => {
+                    let name = attrs.runtime_renamed.unwrap_or("runtime".to_owned());
+                    let name = format_ident!("{}", name);
+                    let runtime = Runtime::new(name, parsed.len());
+                    fields.named.extend(runtime.declare());
+                    runtime
+                }
+
+                syn::Fields::Unnamed(fields) => {
+                    if let Some(runtime_renamed) = attrs.runtime_renamed {
+                        context.error(
+                            &fields,
+                            format!(
+                                "unexpected {} on unnamed fields",
+                                format!("#[steit(runtime_renamed = {:?})]", runtime_renamed),
+                            ),
+                        );
+                    }
+
+                    let runtime = Runtime::new(None, parsed.len());
+                    fields.unnamed.extend(runtime.declare());
+                    runtime
+                }
+
+                syn::Fields::Unit => unreachable!("unexpected unit fields"),
+            };
+
+            Ok(Self {
                 derive,
-                indexed,
+                context,
+                r#impl,
+                fields: parsed,
+                runtime,
+                variant: variant.into(),
             })
         })
     }
 
-    fn parse_attrs(
+    fn parse_fields(
+        derive: &'a DeriveKind,
         context: &Context,
-        variant: &syn::Ident,
-        attrs: &[syn::Attribute],
-    ) -> Result<(AttrValue<u16>), ()> {
-        let mut tag_attr = Attr::new(context, "tag");
-        let mut tag_encountered = false;
+        fields: &mut syn::Fields,
+    ) -> derive::Result<Vec<Field<'a>>> {
+        let len = fields.iter().len();
+        let mut parsed = Vec::with_capacity(len);
 
-        for item in attrs
-            .iter()
-            .flat_map(|attr| util::get_steit_meta_items(context, attr))
-            .flatten()
-        {
-            match &item {
-                syn::NestedMeta::Meta(syn::Meta::NameValue(item)) if item.path.is_ident("tag") => {
-                    tag_encountered = true;
-
-                    if let Ok(lit) = util::get_lit_int(context, "tag", &item.lit) {
-                        if let Ok(tag) = lit.base10_parse() {
-                            tag_attr.set(lit, tag);
-                        } else {
-                            context.error(lit, format!("unable to parse #[steit(tag = {})]", lit));
-                        }
-                    }
-                }
-
-                syn::NestedMeta::Meta(item) => {
-                    let path = item.path();
-                    let path = quote!(#path).to_string().replace(' ', "");
-                    context.error(item.path(), format!("unknown steit attribute `{}`", path));
-                }
-
-                syn::NestedMeta::Lit(lit) => {
-                    context.error(lit, "unexpected literal in steit attributes");
-                }
+        for (index, field) in fields.iter_mut().enumerate() {
+            if let Ok(field) = Field::parse(derive, context, field, index) {
+                parsed.push(field);
             }
         }
 
-        if let Some(tag) = tag_attr.value() {
-            Ok(tag)
-        } else {
-            if !tag_encountered {
-                context.error(variant, "expected a `tag` attribute #[steit(tag = ...)]");
-            }
-
-            Err(())
-        }
-    }
-
-    fn parse_indexed(
-        context: &Context,
-        kind: &'a DeriveKind,
-        indexed: Vec<(usize, &'a syn::Field)>,
-    ) -> Result<Vec<IndexedField<'a>>, ()> {
-        let mut result = Vec::with_capacity(indexed.len());
-
-        for (index, field) in &indexed {
-            if let Ok(field) = IndexedField::parse(context, kind, field, *index) {
-                result.push(field);
-            }
-        }
-
-        if result.len() != indexed.len() {
+        if parsed.len() != len {
             return Err(());
         }
 
         let mut tags = HashSet::new();
         let mut unique = true;
 
-        for field in &result {
-            let tag = field.tag();
+        for field in &parsed {
+            let (tag, tokens) = field.tag_with_tokens();
 
-            if !tags.insert(*tag.get()) {
-                context.error(tag, "duplicate tag");
+            if !tags.insert(tag) {
+                context.error(tokens, "duplicate tag");
                 unique = false;
             }
         }
 
         if unique {
-            Ok(result)
+            Ok(parsed)
         } else {
             Err(())
         }
+    }
+
+    pub fn fields(&self) -> &[Field<'a>] {
+        &self.fields
+    }
+
+    pub fn runtime(&self) -> &Runtime {
+        &self.runtime
     }
 
     pub fn variant(&self) -> Option<&Variant> {
         self.variant.as_ref()
     }
 
-    pub fn runtime(&self) -> Option<&RuntimeField<'_>> {
-        if let Derive::State { runtime } = &self.derive {
-            Some(runtime)
-        } else {
-            None
+    pub fn ctor_name(&self) -> syn::Ident {
+        match &self.variant {
+            Some(variant) => variant.ctor_name(),
+            None => format_ident!("new"),
         }
     }
 
-    pub fn indexed(&self) -> &Vec<IndexedField<'_>> {
-        &self.indexed
-    }
+    pub fn ctor(&self) -> TokenStream {
+        let ctor_name = self.ctor_name();
+        let name = self.r#impl.name();
 
-    pub fn get_ctor_and_setters(&self) -> Option<proc_macro2::TokenStream> {
-        match self.derive {
-            Derive::State { .. } | Derive::Deserialize => {
-                let name = &self.input.ident;
-                let (impl_generics, ty_generics, where_clause) =
-                    self.input.generics.split_for_impl();
+        let qual = self.variant.as_ref().map(|variant| variant.qual());
+        let runtime = self.variant.as_ref().map(|variant| {
+            let tag = variant.tag();
+            quote! { let runtime = runtime.nested(#tag); }
+        });
 
-                let (new, doc) = match &self.variant {
-                    Some(variant) => (
-                        format_ident!("new_{}", util::to_snake_case(&variant.ident().to_string())),
-                        format!("Constructs a new `{}::{}`.", name, variant.ident()),
-                    ),
-                    None => (
-                        format_ident!("new"),
-                        format!("Constructs a new `{}`.", name),
-                    ),
-                };
+        let mut inits: Vec<_> = map_fields!(self, init).collect();
+        inits.push(self.runtime.init());
 
-                let args = self.get_ctor_args();
-                let qual = self.variant().map(|variant| variant.qual());
-                let inits = self.get_inits();
-
-                let setters: Vec<_> = if let Derive::State { .. } = self.derive {
-                    self.get_setters()
-                } else {
-                    Vec::new()
-                };
-
-                Some(quote! {
-                    impl #impl_generics #name #ty_generics #where_clause {
-                        #[doc = #doc]
-                        pub fn #new(#(#args),*) -> Self {
-                            #name #qual { #(#inits,)* }
-                        }
-
-                        #(#setters)*
-                    }
-                })
+        quote! {
+            #[inline]
+            pub fn #ctor_name(runtime: Runtime) -> Self {
+                #runtime
+                #name #qual { #(#inits,)* }
             }
-
-            Derive::Serialize => None,
         }
     }
 
-    pub fn get_sizer_and_serializer(
-        &self,
-    ) -> Option<(proc_macro2::TokenStream, proc_macro2::TokenStream)> {
-        match self.derive {
-            Derive::State { .. } | Derive::Serialize => {
-                let is_variant = self.variant.is_some();
-                let sizers = map_fields!(self, get_sizer(is_variant));
-                let serializers = map_fields!(self, get_serializer(is_variant));
-                Some((quote!(#(#sizers)*), quote!(#(#serializers)*)))
+    fn impl_ctor(&self) -> TokenStream {
+        self.r#impl.r#impl(self.ctor())
+    }
+
+    fn impl_runtimed(&self) -> TokenStream {
+        let runtime = self.runtime.access();
+
+        self.r#impl.r#impl_for(
+            "Runtimed",
+            quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                #[inline]
+                fn runtime(&self) -> &Runtime {
+                    &self.#runtime
+                }
+            },
+        )
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "Default",
+            quote! {
+                #[inline]
+                fn default() -> Self {
+                    Self::new(Default::default())
+                }
+            },
+        )
+    }
+
+    fn impl_wire_type(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "WireType",
+            quote! {
+                const WIRE_TYPE: u8 = 2;
+            },
+        )
+    }
+
+    pub fn sizer(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let sizers = map_fields!(self, sizer(is_variant));
+        quote!(#(#sizers)*)
+    }
+
+    pub fn serializer(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let serializers = map_fields!(self, serializer(is_variant));
+        quote!(#(#serializers)*)
+    }
+
+    fn impl_serialize(&self) -> TokenStream {
+        let sizer = self.sizer();
+        let serializer = self.serializer();
+
+        self.r#impl.impl_for(
+            "Serialize",
+            quote! {
+                fn size(&self) -> u32 {
+                    // self.runtime().get_or_set_cached_size_from(|| {
+                        let mut size = 0;
+                        #sizer
+                        size
+                    // })
+                }
+
+                fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                    #serializer
+                    Ok(())
+                }
+            },
+        )
+    }
+
+    pub fn merger(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let mergers = map_fields!(self, merger(is_variant));
+
+        quote! {
+            while !reader.eof()? {
+                // TODO: Remove `as Deserialize` after refactoring `Varint`
+                let key = <u32 as Deserialize>::deserialize(reader)?;
+                let (tag, wire_type) = wire_type::split_key(key);
+
+                match tag {
+                    #(#mergers)*
+                    _ => { de2::exhaust_nested(tag, wire_type, reader)?; }
+                }
             }
-
-            Derive::Deserialize => None,
         }
     }
 
-    pub fn get_deserializer(&self) -> Option<proc_macro2::TokenStream> {
-        match self.derive {
-            Derive::State { .. } | Derive::Deserialize => {
-                let deserializers = map_fields!(self, get_deserializer(self.variant.is_some()));
+    fn impl_deserialize(&self) -> TokenStream {
+        let merger = self.merger();
 
-                Some(quote! {
-                    while !reader.eof()? {
-                        let key: u32 = varint::deserialize(reader)?;
-                        let tag = (key >> 3) as u16;
-                        let wire_type = (key & 7) as u8;
-
-                        match tag {
-                            #(#deserializers,)*
-
-                            _ => match wire_type {
-                                0 => {
-                                    // Other than `u8`, any int type will do
-                                    // since we deserialize just to ignore the whole varint.
-                                    let _: u8 = varint::deserialize(reader)?;
-                                }
-
-                                2 | 6 => {
-                                    let size = varint::deserialize(reader)?;
-                                    let mut buf = Vec::new();
-
-                                    reader
-                                        .by_ref()
-                                        .take(size)
-                                        .read_to_end(&mut buf)?;
-                                }
-
-                                _ => {
-                                    return Err(io::Error::new(
-                                        io::ErrorKind::InvalidData,
-                                        format!("unexpected tag {} or wire type {}", tag, wire_type),
-                                    ));
-                                }
-                            },
-                        }
-                    }
-                })
-            }
-
-            Derive::Serialize => None,
-        }
-    }
-
-    pub fn get_log_processor(&self) -> Option<proc_macro2::TokenStream> {
-        match self.derive {
-            Derive::State { .. } => {
-                let log_processors = map_fields!(self, get_log_processor(self.variant.is_some()));
-
-                Some(quote! {
-                    if let Some(tag) = path.next() {
-                        match tag {
-                            #(#log_processors,)*
-
-                            _ => Err(io::Error::new(
-                                io::ErrorKind::InvalidData,
-                                format!("unexpected tag {}", tag),
-                            )),
-                        }
-                    } else {
-                        match kind {
-                            RawEntryKind::Update => self.deserialize(reader),
-
-                            RawEntryKind::Add => Err(io::Error::new(
-                                io::ErrorKind::InvalidData,
-                                format!("`add` is not supported for structs and variants"),
-                            )),
-
-                            RawEntryKind::Remove => Err(io::Error::new(
-                                io::ErrorKind::InvalidData,
-                                format!("`remove` is not supported for structs and variants"),
-                            )),
-                        }
-                    }
-                })
-            }
-
-            Derive::Serialize | Derive::Deserialize => None,
-        }
-    }
-
-    fn get_ctor_args(&self) -> Vec<proc_macro2::TokenStream> {
-        if let Derive::State { runtime } = &self.derive {
-            vec![runtime.get_arg()]
-        } else {
-            Vec::new()
-        }
-    }
-
-    fn get_inits(&self) -> Vec<proc_macro2::TokenStream> {
-        let mut inits: Vec<_> = map_fields!(self, get_init).collect();
-
-        if let Derive::State { runtime } = &self.derive {
-            inits.push(runtime.get_init(self.variant.as_ref().map(|variant| variant.tag)));
-        }
-
-        inits
-    }
-
-    fn get_setters(&self) -> Vec<proc_macro2::TokenStream> {
-        if let Derive::State { .. } = &self.derive {
-            map_fields!(self, get_setter(&self.input.ident, self.variant.as_ref())).collect()
-        } else {
-            Vec::new()
-        }
+        self.r#impl.impl_for(
+            "Deserialize",
+            quote! {
+                fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+                    #merger
+                    Ok(())
+                }
+            },
+        )
     }
 }
 
-fn type_name(ty: &syn::Type) -> Option<&syn::Ident> {
-    match ty {
-        syn::Type::Path(syn::TypePath { path, .. }) => {
-            path.segments.last().map(|segment| &segment.ident)
+impl<'a> ToTokens for Struct<'a> {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        // This case is up to `Enum` to handle.
+        if self.variant.is_some() {
+            panic!("unexpected variant");
         }
-        _ => None,
+
+        // tokens.extend(self.impl_ctor());
+        // tokens.extend(self.impl_default());
+        tokens.extend(self.impl_wire_type());
+        // tokens.extend(self.impl_runtimed());
+        tokens.extend(self.impl_serialize());
+        // tokens.extend(self.impl_deserialize());
     }
 }

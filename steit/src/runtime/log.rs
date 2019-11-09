@@ -1,43 +1,75 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{Deserialize, Serialize};
+use crate::{Runtime, Serialize};
 
-use super::path::Path;
-
-#[derive(Serialize)]
-#[steit(own_crate)]
+#[crate::serialize(own_crate)]
 pub enum EntryKind<'a, T: Serialize> {
     #[steit(tag = 0)]
-    Update(#[steit(tag = 0)] &'a T),
-
+    Update {
+        #[steit(tag = 0)]
+        value: &'a T,
+    },
     #[steit(tag = 1)]
-    Add(#[steit(tag = 0)] &'a T),
-
+    Add {
+        #[steit(tag = 0)]
+        item: &'a T,
+    },
     #[steit(tag = 2)]
     Remove,
 }
 
-#[derive(Serialize)]
-#[steit(own_crate)]
+#[crate::serialize(own_crate)]
 pub struct Entry<'a, T: Serialize> {
     #[steit(tag = 0)]
-    path: &'a Path,
+    path: &'a Runtime,
     #[steit(tag = 1)]
     kind: EntryKind<'a, T>,
 }
 
 impl<'a, T: Serialize> Entry<'a, T> {
-    pub fn new(path: &'a Path, kind: EntryKind<'a, T>) -> Self {
-        Self { path, kind }
+    #[inline]
+    pub fn new_update(path: &'a Runtime, value: &'a T) -> Self {
+        Self {
+            runtime: Runtime::new(),
+            path,
+            kind: EntryKind::Update {
+                runtime: Runtime::new(),
+                value,
+            },
+        }
+    }
+
+    #[inline]
+    pub fn new_add(path: &'a Runtime, item: &'a T) -> Self {
+        Self {
+            runtime: Runtime::new(),
+            path,
+            kind: EntryKind::Add {
+                runtime: Runtime::new(),
+                item,
+            },
+        }
+    }
+
+    #[inline]
+    pub fn new_remove(path: &'a Runtime) -> Self {
+        Self {
+            runtime: Runtime::new(),
+            path,
+            kind: EntryKind::Remove {
+                runtime: Runtime::new(),
+            },
+        }
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Default, Debug)]
 pub struct Logger {
     buf: Rc<RefCell<Vec<u8>>>,
 }
 
 impl Logger {
+    #[inline]
     pub fn new() -> Self {
         Logger {
             buf: Rc::new(RefCell::new(Vec::new())),
@@ -52,35 +84,4 @@ impl Logger {
         self.buf.borrow_mut().clear();
         Ok(())
     }
-}
-
-#[derive(Deserialize)]
-#[steit(own_crate)]
-pub enum RawEntryKind {
-    #[steit(tag = 0)]
-    Update,
-    #[steit(tag = 1)]
-    Add,
-    #[steit(tag = 2)]
-    Remove,
-}
-
-impl RawEntryKind {
-    pub fn new() -> Self {
-        Self::new_update()
-    }
-
-    #[inline]
-    pub fn wire_type(&self) -> u8 {
-        6
-    }
-}
-
-#[derive(Deserialize)]
-#[steit(own_crate)]
-pub struct RawEntry {
-    #[steit(tag = 0)]
-    path: Vec<u16>,
-    #[steit(tag = 1)]
-    kind: RawEntryKind,
 }

@@ -1,8 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use std::fmt;
-
-    use steit::{Deserialize2, Eof, RawEntryKind, Runtime, Runtime2, Serialize2, State};
+    use steit::{Deserialize, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -323,7 +321,7 @@ mod tests {
     #[test]
     fn test2() {
         let test = Test {
-            runtime: Runtime2::new(),
+            runtime: Runtime::new(),
             x: 17,
             y: -223,
         };
@@ -337,7 +335,7 @@ mod tests {
         println!("check size {:#?}", test);
 
         let mut test_test = TestTest::Foo {
-            runtime: Runtime2::new(),
+            runtime: Runtime::new(),
             foo: -22,
             test,
         };
@@ -379,10 +377,10 @@ mod tests {
         let default = TestTest::default();
         println!("{:#?}", default);
 
-        let foo = TestTest::new_foo(Runtime2::new());
+        let foo = TestTest::new_foo(Runtime::new());
         println!("{:#?}", foo);
 
-        let bar = TestTest::new_bar(Runtime2::new());
+        let bar = TestTest::new_bar(Runtime::new());
         println!("{:#?}", bar);
 
         let test_test = TestTest::deserialize(&mut Eof::new(
@@ -391,7 +389,7 @@ mod tests {
         .unwrap();
         println!("{:#?}", test_test);
 
-        let hello = Hello::new(Runtime2::new());
+        let hello = Hello::new(Runtime::new());
         println!("{:#?}", hello);
 
         let mut bytes = Vec::new();

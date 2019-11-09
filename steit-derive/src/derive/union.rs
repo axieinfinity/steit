@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::derive2::{ctx::Context, derive, r#impl::Impl};
+use crate::{ctx::Context, derive, r#impl::Impl};
 
 use super::DeriveKind;
 

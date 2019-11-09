@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::derive2::{ctx::Context, derive, r#impl::Impl};
+use crate::{ctx::Context, derive, r#impl::Impl};
 
 use super::{r#struct::Struct, variant::Variant, DeriveKind};
 
@@ -122,7 +122,7 @@ impl<'a> Enum<'a> {
             .r#impl(if let Some(default_ctor_name) = default_ctor_name {
                 quote! {
                     #[inline]
-                    pub fn new(runtime: Runtime2) -> Self {
+                    pub fn new(runtime: Runtime) -> Self {
                         Self::#default_ctor_name(runtime)
                     }
 
@@ -159,11 +159,11 @@ impl<'a> Enum<'a> {
             "Runtimed",
             quote! {
                 #[inline]
-                fn with_runtime(runtime: Runtime2) -> Self {
+                fn with_runtime(runtime: Runtime) -> Self {
                     Self::new(runtime)
                 }
 
-                fn runtime(&self) -> &Runtime2 {
+                fn runtime(&self) -> &Runtime {
                     match self { #(#runtimes,)*}
                 }
             },
@@ -233,7 +233,7 @@ impl<'a> Enum<'a> {
         });
 
         self.r#impl.impl_for(
-            "Serialize2",
+            "Serialize",
             quote! {
                 fn size(&self) -> u32 {
                     // self.runtime().get_or_set_cached_size_from(|| {
@@ -281,11 +281,11 @@ impl<'a> Enum<'a> {
         });
 
         self.r#impl.impl_for(
-            "Deserialize2",
+            "Deserialize",
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     // TODO: Remove `as Deserialize` after refactoring `Varint`
-                    let tag = <u16 as Deserialize2>::deserialize(reader)?;
+                    let tag = <u16 as Deserialize>::deserialize(reader)?;
 
                     match tag {
                         #(#mergers)*

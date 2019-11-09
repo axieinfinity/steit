@@ -2,7 +2,7 @@ use std::{io, rc::Rc};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Serialize2,
+    Serialize,
 };
 
 use super::cached_size::CachedSize;
@@ -79,7 +79,7 @@ impl<Child, Root> WireType for Node<Child, Root> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<Child: Serialize2, Root: Serialize2> Serialize2 for Node<Child, Root> {
+impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
     fn size(&self) -> u32 {
         match self {
             Node::Root { inner } => inner

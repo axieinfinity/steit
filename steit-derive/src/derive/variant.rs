@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 
-use crate::derive2::{
+use crate::{
     attr::{Attr, AttrParse},
     ctx::Context,
     derive, string,
