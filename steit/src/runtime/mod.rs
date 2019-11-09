@@ -11,4 +11,4 @@ mod log2;
 mod node;
 mod runtime2;
 
-pub use runtime2::Runtime as Runtime2;
+pub use runtime2::{Runtime as Runtime2, Runtimed};

@@ -140,7 +140,7 @@ impl<'a> Enum<'a> {
             })
     }
 
-    fn impl_runtime(&self) -> TokenStream {
+    fn impl_runtimed(&self) -> TokenStream {
         let name = self.r#impl.name();
 
         let runtimes = self.variants.iter().map(|r#struct| {
@@ -155,11 +155,19 @@ impl<'a> Enum<'a> {
             quote!(#name #qual { #destructure, .. } => runtime)
         });
 
-        self.r#impl.r#impl(quote! {
-            fn runtime(&self) -> &Runtime2 {
-                match self { #(#runtimes,)*}
-            }
-        })
+        self.r#impl.r#impl_for(
+            "Runtimed",
+            quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime2) -> Self {
+                    Self::new(runtime)
+                }
+
+                fn runtime(&self) -> &Runtime2 {
+                    match self { #(#runtimes,)*}
+                }
+            },
+        )
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -228,11 +236,11 @@ impl<'a> Enum<'a> {
             "Serialize2",
             quote! {
                 fn size(&self) -> u32 {
-                    self.runtime().get_or_set_cached_size_from(|| {
+                    // self.runtime().get_or_set_cached_size_from(|| {
                         let mut size = 0;
                         match self { #(#sizers)* }
                         size
-                    })
+                    // })
                 }
 
                 fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
@@ -275,11 +283,6 @@ impl<'a> Enum<'a> {
         self.r#impl.impl_for(
             "Deserialize2",
             quote! {
-                #[inline]
-                fn with_runtime(runtime: Runtime2) -> Self {
-                    Self::new(runtime)
-                }
-
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     // TODO: Remove `as Deserialize` after refactoring `Varint`
                     let tag = <u16 as Deserialize2>::deserialize(reader)?;
@@ -305,9 +308,9 @@ impl<'a> Enum<'a> {
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         // tokens.extend(self.impl_ctors());
-        tokens.extend(self.impl_runtime());
         // tokens.extend(self.impl_default());
         tokens.extend(self.impl_wire_type());
+        // tokens.extend(self.impl_runtimed());
         tokens.extend(self.impl_serialize());
         // tokens.extend(self.impl_deserialize());
     }

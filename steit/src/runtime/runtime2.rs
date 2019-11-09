@@ -3,6 +3,7 @@ use std::{io, ops, rc::Rc};
 use iowrap::Eof;
 
 use crate::{
+    varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
     Deserialize2, Serialize2,
 };
@@ -182,6 +183,24 @@ impl Serialize2 for Runtime {
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.node.serialize(writer)
+    }
+}
+
+pub trait Runtimed {
+    fn with_runtime(runtime: Runtime) -> Self;
+    fn runtime(&self) -> &Runtime;
+}
+
+// TODO: Remove `varint::` after refactoring `Varint`
+impl<T: Default + varint::Varint> Runtimed for T {
+    #[inline]
+    fn with_runtime(_runtime: Runtime) -> Self {
+        Default::default()
+    }
+
+    #[inline]
+    fn runtime(&self) -> &Runtime {
+        panic!("cannot get a `Runtime` from a varint")
     }
 }
 

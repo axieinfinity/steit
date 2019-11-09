@@ -73,7 +73,7 @@ impl<'a> Field<'a> {
 
         init(
             self.access(),
-            quote!(Deserialize2::with_runtime(runtime.nested(#tag))),
+            quote!(Runtimed::with_runtime(runtime.nested(#tag))),
         )
     }
 
