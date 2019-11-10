@@ -134,7 +134,7 @@ impl<'a> Enum<'a> {
                     #(#ctors)*
                 }
             } else {
-                if self.setting.deserialize {
+                if self.setting.default(true) {
                     self.context.error(
                         self.r#impl.name(),
                         "expected a variant with tag 0 as the default variant of this enum",
