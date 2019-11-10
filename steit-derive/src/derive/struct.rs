@@ -17,7 +17,7 @@ use super::{
 };
 
 struct StructAttrs {
-    runtime_renamed: Option<String>,
+    runtime_renamed: Option<(String, TokenStream)>,
 }
 
 impl StructAttrs {
@@ -30,7 +30,7 @@ impl StructAttrs {
         });
 
         Self {
-            runtime_renamed: runtime_renamed.get(),
+            runtime_renamed: runtime_renamed.get_with_tokens(),
         }
     }
 }
@@ -50,7 +50,7 @@ pub struct Struct<'a> {
     context: &'a Context,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
-    runtime: Runtime,
+    runtime: Option<Runtime>,
     variant: Option<Variant>,
 }
 
@@ -66,36 +66,51 @@ impl<'a> Struct<'a> {
         let attrs = StructAttrs::parse(context, attrs);
 
         Self::parse_fields(setting, context, fields).and_then(|parsed| {
-            if let syn::Fields::Unit = fields {
-                *fields = syn::Fields::Named(syn::parse_quote!({}));
-            }
-
-            let runtime = match fields {
-                syn::Fields::Named(fields) => {
-                    let name = attrs.runtime_renamed.unwrap_or("runtime".to_owned());
-                    let name = format_ident!("{}", name);
-                    let runtime = Runtime::new(name, parsed.len());
-                    fields.named.extend(runtime.declare());
-                    runtime
+            let runtime = if !setting.no_runtime {
+                if let syn::Fields::Unit = fields {
+                    *fields = syn::Fields::Named(syn::parse_quote!({}));
                 }
 
-                syn::Fields::Unnamed(fields) => {
-                    if let Some(runtime_renamed) = attrs.runtime_renamed {
-                        context.error(
-                            &fields,
-                            format!(
-                                "unexpected {} on unnamed fields",
-                                format!("#[steit(runtime_renamed = {:?})]", runtime_renamed),
-                            ),
-                        );
+                Some(match fields {
+                    syn::Fields::Named(fields) => {
+                        let name = match attrs.runtime_renamed {
+                            Some((runtime_renamed, _)) => runtime_renamed,
+                            None => "runtime".to_owned(),
+                        };
+
+                        let name = format_ident!("{}", name);
+                        let runtime = Runtime::new(name, parsed.len());
+                        fields.named.extend(runtime.declare());
+                        runtime
                     }
 
-                    let runtime = Runtime::new(None, parsed.len());
-                    fields.unnamed.extend(runtime.declare());
-                    runtime
+                    syn::Fields::Unnamed(fields) => {
+                        if let Some((runtime_renamed, _)) = attrs.runtime_renamed {
+                            context.error(
+                                &fields,
+                                format!(
+                                    "unexpected {} on unnamed fields",
+                                    format!("#[steit(runtime_renamed = {:?})]", runtime_renamed),
+                                ),
+                            );
+                        }
+
+                        let runtime = Runtime::new(None, parsed.len());
+                        fields.unnamed.extend(runtime.declare());
+                        runtime
+                    }
+
+                    syn::Fields::Unit => unreachable!("unexpected unit fields"),
+                })
+            } else {
+                if let Some((_, runtime_renamed_tokens)) = attrs.runtime_renamed {
+                    context.error(
+                        runtime_renamed_tokens,
+                        "this has no effect because #[steit(no_runtime)] is set",
+                    );
                 }
 
-                syn::Fields::Unit => unreachable!("unexpected unit fields"),
+                None
             };
 
             Ok(Self {
@@ -150,8 +165,8 @@ impl<'a> Struct<'a> {
         &self.fields
     }
 
-    pub fn runtime(&self) -> &Runtime {
-        &self.runtime
+    pub fn runtime(&self) -> Option<&Runtime> {
+        self.runtime.as_ref()
     }
 
     pub fn variant(&self) -> Option<&Variant> {
@@ -170,17 +185,27 @@ impl<'a> Struct<'a> {
         let name = self.r#impl.name();
 
         let qual = self.variant.as_ref().map(|variant| variant.qual());
-        let runtime = self.variant.as_ref().map(|variant| {
-            let tag = variant.tag();
-            quote! { let runtime = runtime.nested(#tag); }
-        });
-
         let mut inits: Vec<_> = map_fields!(self, init).collect();
-        inits.push(self.runtime.init());
+
+        let (arg, runtime) = match &self.runtime {
+            Some(runtime) => {
+                inits.push(runtime.init());
+
+                (
+                    quote!(runtime: Runtime),
+                    self.variant.as_ref().map(|variant| {
+                        let tag = variant.tag();
+                        quote! { let runtime = runtime.nested(#tag); }
+                    }),
+                )
+            }
+
+            None => (quote!(), None),
+        };
 
         quote! {
             #[inline]
-            pub fn #ctor_name(runtime: Runtime) -> Self {
+            pub fn #ctor_name(#arg) -> Self {
                 #runtime
                 #name #qual { #(#inits,)* }
             }
@@ -192,7 +217,11 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_runtimed(&self) -> TokenStream {
-        let runtime = self.runtime.access();
+        let runtime = self
+            .runtime
+            .as_ref()
+            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
+            .access();
 
         self.r#impl.r#impl_for(
             "Runtimed",
@@ -211,12 +240,14 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
+        let arg = self.runtime.as_ref().map(|_| quote!(Default::default()));
+
         self.r#impl.impl_for(
             "Default",
             quote! {
                 #[inline]
                 fn default() -> Self {
-                    Self::new(Default::default())
+                    Self::new(#arg)
                 }
             },
         )
@@ -306,7 +337,7 @@ impl<'a> ToTokens for Struct<'a> {
             panic!("unexpected variant");
         }
 
-        if self.setting.ctors() {
+        if self.setting.ctors(false) {
             tokens.extend(self.impl_ctor());
         }
 
@@ -314,7 +345,7 @@ impl<'a> ToTokens for Struct<'a> {
             // tokens.extend(self.impl_setters());
         }
 
-        if self.setting.default() {
+        if self.setting.default(false) {
             tokens.extend(self.impl_default());
         }
 

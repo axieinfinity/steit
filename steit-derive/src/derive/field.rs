@@ -71,10 +71,12 @@ impl<'a> Field<'a> {
     pub fn init(&self) -> TokenStream {
         let tag = self.tag();
 
-        init(
-            self.access(),
-            quote!(Runtimed::with_runtime(runtime.nested(#tag))),
-        )
+        let value = match self.setting.no_runtime {
+            false => quote!(Runtimed::with_runtime(runtime.nested(#tag))),
+            true => quote!(Default::default()),
+        };
+
+        init(self.access(), value)
     }
 
     pub fn alias(&self) -> TokenStream {
@@ -143,7 +145,7 @@ impl Runtime {
     }
 
     pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
-        if let Some(ref name) = self.name {
+        if let Some(name) = &self.name {
             let fields: syn::FieldsNamed = syn::parse_quote!({ #name: Runtime });
             fields.named
         } else {

@@ -2,7 +2,7 @@ use std::{cell::RefCell, io, rc::Rc};
 
 use crate::{Runtime, Serialize};
 
-#[crate::steitize(Serialize, own_crate)]
+#[crate::steitize(Serialize, own_crate, no_runtime)]
 pub enum EntryKind<'a, T: Serialize> {
     #[steit(tag = 0)]
     Update {
@@ -18,7 +18,7 @@ pub enum EntryKind<'a, T: Serialize> {
     Remove,
 }
 
-#[crate::steitize(Serialize, own_crate)]
+#[crate::steitize(Serialize, own_crate, no_runtime)]
 pub struct Entry<'a, T: Serialize> {
     #[steit(tag = 0)]
     path: &'a Runtime,
@@ -28,38 +28,8 @@ pub struct Entry<'a, T: Serialize> {
 
 impl<'a, T: Serialize> Entry<'a, T> {
     #[inline]
-    pub fn new_update(path: &'a Runtime, value: &'a T) -> Self {
-        Self {
-            runtime: Runtime::new(),
-            path,
-            kind: EntryKind::Update {
-                runtime: Runtime::new(),
-                value,
-            },
-        }
-    }
-
-    #[inline]
-    pub fn new_add(path: &'a Runtime, item: &'a T) -> Self {
-        Self {
-            runtime: Runtime::new(),
-            path,
-            kind: EntryKind::Add {
-                runtime: Runtime::new(),
-                item,
-            },
-        }
-    }
-
-    #[inline]
-    pub fn new_remove(path: &'a Runtime) -> Self {
-        Self {
-            runtime: Runtime::new(),
-            path,
-            kind: EntryKind::Remove {
-                runtime: Runtime::new(),
-            },
-        }
+    pub fn new(path: &'a Runtime, kind: EntryKind<'a, T>) -> Self {
+        Self { path, kind }
     }
 }
 

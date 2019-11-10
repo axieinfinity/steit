@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use steit::{steitize, Deserialize, Runtime, Serialize, State};
+    use steit::{steitize, Deserialize, Eof, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -348,12 +348,7 @@ mod tests {
         println!("{:?}", bytes);
         println!("check size {:#?}", test_test);
 
-        if let TestTest::Foo {
-            ref mut test,
-            ref runtime,
-            ..
-        } = test_test
-        {
+        if let TestTest::Foo { test, runtime, .. } = &mut test_test {
             test.runtime.clear_cached_size();
 
             *test = Test {
@@ -371,7 +366,7 @@ mod tests {
         println!("{:?}", bytes);
         println!("check size {:#?}", test_test);
 
-        /* let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
+        let test = Test::deserialize(&mut Eof::new([0, 34, 8, 189, 3].as_ref())).unwrap();
         println!("{:#?}", test);
 
         let default = TestTest::default();
@@ -398,6 +393,6 @@ mod tests {
 
         println!("{} {}", hello.size(), bytes.len());
         println!("{:?}", bytes);
-        println!("check size {:#?}", hello); */
+        println!("check size {:#?}", hello);
     }
 }

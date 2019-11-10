@@ -6,6 +6,7 @@ use super::{
     log::{Entry, Logger},
     node::Node,
 };
+use crate::rt::log::EntryKind;
 
 #[derive(Default, Debug)]
 pub struct Runtime {
@@ -38,23 +39,25 @@ impl Runtime {
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new_update(&self.nested(tag), value))
+            .log_entry(Entry::new(&self.nested(tag), EntryKind::Update { value }))
     }
 
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(Entry::new_update(self, value))
+        self.logger
+            .log_entry(Entry::new(self, EntryKind::Update { value }))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(Entry::new_add(self, item))
+        self.logger
+            .log_entry(Entry::new(self, EntryKind::Add { item }))
     }
 
     #[inline]
     pub fn log_remove<T: Serialize>(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::<T>::new_remove(&self.nested(tag)))
+            .log_entry(Entry::<T>::new(&self.nested(tag), EntryKind::Remove))
     }
 
     #[inline]

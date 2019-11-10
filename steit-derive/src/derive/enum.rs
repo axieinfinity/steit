@@ -120,10 +120,15 @@ impl<'a> Enum<'a> {
 
         self.r#impl
             .r#impl(if let Some(default_ctor_name) = default_ctor_name {
+                let (declare_arg, call_arg) = match self.setting.no_runtime {
+                    false => (quote!(runtime: Runtime), quote!(runtime)),
+                    true => (quote!(), quote!()),
+                };
+
                 quote! {
                     #[inline]
-                    pub fn new(runtime: Runtime) -> Self {
-                        Self::#default_ctor_name(runtime)
+                    pub fn new(#declare_arg) -> Self {
+                        Self::#default_ctor_name(#call_arg)
                     }
 
                     #(#ctors)*
@@ -144,13 +149,17 @@ impl<'a> Enum<'a> {
         let name = self.r#impl.name();
 
         let runtimes = self.variants.iter().map(|r#struct| {
+            let runtime = r#struct
+                .runtime()
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
             let variant = r#struct
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
             let qual = variant.qual();
             // Technically we can use `destructure` and `init` interchangeably here.
-            let destructure = r#struct.runtime().init();
+            let destructure = runtime.init();
 
             quote!(#name #qual { #destructure, .. } => runtime)
         });
@@ -264,6 +273,11 @@ impl<'a> Enum<'a> {
             let qual = variant.qual();
             let ctor_name = variant.ctor_name();
 
+            let arg = match self.setting.no_runtime {
+                false => quote!(self.runtime().parent()),
+                true => quote!(),
+            };
+
             let destructure = map_fields!(r#struct, destructure);
             let merger = r#struct.merger();
 
@@ -271,7 +285,7 @@ impl<'a> Enum<'a> {
                 #tag => {
                     if let #name #qual { .. } = self {
                     } else {
-                        *self = Self::#ctor_name(self.runtime().parent());
+                        *self = Self::#ctor_name(#arg);
                     }
 
                     if let #name #qual { #(#destructure,)* .. } = self {
@@ -308,7 +322,7 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.ctors() {
+        if self.setting.ctors(true) {
             tokens.extend(self.impl_ctors());
         }
 
@@ -316,7 +330,7 @@ impl<'a> ToTokens for Enum<'a> {
             // tokens.extend(self.impl_setters());
         }
 
-        if self.setting.default() {
+        if self.setting.default(true) {
             tokens.extend(self.impl_default());
         }
 
