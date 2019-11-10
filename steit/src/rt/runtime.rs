@@ -1,93 +1,16 @@
 use std::{io, rc::Rc};
 
-use crate::{
-    wire_type::{WireType, WIRE_TYPE_SIZED},
-    Serialize,
-};
+use crate::{wire_type::WireType, Serialize};
 
 use super::{
-    cached_size::CachedSize,
     log::{Entry, Logger},
     node::Node,
 };
 
-#[derive(Debug)]
-struct Child {
-    tag: u16,
-    /// Cached size of the serialized object
-    /// which the current `Runtime` attaches to
-    cached_size: CachedSize,
-}
-
-impl Child {
-    #[inline]
-    pub fn new(tag: u16) -> Self {
-        Self {
-            tag,
-            cached_size: CachedSize::unset(),
-        }
-    }
-}
-
-impl WireType for Child {
-    const WIRE_TYPE: u8 = <u16 as WireType>::WIRE_TYPE;
-}
-
-impl Serialize for Child {
-    #[inline]
-    fn size(&self) -> u32 {
-        self.tag.size()
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.tag.serialize(writer)
-    }
-}
-
-#[derive(Debug)]
-struct Root {
-    /// Cached size of the serialized object
-    /// which the current `Runtime` attaches to
-    cached_size: CachedSize,
-}
-
-impl Root {
-    #[inline]
-    pub fn new() -> Self {
-        Self {
-            cached_size: CachedSize::unset(),
-        }
-    }
-}
-
-impl Default for Root {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl WireType for Root {
-    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
-}
-
-impl Serialize for Root {
-    #[inline]
-    fn size(&self) -> u32 {
-        0
-    }
-
-    #[inline]
-    fn serialize(&self, _writer: &mut impl io::Write) -> io::Result<()> {
-        Ok(())
-    }
-}
-
 #[derive(Default, Debug)]
 pub struct Runtime {
     logger: Logger,
-    node: Rc<Node<Child, Root>>,
+    path: Rc<Node<u16>>,
 }
 
 impl Runtime {
@@ -100,7 +23,7 @@ impl Runtime {
     pub fn nested(&self, tag: u16) -> Self {
         Self {
             logger: self.logger.clone(),
-            node: Rc::new(Node::child(&self.node, Child::new(tag))),
+            path: Rc::new(Node::child(&self.path, tag)),
         }
     }
 
@@ -108,7 +31,7 @@ impl Runtime {
     pub fn parent(&self) -> Self {
         Self {
             logger: self.logger.clone(),
-            node: self.node.parent().expect("expect a parent `Runtime`"),
+            path: self.path.parent().expect("expect a parent `Runtime`"),
         }
     }
 
@@ -136,22 +59,26 @@ impl Runtime {
 
     #[inline]
     pub fn get_or_set_cached_size_from(&self, f: impl FnOnce() -> u32) -> u32 {
-        match &*self.node {
-            Node::Root { inner } => inner.value().cached_size.get_or_set_from(f),
-            Node::Child { inner, .. } => inner.value().cached_size.get_or_set_from(f),
+        match &*self.path {
+            Node::Root { cached_size } => cached_size.get_or_set_from(f),
+            Node::Child { cached_size, .. } => cached_size.get_or_set_from(f),
         }
     }
 
     #[inline]
     pub fn clear_cached_size(&self) {
-        Self::clear_cached_size_branch(&self.node);
+        Self::clear_cached_size_branch(&self.path);
     }
 
-    fn clear_cached_size_branch(node: &Node<Child, Root>) {
+    fn clear_cached_size_branch(node: &Node<u16>) {
         match node {
-            Node::Root { inner } => inner.value().cached_size.clear(),
-            Node::Child { parent, inner } => {
-                inner.value().cached_size.clear();
+            Node::Root { cached_size } => cached_size.clear(),
+            Node::Child {
+                parent,
+                cached_size,
+                ..
+            } => {
+                cached_size.clear();
                 Self::clear_cached_size_branch(parent);
             }
         }
@@ -168,18 +95,18 @@ impl PartialEq for Runtime {
 impl Eq for Runtime {}
 
 impl WireType for Runtime {
-    const WIRE_TYPE: u8 = <Node<Child, Root> as WireType>::WIRE_TYPE;
+    const WIRE_TYPE: u8 = <Node<u16> as WireType>::WIRE_TYPE;
 }
 
 impl Serialize for Runtime {
     #[inline]
     fn size(&self) -> u32 {
-        self.node.size()
+        self.path.size()
     }
 
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.node.serialize(writer)
+        self.path.serialize(writer)
     }
 }
 
@@ -212,13 +139,17 @@ mod tests {
         let runtime = Runtime::new().nested(2);
 
         // Set cached sizes of both `Runtime` nodes
-        match &*runtime.node {
+        match &*runtime.path {
             Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner } => {
-                inner.value().cached_size.set(7);
+            Node::Child {
+                parent,
+                cached_size,
+                ..
+            } => {
+                cached_size.set(7);
 
                 match &**parent {
-                    Node::Root { inner } => inner.value().cached_size.set(6),
+                    Node::Root { cached_size } => cached_size.set(6),
                     Node::Child { .. } => assert!(false),
                 }
             }
@@ -226,15 +157,19 @@ mod tests {
 
         runtime.parent().clear_cached_size();
 
-        match &*runtime.node {
+        match &*runtime.path {
             Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner } => {
+            Node::Child {
+                parent,
+                cached_size,
+                ..
+            } => {
                 // Cached size of the leaf `Runtime` is still set.
-                assert!(inner.value().cached_size.is_set());
+                assert!(cached_size.is_set());
 
                 match &**parent {
                     // Cached size of the root `Runtime` has been cleared.
-                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
+                    Node::Root { cached_size } => assert!(!cached_size.is_set()),
                     Node::Child { .. } => assert!(false),
                 }
             }
@@ -242,14 +177,18 @@ mod tests {
 
         runtime.clear_cached_size();
 
-        match &*runtime.node {
+        match &*runtime.path {
             Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner } => {
+            Node::Child {
+                parent,
+                cached_size,
+                ..
+            } => {
                 // Now cached size of the leaf runtime has also been cleared.
-                assert!(!inner.value().cached_size.is_set());
+                assert!(!cached_size.is_set());
 
                 match &**parent {
-                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
+                    Node::Root { cached_size } => assert!(!cached_size.is_set()),
                     Node::Child { .. } => assert!(false),
                 }
             }
