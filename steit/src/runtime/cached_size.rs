@@ -54,7 +54,7 @@ impl fmt::Debug for CachedSize {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.get() {
             Self::UNSET => write!(f, "<unset>"),
-            size => write!(f, "{}", self.get()),
+            size => write!(f, "{}", size),
         }
     }
 }
