@@ -43,6 +43,7 @@ pub trait Deserialize: Default + Merge {
 
 impl<T: Default + Merge> Deserialize for T {}
 
+#[inline]
 pub fn exhaust_nested(tag: u16, wire_type: u8, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
     match wire_type {
         WIRE_TYPE_VARINT => {

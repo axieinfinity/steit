@@ -163,6 +163,7 @@ impl<'a> Enum<'a> {
                     Self::new(runtime)
                 }
 
+                #[inline]
                 fn runtime(&self) -> &Runtime {
                     match self { #(#runtimes,)*}
                 }

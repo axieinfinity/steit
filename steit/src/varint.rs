@@ -17,6 +17,7 @@ macro_rules! impl_unsigned_varint {
                 $size_fn(*self as $size_t)
             }
 
+            #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
@@ -31,6 +32,7 @@ macro_rules! impl_unsigned_varint {
                 }
             }
 
+            #[inline]
             fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
                 let mut value = 0;
 
@@ -65,10 +67,12 @@ macro_rules! impl_signed_varint {
                 (impl_signed_varint!(@encode self, $t) as $ut).size()
             }
 
+            #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
             }
 
+            #[inline]
             fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
                 let encoded = <$ut>::deserialize(reader)? as $t;
                 Ok(impl_signed_varint!(@decode encoded))
@@ -98,6 +102,7 @@ pub fn deserialize<T: Varint>(reader: &mut impl io::Read) -> io::Result<T> {
 }
 
 // Reference: https://bit.ly/2BJbkd5
+#[inline]
 fn size_32(value: i32) -> u8 {
     if value & (!0 << 7) == 0 {
         return 1;
@@ -119,6 +124,7 @@ fn size_32(value: i32) -> u8 {
 }
 
 // Reference: https://bit.ly/2MPq54D
+#[inline]
 fn size_64(mut value: i64) -> u8 {
     // Handle two popular special cases upfront ...
     if value & (!0i64 << 7) == 0 {
