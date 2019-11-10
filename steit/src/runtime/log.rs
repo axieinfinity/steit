@@ -2,7 +2,7 @@ use std::{cell::RefCell, io, rc::Rc};
 
 use crate::{Runtime, Serialize};
 
-#[crate::serialize(own_crate)]
+#[crate::steitize(Serialize, own_crate)]
 pub enum EntryKind<'a, T: Serialize> {
     #[steit(tag = 0)]
     Update {
@@ -18,7 +18,7 @@ pub enum EntryKind<'a, T: Serialize> {
     Remove,
 }
 
-#[crate::serialize(own_crate)]
+#[crate::steitize(Serialize, own_crate)]
 pub struct Entry<'a, T: Serialize> {
     #[steit(tag = 0)]
     path: &'a Runtime,

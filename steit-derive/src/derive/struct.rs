@@ -46,7 +46,7 @@ macro_rules! map_fields {
 }
 
 pub struct Struct<'a> {
-    derive: &'a DeriveKind,
+    derives: &'a HashSet<DeriveKind>,
     context: &'a Context,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
@@ -56,7 +56,7 @@ pub struct Struct<'a> {
 
 impl<'a> Struct<'a> {
     pub fn parse(
-        derive: &'a DeriveKind,
+        derives: &'a HashSet<DeriveKind>,
         context: &'a Context,
         r#impl: &'a Impl<'a>,
         attrs: impl AttrParse,
@@ -65,7 +65,7 @@ impl<'a> Struct<'a> {
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(context, attrs);
 
-        Self::parse_fields(derive, context, fields).and_then(|parsed| {
+        Self::parse_fields(derives, context, fields).and_then(|parsed| {
             if let syn::Fields::Unit = fields {
                 *fields = syn::Fields::Named(syn::parse_quote!({}));
             }
@@ -99,7 +99,7 @@ impl<'a> Struct<'a> {
             };
 
             Ok(Self {
-                derive,
+                derives,
                 context,
                 r#impl,
                 fields: parsed,
@@ -110,7 +110,7 @@ impl<'a> Struct<'a> {
     }
 
     fn parse_fields(
-        derive: &'a DeriveKind,
+        derives: &'a HashSet<DeriveKind>,
         context: &Context,
         fields: &mut syn::Fields,
     ) -> derive::Result<Vec<Field<'a>>> {
@@ -118,7 +118,7 @@ impl<'a> Struct<'a> {
         let mut parsed = Vec::with_capacity(len);
 
         for (index, field) in fields.iter_mut().enumerate() {
-            if let Ok(field) = Field::parse(derive, context, field, index) {
+            if let Ok(field) = Field::parse(derives, context, field, index) {
                 parsed.push(field);
             }
         }

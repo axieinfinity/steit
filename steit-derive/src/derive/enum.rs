@@ -18,7 +18,7 @@ macro_rules! map_fields {
 }
 
 pub struct Enum<'a> {
-    derive: &'a DeriveKind,
+    derives: &'a HashSet<DeriveKind>,
     context: &'a Context,
     r#impl: &'a Impl<'a>,
     variants: Vec<Struct<'a>>,
@@ -26,7 +26,7 @@ pub struct Enum<'a> {
 
 impl<'a> Enum<'a> {
     pub fn parse(
-        derive: &'a DeriveKind,
+        derives: &'a HashSet<DeriveKind>,
         context: &'a Context,
         r#impl: &'a Impl<'_>,
         data: &'a mut syn::DataEnum,
@@ -36,8 +36,8 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
-        Self::parse_variants(derive, context, r#impl, &mut data.variants).map(|variants| Self {
-            derive,
+        Self::parse_variants(derives, context, r#impl, &mut data.variants).map(|variants| Self {
+            derives,
             context,
             r#impl,
             variants,
@@ -45,7 +45,7 @@ impl<'a> Enum<'a> {
     }
 
     fn parse_variants(
-        derive: &'a DeriveKind,
+        derives: &'a HashSet<DeriveKind>,
         context: &'a Context,
         r#impl: &'a Impl<'_>,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
@@ -86,7 +86,7 @@ impl<'a> Enum<'a> {
 
         for (variant, unknown_attrs, fields) in parsed_data {
             if let Ok(r#struct) =
-                Struct::parse(derive, context, r#impl, unknown_attrs, fields, variant)
+                Struct::parse(derives, context, r#impl, unknown_attrs, fields, variant)
             {
                 parsed.push(r#struct);
             }
@@ -129,7 +129,7 @@ impl<'a> Enum<'a> {
                     #(#ctors)*
                 }
             } else {
-                if self.derive == &DeriveKind::Deserialize || self.derive == &DeriveKind::State {
+                if self.derives.contains(&DeriveKind::Deserialize) {
                     self.context.error(
                         self.r#impl.name(),
                         "expected a variant with tag 0 as the default variant of this enum",

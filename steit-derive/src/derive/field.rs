@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -33,7 +35,7 @@ impl FieldAttrs {
 }
 
 pub struct Field<'a> {
-    derive: &'a DeriveKind,
+    derives: &'a HashSet<DeriveKind>,
     name: Option<syn::Ident>,
     ty: syn::Type,
     index: usize,
@@ -42,13 +44,13 @@ pub struct Field<'a> {
 
 impl<'a> Field<'a> {
     pub fn parse(
-        derive: &'a DeriveKind,
+        derives: &'a HashSet<DeriveKind>,
         context: &Context,
         field: &mut syn::Field,
         index: usize,
     ) -> derive::Result<Self> {
         FieldAttrs::parse(context, field).map(|attrs| Self {
-            derive,
+            derives,
             name: field.ident.clone(),
             ty: field.ty.clone(),
             index,

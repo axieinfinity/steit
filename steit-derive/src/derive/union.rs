@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -9,7 +11,7 @@ pub struct Union;
 
 impl Union {
     pub fn parse(
-        _derive: &DeriveKind,
+        _derives: &HashSet<DeriveKind>,
         context: &Context,
         _impl: &Impl<'_>,
         data: &mut syn::DataUnion,

@@ -15,22 +15,8 @@ mod string;
 use derive::DeriveKind;
 
 #[proc_macro_attribute]
-pub fn serialize(args: TokenStream, input: TokenStream) -> TokenStream {
-    derive(DeriveKind::Serialize, args, input)
-}
-
-#[proc_macro_attribute]
-pub fn deserialize(args: TokenStream, input: TokenStream) -> TokenStream {
-    derive(DeriveKind::Deserialize, args, input)
-}
-
-#[proc_macro_attribute]
-pub fn state(args: TokenStream, input: TokenStream) -> TokenStream {
-    derive(DeriveKind::State, args, input)
-}
-
-fn derive(derive: DeriveKind, args: TokenStream, input: TokenStream) -> TokenStream {
+pub fn steitize(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = syn::parse_macro_input!(args as syn::AttributeArgs);
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
-    derive::derive(derive, args, input).into()
+    derive::derive(args, input).into()
 }

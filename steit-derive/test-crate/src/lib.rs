@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use steit::{Deserialize, Runtime, Serialize, State};
+    use steit::{steitize, Deserialize, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -264,7 +264,7 @@ mod tests {
         println!("{:?}", well);
     } */
 
-    #[steit::serialize]
+    #[steitize(Serialize)]
     #[derive(Debug)]
     struct Test {
         #[steit(tag = 0)]
@@ -273,7 +273,7 @@ mod tests {
         y: i32,
     }
 
-    #[steit::state]
+    #[steitize(State)]
     #[derive(Debug)]
     enum TestTest {
         #[steit(tag = 27)]
@@ -292,7 +292,7 @@ mod tests {
         Qux,
     }
 
-    #[steit::state]
+    #[steitize(State)]
     #[derive(Debug)]
     enum TestTest2 {
         #[steit(tag = 0)]
@@ -311,7 +311,7 @@ mod tests {
         Qux,
     }
 
-    #[steit::state]
+    #[steitize(State)]
     #[derive(Debug)]
     struct Hello {
         #[steit(tag = 10)]
