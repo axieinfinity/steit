@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use steit::{steitize, Deserialize, Eof, Runtime, Serialize, State};
+    use steit::{steitize, Deserialize, Eof, Runtime, Serialize};
 
     /* #[derive(State)]
     struct Good {

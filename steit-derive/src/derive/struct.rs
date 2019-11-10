@@ -47,7 +47,6 @@ macro_rules! map_fields {
 
 pub struct Struct<'a> {
     setting: &'a DeriveSetting,
-    context: &'a Context,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
     runtime: Option<Runtime>,
@@ -115,7 +114,6 @@ impl<'a> Struct<'a> {
 
             Ok(Self {
                 setting,
-                context,
                 r#impl,
                 fields: parsed,
                 runtime,

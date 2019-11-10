@@ -35,7 +35,6 @@ impl FieldAttrs {
 pub struct Field<'a> {
     setting: &'a DeriveSetting,
     name: Option<syn::Ident>,
-    ty: syn::Type,
     index: usize,
     attrs: FieldAttrs,
 }
@@ -50,7 +49,6 @@ impl<'a> Field<'a> {
         FieldAttrs::parse(context, field).map(|attrs| Self {
             setting,
             name: field.ident.clone(),
-            ty: field.ty.clone(),
             index,
             attrs,
         })
