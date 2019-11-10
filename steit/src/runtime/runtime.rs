@@ -5,12 +5,12 @@ use iowrap::Eof;
 use crate::{
     varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Deserialize, Serialize,
+    Deserialize, Merge, Serialize,
 };
 
 use super::{
     cached_size::CachedSize,
-    log::{Entry, EntryKind, Logger},
+    log::{Entry, Logger},
     node::Node,
 };
 
@@ -229,11 +229,12 @@ impl WireType for Path {
     const WIRE_TYPE: u8 = <Runtime as WireType>::WIRE_TYPE;
 }
 
-impl Deserialize for Path {
+impl Merge for Path {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
-            let tag = u16::deserialize(reader)?;
+            // TODO: Remove `as Varint` after refactoring `Varint`
+            let tag = <u16 as varint::Varint>::deserialize(reader)?;
             self.path.push(tag);
         }
 

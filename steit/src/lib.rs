@@ -5,7 +5,7 @@ pub mod state;
 pub mod varint;
 pub mod wire_type;
 
-pub use de::Deserialize;
+pub use de::{Deserialize, Merge};
 pub use runtime::{Runtime, Runtimed};
 pub use ser::Serialize;
 pub use state::State;

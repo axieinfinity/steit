@@ -251,7 +251,7 @@ impl<'a> Enum<'a> {
         )
     }
 
-    fn impl_deserialize(&self) -> TokenStream {
+    fn impl_merge(&self) -> TokenStream {
         let name = self.r#impl.name();
 
         let mergers = self.variants.iter().map(|r#struct| {
@@ -281,7 +281,7 @@ impl<'a> Enum<'a> {
         });
 
         self.r#impl.impl_for(
-            "Deserialize",
+            "Merge",
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     // TODO: Remove `as Deserialize` after refactoring `Varint`
@@ -312,6 +312,6 @@ impl<'a> ToTokens for Enum<'a> {
         tokens.extend(self.impl_wire_type());
         // tokens.extend(self.impl_runtimed());
         tokens.extend(self.impl_serialize());
-        // tokens.extend(self.impl_deserialize());
+        // tokens.extend(self.impl_merge());
     }
 }

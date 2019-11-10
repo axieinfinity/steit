@@ -128,7 +128,7 @@ fn wrap_in_const(
         const #dummy_const: () = {
             #extern_crate
             use std::io::{self, Read};
-            use #krate::{de, wire_type, Deserialize, Eof, Runtime, Runtimed, Serialize, WireType};
+            use #krate::{de, wire_type, Deserialize, Eof, Merge, Runtime, Runtimed, Serialize, WireType};
             #tokens
         };
     }
