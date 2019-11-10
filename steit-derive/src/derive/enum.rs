@@ -307,11 +307,34 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        // tokens.extend(self.impl_ctors());
-        // tokens.extend(self.impl_default());
+        if self.setting.ctors() {
+            tokens.extend(self.impl_ctors());
+        }
+
+        if self.setting.setters() {
+            // tokens.extend(self.impl_setters());
+        }
+
+        if self.setting.default() {
+            tokens.extend(self.impl_default());
+        }
+
         tokens.extend(self.impl_wire_type());
-        // tokens.extend(self.impl_runtimed());
-        tokens.extend(self.impl_serialize());
-        // tokens.extend(self.impl_merge());
+
+        if self.setting.runtimed() {
+            tokens.extend(self.impl_runtimed());
+        }
+
+        if self.setting.serialize {
+            tokens.extend(self.impl_serialize());
+        }
+
+        if self.setting.merge {
+            tokens.extend(self.impl_merge());
+        }
+
+        if self.setting.state {
+            // tokens.extend(self.impl_state());
+        }
     }
 }

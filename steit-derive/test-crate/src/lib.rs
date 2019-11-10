@@ -264,7 +264,7 @@ mod tests {
         println!("{:?}", well);
     } */
 
-    #[steitize(Serialize)]
+    #[steitize(State)]
     #[derive(Debug)]
     struct Test {
         #[steit(tag = 0)]
