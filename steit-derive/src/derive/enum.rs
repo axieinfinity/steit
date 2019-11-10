@@ -223,6 +223,20 @@ impl<'a> Enum<'a> {
             }
         });
 
+        let mut sizer = quote! {
+            let mut size = 0;
+            match self { #(#sizers)* }
+            size
+        };
+
+        if !self.setting.no_runtime {
+            sizer = quote! {
+                self.runtime().get_or_set_cached_size_from(|| {
+                    #sizer
+                })
+            }
+        }
+
         let serializers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
                 .variant()
@@ -246,11 +260,7 @@ impl<'a> Enum<'a> {
             "Serialize",
             quote! {
                 fn size(&self) -> u32 {
-                    // self.runtime().get_or_set_cached_size_from(|| {
-                        let mut size = 0;
-                        match self { #(#sizers)* }
-                        size
-                    // })
+                    #sizer
                 }
 
                 fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
