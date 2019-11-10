@@ -1,11 +1,8 @@
-use std::{io, ops, rc::Rc};
-
-use iowrap::Eof;
+use std::{io, rc::Rc};
 
 use crate::{
-    varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Deserialize, Merge, Serialize,
+    Serialize,
 };
 
 use super::{
@@ -186,65 +183,16 @@ impl Serialize for Runtime {
     }
 }
 
-pub trait Runtimed {
-    fn with_runtime(runtime: Runtime) -> Self;
-    fn runtime(&self) -> &Runtime;
-}
-
-// TODO: Remove `varint::` after refactoring `Varint`
-impl<T: Default + varint::Varint> Runtimed for T {
-    #[inline]
-    fn with_runtime(_runtime: Runtime) -> Self {
-        Default::default()
-    }
-
-    #[inline]
-    fn runtime(&self) -> &Runtime {
-        panic!("cannot get a `Runtime` from a varint")
-    }
-}
-
-#[derive(Default)]
-pub struct Path {
-    path: Vec<u16>,
-}
-
-impl Path {
-    #[inline]
-    pub fn new() -> Self {
-        Default::default()
-    }
-}
-
-impl ops::Deref for Path {
-    type Target = <Vec<u16> as ops::Deref>::Target;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        &self.path
-    }
-}
-
-impl WireType for Path {
-    const WIRE_TYPE: u8 = <Runtime as WireType>::WIRE_TYPE;
-}
-
-impl Merge for Path {
-    #[inline]
-    fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        while !reader.eof()? {
-            // TODO: Remove `as Varint` after refactoring `Varint`
-            let tag = <u16 as varint::Varint>::deserialize(reader)?;
-            self.path.push(tag);
-        }
-
-        Ok(())
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{Deserialize, Eof, Node, Path, Runtime, Serialize};
+    use iowrap::Eof;
+
+    use crate::{
+        runtime::{node::Node, path::Path},
+        Deserialize, Serialize,
+    };
+
+    use super::Runtime;
 
     #[test]
     fn serialization() {
