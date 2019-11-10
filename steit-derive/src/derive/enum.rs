@@ -309,8 +309,7 @@ impl<'a> Enum<'a> {
             "Merge",
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-                    // TODO: Remove `as Deserialize` after refactoring `Varint`
-                    let tag = <u16 as Deserialize>::deserialize(reader)?;
+                    let tag = u16::deserialize(reader)?;
 
                     match tag {
                         #(#mergers)*

@@ -3,9 +3,8 @@ use std::{io, ops};
 use iowrap::Eof;
 
 use crate::{
-    varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Merge,
+    Deserialize, Merge,
 };
 
 #[derive(Default)]
@@ -37,8 +36,7 @@ impl Merge for Path {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
-            // TODO: Remove `as Varint` after refactoring `Varint`
-            let tag = <u16 as varint::Varint>::deserialize(reader)?;
+            let tag = u16::deserialize(reader)?;
             self.path.push(tag);
         }
 

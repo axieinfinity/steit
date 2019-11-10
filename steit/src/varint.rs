@@ -95,7 +95,6 @@ impl_signed_varint!(i16, u16);
 impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
 
-// TODO: Remove this
 #[inline]
 pub fn deserialize<T: Varint>(reader: &mut impl io::Read) -> io::Result<T> {
     <T as Varint>::deserialize(reader)

@@ -13,8 +13,7 @@ pub trait Merge: WireType {
     #[inline]
     fn merge_nested(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         if Self::WIRE_TYPE == WIRE_TYPE_SIZED {
-            // TODO: Remove `as Varint` after refactoring `Varint`
-            let size = <u64 as Varint>::deserialize(reader)?;
+            let size = Varint::deserialize(reader)?;
             let reader = &mut Eof::new(reader.by_ref().take(size));
             self.merge(reader)
         } else {

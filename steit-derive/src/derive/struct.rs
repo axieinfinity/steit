@@ -311,8 +311,7 @@ impl<'a> Struct<'a> {
 
         quote! {
             while !reader.eof()? {
-                // TODO: Remove `as Deserialize` after refactoring `Varint`
-                let key = <u32 as Deserialize>::deserialize(reader)?;
+                let key = u32::deserialize(reader)?;
                 let (tag, wire_type) = wire_type::split_key(key);
 
                 match tag {

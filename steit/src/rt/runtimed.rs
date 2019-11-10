@@ -1,4 +1,4 @@
-use crate::varint;
+use crate::varint::Varint;
 
 use super::runtime::Runtime;
 
@@ -7,8 +7,7 @@ pub trait Runtimed {
     fn runtime(&self) -> &Runtime;
 }
 
-// TODO: Remove `varint::` after refactoring `Varint`
-impl<T: Default + varint::Varint> Runtimed for T {
+impl<T: Default + Varint> Runtimed for T {
     #[inline]
     fn with_runtime(_runtime: Runtime) -> Self {
         Default::default()

@@ -4,7 +4,6 @@ use iowrap::Eof;
 
 use super::{
     merge::Merge,
-    varint::Varint,
     wire_type::{WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
 };
 
@@ -24,13 +23,11 @@ impl<T: Default + Merge> Deserialize for T {}
 pub fn exhaust_nested(tag: u16, wire_type: u8, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
     match wire_type {
         WIRE_TYPE_VARINT => {
-            // TODO: Remove `as Varint` after refactoring `Varint`
-            <u8 as Varint>::deserialize(reader)?;
+            u8::deserialize(reader)?;
         }
 
         WIRE_TYPE_SIZED => {
-            // TODO: Remove `as Varint` after refactoring `Varint`
-            let size = <u64 as Varint>::deserialize(reader)?;
+            let size = u64::deserialize(reader)?;
             let mut buf = Vec::new();
             reader.by_ref().take(size).read_to_end(&mut buf)?;
         }
