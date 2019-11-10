@@ -145,6 +145,27 @@ impl<'a> Enum<'a> {
             })
     }
 
+    fn impl_default(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "Default",
+            quote! {
+                #[inline]
+                fn default() -> Self {
+                    Self::new(Default::default())
+                }
+            },
+        )
+    }
+
+    fn impl_wire_type(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "WireType",
+            quote! {
+                const WIRE_TYPE: u8 = 2;
+            },
+        )
+    }
+
     fn impl_runtimed(&self) -> TokenStream {
         let name = self.r#impl.name();
 
@@ -176,27 +197,6 @@ impl<'a> Enum<'a> {
                 fn runtime(&self) -> &Runtime {
                     match self { #(#runtimes,)*}
                 }
-            },
-        )
-    }
-
-    fn impl_default(&self) -> TokenStream {
-        self.r#impl.impl_for(
-            "Default",
-            quote! {
-                #[inline]
-                fn default() -> Self {
-                    Self::new(Default::default())
-                }
-            },
-        )
-    }
-
-    fn impl_wire_type(&self) -> TokenStream {
-        self.r#impl.impl_for(
-            "WireType",
-            quote! {
-                const WIRE_TYPE: u8 = 2;
             },
         )
     }

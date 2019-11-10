@@ -214,29 +214,6 @@ impl<'a> Struct<'a> {
         self.r#impl.r#impl(self.ctor())
     }
 
-    fn impl_runtimed(&self) -> TokenStream {
-        let runtime = self
-            .runtime
-            .as_ref()
-            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
-            .access();
-
-        self.r#impl.r#impl_for(
-            "Runtimed",
-            quote! {
-                #[inline]
-                fn with_runtime(runtime: Runtime) -> Self {
-                    Self::new(runtime)
-                }
-
-                #[inline]
-                fn runtime(&self) -> &Runtime {
-                    &self.#runtime
-                }
-            },
-        )
-    }
-
     fn impl_default(&self) -> TokenStream {
         let arg = self.runtime.as_ref().map(|_| quote!(Default::default()));
 
@@ -256,6 +233,29 @@ impl<'a> Struct<'a> {
             "WireType",
             quote! {
                 const WIRE_TYPE: u8 = 2;
+            },
+        )
+    }
+
+    fn impl_runtimed(&self) -> TokenStream {
+        let runtime = self
+            .runtime
+            .as_ref()
+            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
+            .access();
+
+        self.r#impl.r#impl_for(
+            "Runtimed",
+            quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                #[inline]
+                fn runtime(&self) -> &Runtime {
+                    &self.#runtime
+                }
             },
         )
     }
