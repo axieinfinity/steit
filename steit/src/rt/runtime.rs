@@ -188,7 +188,7 @@ mod tests {
     use iowrap::Eof;
 
     use crate::{
-        runtime::{node::Node, path::Path},
+        rt::{node::Node, path::Path},
         Deserialize, Serialize,
     };
 

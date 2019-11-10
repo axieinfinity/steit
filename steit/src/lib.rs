@@ -1,12 +1,12 @@
 pub mod de;
-pub mod runtime;
+pub mod rt;
 pub mod ser;
 pub mod state;
 pub mod varint;
 pub mod wire_type;
 
 pub use de::{Deserialize, Merge};
-pub use runtime::{Runtime, Runtimed};
+pub use rt::{Runtime, Runtimed};
 pub use ser::Serialize;
 pub use state::State;
 pub use wire_type::WireType;
