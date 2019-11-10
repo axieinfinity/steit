@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
@@ -22,15 +20,7 @@ use union::Union;
 
 pub type Result<T> = std::result::Result<T, ()>;
 
-#[derive(PartialEq, Eq, Hash)]
-pub enum DeriveKind {
-    Serialize,
-    Merge,
-    Deserialize,
-    State,
-}
-
-struct DeriveAttrs {
+pub struct DeriveSetting {
     serialize: bool,
     deserialize: bool,
     merge: bool,
@@ -40,7 +30,7 @@ struct DeriveAttrs {
     own_crate: bool,
 }
 
-impl DeriveAttrs {
+impl DeriveSetting {
     pub fn parse(context: &Context, args: syn::AttributeArgs) -> Self {
         let mut serialize = Attr::new(context, "Serialize");
         let mut merge = Attr::new(context, "Merge");
@@ -65,51 +55,51 @@ impl DeriveAttrs {
             _ => false,
         });
 
+        let serialize = serialize.get().unwrap_or_default();
+        let merge = merge.get().unwrap_or_default();
+        let deserialize = deserialize.get().unwrap_or_default();
+        let state = state.get().unwrap_or_default();
+
         Self {
-            serialize: serialize.get().unwrap_or_default(),
-            merge: merge.get().unwrap_or_default(),
-            deserialize: deserialize.get().unwrap_or_default(),
-            state: state.get().unwrap_or_default(),
+            serialize: serialize || state,
+            merge: merge || deserialize || state,
+            deserialize: deserialize || state,
+            state,
 
             no_cached_size: no_cached_size.get().unwrap_or_default(),
             own_crate: own_crate.get().unwrap_or_default(),
         }
     }
+
+    pub fn ctors(&self) -> bool {
+        self.deserialize
+    }
+
+    pub fn setters(&self) -> bool {
+        self.state || !self.no_cached_size
+    }
+
+    pub fn default(&self) -> bool {
+        self.deserialize
+    }
+
+    pub fn runtimed(&self) -> bool {
+        self.state
+    }
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
     let context = Context::new();
-    let attrs = DeriveAttrs::parse(&context, args);
+    let setting = DeriveSetting::parse(&context, args);
     let r#impl = Impl::new(&input.ident, &input.generics);
 
-    let mut derives = HashSet::new();
-
-    if attrs.serialize {
-        derives.insert(DeriveKind::Serialize);
-    }
-
-    if attrs.merge {
-        derives.insert(DeriveKind::Merge);
-    }
-
-    if attrs.deserialize {
-        derives.insert(DeriveKind::Merge);
-        derives.insert(DeriveKind::Deserialize);
-    }
-
-    if attrs.state {
-        derives.insert(DeriveKind::Serialize);
-        derives.insert(DeriveKind::Merge);
-        derives.insert(DeriveKind::Deserialize);
-    }
-
     let output = match &mut input.data {
-        syn::Data::Enum(data) => Enum::parse(&derives, &context, &r#impl, data)
+        syn::Data::Enum(data) => Enum::parse(&setting, &context, &r#impl, data)
             .ok()
             .into_token_stream(),
 
         syn::Data::Struct(data) => Struct::parse(
-            &derives,
+            &setting,
             &context,
             &r#impl,
             &mut input.attrs,
@@ -119,7 +109,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
         .ok()
         .into_token_stream(),
 
-        syn::Data::Union(data) => Union::parse(&derives, &context, &r#impl, data)
+        syn::Data::Union(data) => Union::parse(&setting, &context, &r#impl, data)
             .ok()
             .into_token_stream(),
     };
@@ -127,7 +117,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(&input.ident, attrs.own_crate, output.into_token_stream())
+        wrap_in_const(&input.ident, setting.own_crate, output.into_token_stream())
     };
 
     let derived = quote! {

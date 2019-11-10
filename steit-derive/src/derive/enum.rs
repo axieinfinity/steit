@@ -5,7 +5,7 @@ use quote::ToTokens;
 
 use crate::{ctx::Context, derive, r#impl::Impl};
 
-use super::{r#struct::Struct, variant::Variant, DeriveKind};
+use super::{r#struct::Struct, variant::Variant, DeriveSetting};
 
 macro_rules! map_fields {
     ($struct:ident, $method:ident) => {
@@ -18,7 +18,7 @@ macro_rules! map_fields {
 }
 
 pub struct Enum<'a> {
-    derives: &'a HashSet<DeriveKind>,
+    setting: &'a DeriveSetting,
     context: &'a Context,
     r#impl: &'a Impl<'a>,
     variants: Vec<Struct<'a>>,
@@ -26,7 +26,7 @@ pub struct Enum<'a> {
 
 impl<'a> Enum<'a> {
     pub fn parse(
-        derives: &'a HashSet<DeriveKind>,
+        setting: &'a DeriveSetting,
         context: &'a Context,
         r#impl: &'a Impl<'_>,
         data: &'a mut syn::DataEnum,
@@ -36,8 +36,8 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
-        Self::parse_variants(derives, context, r#impl, &mut data.variants).map(|variants| Self {
-            derives,
+        Self::parse_variants(setting, context, r#impl, &mut data.variants).map(|variants| Self {
+            setting,
             context,
             r#impl,
             variants,
@@ -45,7 +45,7 @@ impl<'a> Enum<'a> {
     }
 
     fn parse_variants(
-        derives: &'a HashSet<DeriveKind>,
+        setting: &'a DeriveSetting,
         context: &'a Context,
         r#impl: &'a Impl<'_>,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
@@ -86,7 +86,7 @@ impl<'a> Enum<'a> {
 
         for (variant, unknown_attrs, fields) in parsed_data {
             if let Ok(r#struct) =
-                Struct::parse(derives, context, r#impl, unknown_attrs, fields, variant)
+                Struct::parse(setting, context, r#impl, unknown_attrs, fields, variant)
             {
                 parsed.push(r#struct);
             }
@@ -129,7 +129,7 @@ impl<'a> Enum<'a> {
                     #(#ctors)*
                 }
             } else {
-                if self.derives.contains(&DeriveKind::Deserialize) {
+                if self.setting.deserialize {
                     self.context.error(
                         self.r#impl.name(),
                         "expected a variant with tag 0 as the default variant of this enum",

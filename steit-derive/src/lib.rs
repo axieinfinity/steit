@@ -12,8 +12,6 @@ mod derive;
 mod r#impl;
 mod string;
 
-use derive::DeriveKind;
-
 #[proc_macro_attribute]
 pub fn steitize(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = syn::parse_macro_input!(args as syn::AttributeArgs);
