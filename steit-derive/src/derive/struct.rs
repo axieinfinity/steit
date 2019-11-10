@@ -278,7 +278,7 @@ impl<'a> Struct<'a> {
 
                 match tag {
                     #(#mergers)*
-                    _ => { de2::exhaust_nested(tag, wire_type, reader)?; }
+                    _ => { de::exhaust_nested(tag, wire_type, reader)?; }
                 }
             }
         }
