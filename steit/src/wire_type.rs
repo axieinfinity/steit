@@ -1,4 +1,4 @@
-use crate::varint::Varint;
+use super::varint::Varint;
 
 pub const WIRE_TYPE_VARINT: u8 = 0;
 pub const WIRE_TYPE_SIZED: u8 = 2;

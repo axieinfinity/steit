@@ -1,6 +1,8 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{Runtime, Serialize};
+use crate::Serialize;
+
+use super::runtime::Runtime;
 
 #[crate::steitize(Serialize, own_crate, no_runtime)]
 pub enum EntryKind<'a, T: Serialize> {

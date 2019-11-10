@@ -3,10 +3,9 @@ use std::{io, rc::Rc};
 use crate::{wire_type::WireType, Serialize};
 
 use super::{
-    log::{Entry, Logger},
+    log::{Entry, EntryKind, Logger},
     node::Node,
 };
-use crate::rt::log::EntryKind;
 
 #[derive(Default, Debug)]
 pub struct Runtime {

@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::{
+use super::{
     varint,
     wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
 };
