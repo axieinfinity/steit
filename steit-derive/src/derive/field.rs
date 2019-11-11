@@ -134,12 +134,18 @@ impl<'a> Field<'a> {
                 let qual = variant.qual();
                 let ctor_name = variant.ctor_name();
 
+                let log_update = if self.setting.state {
+                    quote! { value.runtime().parent().log_update_in_place(&value).unwrap(); }
+                } else {
+                    quote!()
+                };
+
                 (
                     quote! {
                         if let #struct_name #qual { .. } = self {
                         } else {
                             let value = Self::#ctor_name(self.runtime().parent());
-                            value.runtime().parent().log_update_in_place(&value).unwrap();
+                            #log_update
                             *self = value;
                         }
                     },
@@ -153,12 +159,19 @@ impl<'a> Field<'a> {
             None => (quote!(), quote! { #field = value; }),
         };
 
+        let log_update = if self.setting.state {
+            quote! { runtime.log_update(#tag, &value).unwrap(); }
+        } else {
+            quote!()
+        };
+
         let clear_cached_size = quote! { self.runtime().clear_cached_size(); };
 
         quote! {
             pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
                 #reset_variant
-                self.runtime().log_update(#tag, &value).unwrap();
+                let runtime = self.runtime();
+                #log_update
                 #setter
                 #clear_cached_size
                 self
@@ -168,7 +181,7 @@ impl<'a> Field<'a> {
                 #reset_variant
                 let runtime = self.runtime();
                 let value = f(runtime.nested(#tag));
-                runtime.log_update(#tag, &value).unwrap();
+                #log_update
                 #setter
                 #clear_cached_size
                 self
