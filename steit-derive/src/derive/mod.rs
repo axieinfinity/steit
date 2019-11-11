@@ -65,10 +65,10 @@ impl DeriveSetting {
         let deserialize = deserialize || state;
 
         let no_runtime = if let Some((true, no_runtime_tokens)) = no_runtime {
-            if deserialize {
+            if state {
                 context.error(
                     no_runtime_tokens,
-                    "`no_runtime` cannot be enabled on `Deserialize` or `State`",
+                    "`no_runtime` cannot be enabled on `State`",
                 );
 
                 // Force it to be `false`
