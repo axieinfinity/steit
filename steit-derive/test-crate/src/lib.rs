@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize};
+    use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -227,6 +227,23 @@ mod tests {
 
         test.set_foo_foo(50);
         back_and_forth(&mut test);
+
+        test.replay(&mut Eof::new([7, 0, 2, 2, 0, 4, 8, 40].as_ref()))
+            .unwrap();
+
+        println!("{:?}", test);
+
+        test.replay(&mut Eof::new([7, 0, 2, 2, 28, 5, 8, 10].as_ref()))
+            .unwrap();
+
+        println!("{:?}", test);
+
+        test.replay(&mut Eof::new(
+            [4, 0, 10, 1, 0, /**/ 7, 0, 2, 2, 0, 4, 8, 100].as_ref(),
+        ))
+        .unwrap();
+
+        println!("{:?}", test);
 
         /* let mut reader: &[u8] = &[6];
 

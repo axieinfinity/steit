@@ -113,6 +113,19 @@ impl Runtime {
     }
 
     #[inline]
+    pub fn is_root(&self) -> bool {
+        match &*self.path {
+            Node::Root { .. } => true,
+            Node::Child { .. } => false,
+        }
+    }
+
+    #[inline]
+    pub fn is_child(&self) -> bool {
+        !self.is_root()
+    }
+
+    #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .log_entry(LogEntry::new_update(&self.nested(tag), value))

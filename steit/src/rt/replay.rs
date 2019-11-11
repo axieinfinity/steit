@@ -29,11 +29,11 @@ pub enum ReplayEntry {
 }
 
 impl ReplayEntry {
-    pub fn kind(&self) -> ReplayKind {
+    pub fn decompose(self) -> (Vec<u16>, ReplayKind, Vec<u8>) {
         match self {
-            ReplayEntry::Update { .. } => ReplayKind::Update,
-            ReplayEntry::Add { .. } => ReplayKind::Add,
-            ReplayEntry::Remove { .. } => ReplayKind::Remove,
+            ReplayEntry::Update { path, value } => (path, ReplayKind::Update, value),
+            ReplayEntry::Add { path, item } => (path, ReplayKind::Add, item),
+            ReplayEntry::Remove { path } => (path, ReplayKind::Remove, Vec::new()),
         }
     }
 }

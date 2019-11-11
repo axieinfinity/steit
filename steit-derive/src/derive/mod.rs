@@ -188,8 +188,22 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
     quote! {
         const #dummy_const: () = {
             #extern_crate
+
             use std::io::{self, Read};
-            use #krate::{de, wire_type, Deserialize, Eof, Merge, Runtime, Runtimed, Serialize, WireType};
+
+            use #krate::{
+                de,
+                wire_type,
+                Deserialize,
+                Eof,
+                Merge,
+                ReplayKind,
+                Runtime,
+                Runtimed,
+                Serialize,
+                WireType,
+            };
+
             #tokens
         };
     }

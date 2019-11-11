@@ -337,6 +337,23 @@ impl<'a> Enum<'a> {
             },
         )
     }
+
+    fn impl_state(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "State",
+            quote! {
+                fn replay_nested<'a>(
+                    &mut self,
+                    tag: u16,
+                    path: &mut impl Iterator<Item = &'a u16>,
+                    kind: &ReplayKind,
+                    reader: &mut Eof<impl io::Read>,
+                ) -> io::Result<()> {
+                    unimplemented!()
+                }
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Enum<'a> {
@@ -368,7 +385,7 @@ impl<'a> ToTokens for Enum<'a> {
         }
 
         if self.setting.state {
-            // tokens.extend(self.impl_state());
+            tokens.extend(self.impl_state());
         }
     }
 }
