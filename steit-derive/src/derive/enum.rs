@@ -151,12 +151,17 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
+        let arg = match self.setting.no_runtime {
+            false => quote!(Default::default()),
+            true => quote!(),
+        };
+
         self.r#impl.impl_for(
             "Default",
             quote! {
                 #[inline]
                 fn default() -> Self {
-                    Self::new(Default::default())
+                    Self::new(#arg)
                 }
             },
         )
