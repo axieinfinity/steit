@@ -1,13 +1,11 @@
 pub mod de;
-pub mod merge;
 pub mod rt;
 pub mod ser;
 pub mod state;
 pub mod varint;
 pub mod wire_type;
 
-pub use de::Deserialize;
-pub use merge::Merge;
+pub use de::{Deserialize, Merge};
 pub use rt::{replay::ReplayKind, runtime::Runtime, runtimed::Runtimed};
 pub use ser::Serialize;
 pub use state::State;

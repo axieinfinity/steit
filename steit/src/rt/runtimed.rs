@@ -7,7 +7,7 @@ pub trait Runtimed {
     fn runtime(&self) -> &Runtime;
 }
 
-impl<T: Default + Varint> Runtimed for T {
+impl<T: Varint> Runtimed for T {
     #[inline]
     fn with_runtime(_runtime: Runtime) -> Self {
         Default::default()

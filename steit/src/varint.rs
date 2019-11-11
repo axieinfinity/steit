@@ -1,19 +1,27 @@
-use std::io;
+use std::io::{self, Read};
 
-pub trait Varint: Sized {
-    fn size(&self) -> u8;
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
-    fn deserialize(reader: &mut impl io::Read) -> io::Result<Self>;
-}
+use iowrap::Eof;
+
+use super::{
+    de::{Deserialize, Merge},
+    ser::Serialize,
+    wire_type::{WireType, WIRE_TYPE_VARINT},
+};
+
+pub trait Varint: Serialize + Deserialize {}
 
 macro_rules! impl_unsigned_varint {
     (u64) => (impl_unsigned_varint!(@impl u64, size_64, i64););
     ($t:ty) => (impl_unsigned_varint!(@impl $t, size_32, i32););
 
     (@impl $t:ty, $size_fn:ident, $size_t:ty) => {
-        impl Varint for $t {
+        impl WireType for $t {
+            const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
+        }
+
+        impl Serialize for $t {
             #[inline]
-            fn size(&self) -> u8 {
+            fn size(&self) -> u32 {
                 $size_fn(*self as $size_t)
             }
 
@@ -33,7 +41,14 @@ macro_rules! impl_unsigned_varint {
             }
 
             #[inline]
-            fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
+            fn is_empty(&self) -> bool {
+                *self == Default::default()
+            }
+        }
+
+        impl Merge for $t {
+            #[inline]
+            fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                 let mut value = 0;
 
                 let mut buf = [0];
@@ -44,13 +59,16 @@ macro_rules! impl_unsigned_varint {
                     value |= (buf[0] & 0x7f) as $t << offset;
 
                     if buf[0] & 0x80 == 0 {
-                        return Ok(value);
+                        *self = value;
+                        return Ok(());
                     }
 
                     offset += 7;
                 }
             }
         }
+
+        impl Varint for $t {}
     };
 }
 
@@ -61,9 +79,13 @@ impl_unsigned_varint!(u64);
 
 macro_rules! impl_signed_varint {
     ($t:ty, $ut:ty) => {
-        impl Varint for $t {
+        impl WireType for $t {
+            const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
+        }
+
+        impl Serialize for $t {
             #[inline]
-            fn size(&self) -> u8 {
+            fn size(&self) -> u32 {
                 (impl_signed_varint!(@encode self, $t) as $ut).size()
             }
 
@@ -73,11 +95,21 @@ macro_rules! impl_signed_varint {
             }
 
             #[inline]
-            fn deserialize(reader: &mut impl io::Read) -> io::Result<Self> {
-                let encoded = <$ut>::deserialize(reader)? as $t;
-                Ok(impl_signed_varint!(@decode encoded))
+            fn is_empty(&self) -> bool {
+                *self == Default::default()
             }
         }
+
+        impl Merge for $t {
+            #[inline]
+            fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+                let encoded = <$ut>::deserialize(reader)? as $t;
+                *self = impl_signed_varint!(@decode encoded);
+                Ok(())
+            }
+        }
+
+        impl Varint for $t {}
     };
 
     // ZigZag encoding: https://bit.ly/2Pl9Gq8
@@ -95,14 +127,9 @@ impl_signed_varint!(i16, u16);
 impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
 
-#[inline]
-pub fn deserialize<T: Varint>(reader: &mut impl io::Read) -> io::Result<T> {
-    <T as Varint>::deserialize(reader)
-}
-
 // Reference: https://bit.ly/2BJbkd5
 #[inline]
-fn size_32(value: i32) -> u8 {
+fn size_32(value: i32) -> u32 {
     if value & (!0 << 7) == 0 {
         return 1;
     }
@@ -124,7 +151,7 @@ fn size_32(value: i32) -> u8 {
 
 // Reference: https://bit.ly/2MPq54D
 #[inline]
-fn size_64(mut value: i64) -> u8 {
+fn size_64(mut value: i64) -> u32 {
     // Handle two popular special cases upfront ...
     if value & (!0i64 << 7) == 0 {
         return 1;
@@ -158,6 +185,8 @@ fn size_64(mut value: i64) -> u8 {
 mod tests {
     use std::fmt;
 
+    use iowrap::Eof;
+
     use crate::test_case;
 
     use super::Varint;
@@ -179,7 +208,7 @@ mod tests {
     test_case!(encode_zig_zag_05: assert_encode;  2 => &[4]);
 
     fn decode<T: Varint>(bytes: &[u8]) -> T {
-        T::deserialize(&mut &*bytes).unwrap()
+        T::deserialize(&mut Eof::new(bytes)).unwrap()
     }
 
     fn assert_decode<T: PartialEq + fmt::Debug + Varint>(bytes: &[u8], expected_value: T) {

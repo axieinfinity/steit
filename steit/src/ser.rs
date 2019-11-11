@@ -1,7 +1,7 @@
 use std::io;
 
 use super::{
-    varint,
+    varint::Varint,
     wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
 };
 
@@ -73,24 +73,7 @@ pub trait Serialize: WireType {
     }
 }
 
-impl<T: Default + Eq + varint::Varint> Serialize for T {
-    #[inline]
-    fn size(&self) -> u32 {
-        varint::Varint::size(self) as u32
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        varint::Varint::serialize(self, writer)
-    }
-
-    #[inline]
-    fn is_empty(&self) -> bool {
-        *self == Self::default()
-    }
-}
-
-impl<T: varint::Varint + Serialize> Serialize for Vec<T> {
+impl<T: Varint> Serialize for Vec<T> {
     fn size(&self) -> u32 {
         let mut size = 0;
 

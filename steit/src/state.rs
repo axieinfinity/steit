@@ -60,7 +60,7 @@ pub trait State: Runtimed + Serialize + Deserialize {
     }
 }
 
-impl<T: Varint + Serialize + Deserialize> State for T {
+impl<T: Varint> State for T {
     #[inline]
     fn replay_nested<'a>(
         &mut self,
