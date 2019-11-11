@@ -342,9 +342,14 @@ impl<'a> Enum<'a> {
         self.r#impl.impl_for(
             "State",
             quote! {
-                fn replay_nested<'a>(
+                #[inline]
+                fn is_root(&self) -> bool {
+                    self.runtime().parent().is_root()
+                }
+
+                #[inline]
+                fn handle<'a>(
                     &mut self,
-                    tag: u16,
                     path: &mut impl Iterator<Item = &'a u16>,
                     kind: &ReplayKind,
                     reader: &mut Eof<impl io::Read>,

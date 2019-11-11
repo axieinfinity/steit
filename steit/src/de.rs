@@ -42,6 +42,13 @@ pub trait Deserialize: Default + Merge {
         value.merge(reader)?;
         Ok(value)
     }
+
+    #[inline]
+    fn deserialize_nested(reader: &mut Eof<impl io::Read>) -> io::Result<Self> {
+        let mut value = Self::default();
+        value.merge_nested(reader)?;
+        Ok(value)
+    }
 }
 
 impl<T: Default + Merge> Deserialize for T {}

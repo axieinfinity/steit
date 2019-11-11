@@ -13,17 +13,45 @@ use super::{
 };
 
 pub trait State: Runtimed + Serialize + Deserialize {
-    fn replay_nested<'a>(
+    fn handle<'a>(
         &mut self,
-        tag: u16,
         path: &mut impl Iterator<Item = &'a u16>,
         kind: &ReplayKind,
         reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()>;
 
     #[inline]
+    fn handle_in_place<'a>(
+        &mut self,
+        kind: &ReplayKind,
+        reader: &mut Eof<impl io::Read>,
+    ) -> io::Result<()> {
+        match kind {
+            ReplayKind::Update => {
+                *self = Self::deserialize(reader)?;
+                Ok(())
+            }
+
+            ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "`add` and `remove` are not supported on the current `State` object",
+            )),
+        }
+    }
+
+    #[inline]
+    fn is_root(&self) -> bool {
+        self.runtime().is_root()
+    }
+
+    #[inline]
+    fn is_child(&self) -> bool {
+        !self.is_root()
+    }
+
+    #[inline]
     fn replay(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        if !self.runtime().is_root() {
+        if !self.is_root() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
                 "`replay` can only be called on the root `State` object",
@@ -31,29 +59,14 @@ pub trait State: Runtimed + Serialize + Deserialize {
         }
 
         while !reader.eof()? {
-            let entry = ReplayEntry::deserialize(reader)?;
+            let entry = ReplayEntry::deserialize_nested(reader)?;
             println!("{:?}", entry);
 
             let (path, kind, buf) = entry.decompose();
             let path = &mut path.iter();
             let reader = &mut Eof::new(&*buf);
 
-            if let Some(tag) = path.next() {
-                self.replay_nested(*tag, path, &kind, reader)?;
-            } else {
-                match kind {
-                    ReplayKind::Update => {
-                        *self = Self::deserialize(reader)?;
-                    }
-
-                    ReplayKind::Add | ReplayKind::Remove => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::InvalidData,
-                            "`add` and `remove` are not supported on the current `State` object",
-                        ));
-                    }
-                }
-            }
+            self.handle(path, &kind, reader)?;
         }
 
         Ok(())
@@ -62,22 +75,25 @@ pub trait State: Runtimed + Serialize + Deserialize {
 
 impl<T: Varint> State for T {
     #[inline]
-    fn replay_nested<'a>(
+    fn handle<'a>(
         &mut self,
-        tag: u16,
         path: &mut impl Iterator<Item = &'a u16>,
-        _kind: &ReplayKind,
-        _reader: &mut Eof<impl io::Read>,
+        kind: &ReplayKind,
+        reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()> {
-        let mut s = format!("{}", tag);
+        if let Some(tag) = path.next() {
+            let mut s = format!("{}", tag);
 
-        for tag in path {
-            s.push_str(&format!(", {}", tag));
+            for tag in path {
+                s.push_str(&format!(", {}", tag));
+            }
+
+            Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("expected end-of-path but still got [{}] remaining", s),
+            ))
+        } else {
+            self.handle_in_place(kind, reader)
         }
-
-        Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            format!("expected end-of-path but still got [{}] remaining", s),
-        ))
     }
 }
