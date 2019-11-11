@@ -159,10 +159,6 @@ impl<'a> Struct<'a> {
         }
     }
 
-    pub fn fields(&self) -> &[Field<'a>] {
-        &self.fields
-    }
-
     pub fn runtime(&self) -> Option<&Runtime> {
         self.runtime.as_ref()
     }
@@ -176,6 +172,11 @@ impl<'a> Struct<'a> {
             Some(variant) => variant.ctor_name(),
             None => format_ident!("new"),
         }
+    }
+
+    pub fn destructure(&self) -> TokenStream {
+        let destructure = map_fields!(self, destructure);
+        quote!(#(#destructure,)*)
     }
 
     pub fn ctor(&self) -> TokenStream {

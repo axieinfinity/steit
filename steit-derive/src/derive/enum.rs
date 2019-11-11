@@ -7,16 +7,6 @@ use crate::{ctx::Context, derive, r#impl::Impl};
 
 use super::{r#struct::Struct, variant::Variant, DeriveSetting};
 
-macro_rules! map_fields {
-    ($struct:ident, $method:ident) => {
-        $struct.fields().iter().map(|field| field.$method())
-    };
-
-    ($struct:ident, $method:ident ($($rest:tt)*)) => {
-        $struct.fields().iter().map(|field| field.$method($($rest)*))
-    };
-}
-
 pub struct Enum<'a> {
     setting: &'a DeriveSetting,
     context: &'a Context,
@@ -222,13 +212,13 @@ impl<'a> Enum<'a> {
             let tag = variant.tag();
             let qual = variant.qual();
 
-            let destructure = map_fields!(r#struct, destructure);
-            let sizers = map_fields!(r#struct, sizer(true));
+            let destructure = r#struct.destructure();
+            let sizer = r#struct.sizer();
 
             quote! {
-                #name #qual { #(#destructure,)* .. } => {
+                #name #qual { #destructure .. } => {
                     size += #tag.size();
-                    #(#sizers)*
+                    #sizer
                 }
             }
         });
@@ -255,13 +245,13 @@ impl<'a> Enum<'a> {
             let tag = variant.tag();
             let qual = variant.qual();
 
-            let destructure = map_fields!(r#struct, destructure);
-            let serializers = map_fields!(r#struct, serializer(true));
+            let destructure = r#struct.destructure();
+            let serializer = r#struct.serializer();
 
             quote! {
-                #name #qual { #(#destructure,)* .. } => {
+                #name #qual { #destructure .. } => {
                     #tag.serialize(writer)?;
-                    #(#serializers)*
+                    #serializer
                 }
             }
         });
@@ -298,7 +288,7 @@ impl<'a> Enum<'a> {
                 true => quote!(),
             };
 
-            let destructure = map_fields!(r#struct, destructure);
+            let destructure = r#struct.destructure();
             let merger = r#struct.merger();
 
             quote! {
@@ -308,7 +298,7 @@ impl<'a> Enum<'a> {
                         *self = Self::#ctor_name(#arg);
                     }
 
-                    if let #name #qual { #(#destructure,)* .. } = self {
+                    if let #name #qual { #destructure .. } = self {
                         #merger
                     }
                 }
@@ -349,12 +339,12 @@ impl<'a> Enum<'a> {
             let tag = variant.tag();
             let qual = variant.qual();
 
-            let destructure = map_fields!(r#struct, destructure);
+            let destructure = r#struct.destructure();
             let replayer = r#struct.replayer();
 
             quote! {
                 #tag => {
-                    if let #name #qual { #(#destructure,)* .. } = self {
+                    if let #name #qual { #destructure .. } = self {
                         #replayer
                     } else {
                         Err(io::Error::new(
