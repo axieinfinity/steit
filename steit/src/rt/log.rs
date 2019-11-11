@@ -1,8 +1,34 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::Serialize;
+use crate::{wire_type::WIRE_TYPE_SIZED, Serialize, WireType};
 
 use super::runtime::Runtime;
+
+pub struct Value<'a, T: Serialize> {
+    value: &'a T,
+}
+
+impl<'a, T: Serialize> Value<'a, T> {
+    pub fn new(value: &'a T) -> Self {
+        Self { value }
+    }
+}
+
+impl<'a, T: Serialize> WireType for Value<'a, T> {
+    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
+}
+
+impl<'a, T: Serialize> Serialize for Value<'a, T> {
+    #[inline]
+    fn size(&self) -> u32 {
+        self.value.size()
+    }
+
+    #[inline]
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.value.serialize(writer)
+    }
+}
 
 // `path` is put in each variant and `Entry` is flattened to save serialization size.
 #[crate::steitize(Serialize, own_crate, no_runtime)]
@@ -12,14 +38,14 @@ pub enum LogEntry<'a, T: Serialize> {
         #[steit(tag = 0)]
         path: &'a Runtime,
         #[steit(tag = 1)]
-        value: &'a T,
+        value: Value<'a, T>,
     },
     #[steit(tag = 1)]
     Add {
         #[steit(tag = 0)]
         path: &'a Runtime,
         #[steit(tag = 1)]
-        item: &'a T,
+        item: Value<'a, T>,
     },
     #[steit(tag = 2)]
     Remove {
@@ -31,12 +57,18 @@ pub enum LogEntry<'a, T: Serialize> {
 impl<'a, T: Serialize> LogEntry<'a, T> {
     #[inline]
     pub fn new_update(path: &'a Runtime, value: &'a T) -> Self {
-        LogEntry::Update { path, value }
+        LogEntry::Update {
+            path,
+            value: Value::new(value),
+        }
     }
 
     #[inline]
     pub fn new_add(path: &'a Runtime, item: &'a T) -> Self {
-        LogEntry::Add { path, item }
+        LogEntry::Add {
+            path,
+            item: Value::new(item),
+        }
     }
 
     #[inline]
