@@ -73,7 +73,7 @@ pub trait Serialize: WireType {
     }
 }
 
-impl<T: Default + Eq + varint::Varint + WireType> Serialize for T {
+impl<T: Default + Eq + varint::Varint> Serialize for T {
     #[inline]
     fn size(&self) -> u32 {
         varint::Varint::size(self) as u32
@@ -87,5 +87,25 @@ impl<T: Default + Eq + varint::Varint + WireType> Serialize for T {
     #[inline]
     fn is_empty(&self) -> bool {
         *self == Self::default()
+    }
+}
+
+impl<T: varint::Varint + Serialize> Serialize for Vec<T> {
+    fn size(&self) -> u32 {
+        let mut size = 0;
+
+        for item in self {
+            size += item.size_nested(None);
+        }
+
+        size
+    }
+
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        for item in self {
+            item.serialize_nested(None, writer)?;
+        }
+
+        Ok(())
     }
 }

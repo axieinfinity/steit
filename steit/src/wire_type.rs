@@ -16,6 +16,10 @@ impl<T: Varint> WireType for T {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;
 }
 
+impl<T: Varint> WireType for Vec<T> {
+    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
+}
+
 #[inline]
 pub fn key(tag: u16, wire_type: u8) -> u32 {
     (tag as u32) << 3 | wire_type as u32
