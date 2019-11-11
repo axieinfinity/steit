@@ -214,6 +214,17 @@ impl<'a> Struct<'a> {
         self.r#impl.r#impl(self.ctor())
     }
 
+    pub fn setters(&self) -> TokenStream {
+        let name = self.r#impl.name();
+        let setters = map_fields!(self, setter(name, self.variant()));
+        quote!(#(#setters)*)
+    }
+
+    fn impl_setters(&self) -> TokenStream {
+        let setters = self.setters();
+        self.r#impl.r#impl(quote!(#setters))
+    }
+
     fn impl_default(&self) -> TokenStream {
         let arg = self.runtime.as_ref().map(|_| quote!(Default::default()));
 
@@ -349,7 +360,7 @@ impl<'a> ToTokens for Struct<'a> {
         }
 
         if self.setting.setters() {
-            // tokens.extend(self.impl_setters());
+            tokens.extend(self.impl_setters());
         }
 
         if self.setting.default(false) {

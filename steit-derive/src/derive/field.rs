@@ -7,7 +7,7 @@ use crate::{
     derive,
 };
 
-use super::DeriveSetting;
+use super::{variant::Variant, DeriveSetting};
 
 struct FieldAttrs {
     tag: u16,
@@ -35,6 +35,7 @@ impl FieldAttrs {
 pub struct Field<'a> {
     setting: &'a DeriveSetting,
     name: Option<syn::Ident>,
+    ty: syn::Type,
     index: usize,
     attrs: FieldAttrs,
 }
@@ -49,6 +50,7 @@ impl<'a> Field<'a> {
         FieldAttrs::parse(context, field).map(|attrs| Self {
             setting,
             name: field.ident.clone(),
+            ty: field.ty.clone(),
             index,
             attrs,
         })
@@ -102,6 +104,75 @@ impl<'a> Field<'a> {
         } else {
             let access = self.access();
             quote!(self.#access)
+        }
+    }
+
+    pub fn setter(&self, struct_name: &syn::Ident, variant: Option<&Variant>) -> TokenStream {
+        if self.setting.no_runtime {
+            unreachable!("expected a `Runtime` field");
+        }
+
+        let field_name = match &self.name {
+            Some(name) => name.clone(),
+            None => format_ident!("f_{}", self.index),
+        };
+
+        let setter_name = match variant {
+            Some(variant) => format_ident!("set_{}_{}", variant.snake_case_name(), field_name),
+            None => format_ident!("set_{}", field_name),
+        };
+
+        let setter_name_with = format_ident!("{}_with", setter_name);
+
+        let ty = &self.ty;
+        let tag = self.attrs.tag;
+        let destructure = self.destructure();
+        let field = self.field(variant.is_some());
+
+        let (reset_variant, setter) = match variant {
+            Some(variant) => {
+                let qual = variant.qual();
+                let ctor_name = variant.ctor_name();
+
+                (
+                    quote! {
+                        if let #struct_name #qual { .. } = self {
+                        } else {
+                            let value = Self::#ctor_name(self.runtime().parent());
+                            value.runtime().parent().log_update_in_place(&value).unwrap();
+                            *self = value;
+                        }
+                    },
+                    quote! {
+                        if let #struct_name #qual { ref mut #destructure, .. } = self {
+                            *#field = value;
+                        }
+                    },
+                )
+            }
+            None => (quote!(), quote! { #field = value; }),
+        };
+
+        let clear_cached_size = quote! { self.runtime().clear_cached_size(); };
+
+        quote! {
+            pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
+                #reset_variant
+                self.runtime().log_update(#tag, &value).unwrap();
+                #setter
+                #clear_cached_size
+                self
+            }
+
+            pub fn #setter_name_with(&mut self, f: impl FnOnce(Runtime) -> #ty) -> &mut Self {
+                #reset_variant
+                let runtime = self.runtime();
+                let value = f(runtime.nested(#tag));
+                runtime.log_update(#tag, &value).unwrap();
+                #setter
+                #clear_cached_size
+                self
+            }
         }
     }
 

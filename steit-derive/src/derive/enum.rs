@@ -145,6 +145,11 @@ impl<'a> Enum<'a> {
             })
     }
 
+    fn impl_setters(&self) -> TokenStream {
+        let setters = self.variants.iter().map(|variant| variant.setters());
+        self.r#impl.r#impl(quote!(#(#setters)*))
+    }
+
     fn impl_default(&self) -> TokenStream {
         self.r#impl.impl_for(
             "Default",
@@ -336,7 +341,7 @@ impl<'a> ToTokens for Enum<'a> {
         }
 
         if self.setting.setters() {
-            // tokens.extend(self.impl_setters());
+            tokens.extend(self.impl_setters());
         }
 
         if self.setting.default(true) {

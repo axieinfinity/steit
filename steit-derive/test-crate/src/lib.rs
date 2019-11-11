@@ -1,6 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use steit::{steitize, Deserialize, Eof, Runtime, Serialize};
+    use std::fmt;
+
+    use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize};
 
     /* #[derive(State)]
     struct Good {
@@ -172,49 +174,47 @@ mod tests {
         segment.set_2_with(Point::new);
         debug(&segment);
         check(&segment, &mut Segment::new(Runtime::new()));
-    } */
+    }
 
-    /* #[derive(Debug, State)]
+    #[derive(Debug, State)]
     struct Well {
         runtime: Runtime,
         #[steit(tag = 0)]
         well: i32,
-    }
+    } */
 
-    #[derive(Debug, State)]
-    enum Test {
-        #[steit(tag = 27)]
+    #[steitize(State)]
+    #[derive(Debug)]
+    enum TestPrev {
+        #[steit(tag = 0)]
         Foo {
-            runtime: Runtime,
             #[steit(tag = 4)]
             foo: i32,
         },
         #[steit(tag = 28)]
         Bar {
-            runtime: Runtime,
             #[steit(tag = 5)]
             bar: u16,
         },
         #[steit(tag = 29)]
-        Qux { runtime: Runtime },
+        Qux,
     }
 
-    struct Qux(i32);
+    // struct Qux(i32);
 
-    fn back_and_forth(value: &mut (impl fmt::Debug + Serialize + Deserialize)) {
+    fn back_and_forth(value: &mut (impl fmt::Debug + Serialize + Merge)) {
         let mut bytes = Vec::new();
         value.serialize(&mut bytes).unwrap();
         println!("{:?}", value);
         println!("{:?}", bytes);
-        let mut bytes: &[u8] = &[3u8, 28, 40, 100];
-        value.deserialize(&mut bytes).unwrap();
+        value.merge(&mut Eof::new([28, 40, 100].as_ref())).unwrap();
         println!("{:?}", value);
         println!();
     }
 
     #[test]
     fn test() {
-        let mut test = Test::new_foo(Runtime::new());
+        let mut test = TestPrev::new_foo(Runtime::new());
 
         println!("size: {}", test.size());
         println!();
@@ -228,7 +228,7 @@ mod tests {
         test.set_foo_foo(50);
         back_and_forth(&mut test);
 
-        let mut reader: &[u8] = &[6];
+        /* let mut reader: &[u8] = &[6];
 
         test.process_log(&mut [28, 5].iter(), &RawEntryKind::Update, &mut reader)
             .unwrap();
@@ -261,8 +261,8 @@ mod tests {
         well.process_log(&mut [].iter(), &RawEntryKind::Update, &mut reader)
             .unwrap();
 
-        println!("{:?}", well);
-    } */
+        println!("{:?}", well); */
+    }
 
     #[steitize(State)]
     #[derive(Debug)]
@@ -318,7 +318,6 @@ mod tests {
         test_test: TestTest2,
     }
 
-    #[test]
     fn test2() {
         let test = Test {
             runtime: Runtime::new(),
