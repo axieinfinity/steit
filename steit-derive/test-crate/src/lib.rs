@@ -318,6 +318,7 @@ mod tests {
         test_test: TestTest2,
     }
 
+    #[test]
     fn test2() {
         let test = Test {
             runtime: Runtime::new(),

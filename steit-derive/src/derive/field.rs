@@ -213,25 +213,33 @@ impl<'a> Field<'a> {
     }
 }
 
-pub struct Runtime {
+pub struct Runtime<'a> {
+    setting: &'a DeriveSetting,
     name: Option<syn::Ident>,
     index: usize,
 }
 
-impl Runtime {
-    pub fn new(name: impl Into<Option<syn::Ident>>, index: usize) -> Self {
+impl<'a> Runtime<'a> {
+    pub fn new(
+        setting: &'a DeriveSetting,
+        name: impl Into<Option<syn::Ident>>,
+        index: usize,
+    ) -> Self {
         Self {
+            setting,
             name: name.into(),
             index,
         }
     }
 
     pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
+        let krate = self.setting.krate();
+
         if let Some(name) = &self.name {
-            let fields: syn::FieldsNamed = syn::parse_quote!({ #name: Runtime });
+            let fields: syn::FieldsNamed = syn::parse_quote!({ #name: #krate::Runtime });
             fields.named
         } else {
-            let fields: syn::FieldsUnnamed = syn::parse_quote!(Runtime);
+            let fields: syn::FieldsUnnamed = syn::parse_quote!(#krate::Runtime);
             fields.unnamed
         }
     }

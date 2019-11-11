@@ -49,7 +49,7 @@ pub struct Struct<'a> {
     setting: &'a DeriveSetting,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
-    runtime: Option<Runtime>,
+    runtime: Option<Runtime<'a>>,
     variant: Option<Variant>,
 }
 
@@ -78,7 +78,7 @@ impl<'a> Struct<'a> {
                         };
 
                         let name = format_ident!("{}", name);
-                        let runtime = Runtime::new(name, parsed.len());
+                        let runtime = Runtime::new(setting, name, parsed.len());
                         fields.named.extend(runtime.declare());
                         runtime
                     }
@@ -94,7 +94,7 @@ impl<'a> Struct<'a> {
                             );
                         }
 
-                        let runtime = Runtime::new(None, parsed.len());
+                        let runtime = Runtime::new(setting, None, parsed.len());
                         fields.unnamed.extend(runtime.declare());
                         runtime
                     }

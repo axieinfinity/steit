@@ -91,6 +91,20 @@ impl DeriveSetting {
         }
     }
 
+    pub fn extern_crate(&self) -> TokenStream {
+        match self.own_crate {
+            true => quote!(),
+            false => quote! { extern crate steit; },
+        }
+    }
+
+    pub fn krate(&self) -> TokenStream {
+        match self.own_crate {
+            true => quote!(crate),
+            false => quote!(steit),
+        }
+    }
+
     pub fn ctors(&self, is_enum: bool) -> bool {
         if is_enum {
             self.merge
@@ -145,7 +159,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
     let output = if let Err(errors) = context.check() {
         to_compile_errors(errors)
     } else {
-        wrap_in_const(&input.ident, setting.own_crate, output.into_token_stream())
+        wrap_in_const(&setting, &input.ident, output.into_token_stream())
     };
 
     let derived = quote! {
@@ -162,17 +176,14 @@ fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {
     quote!(#(#compile_errors)*)
 }
 
-fn wrap_in_const(name: &syn::Ident, own_crate: bool, tokens: TokenStream) -> TokenStream {
+fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream) -> TokenStream {
     let dummy_const = format_ident!(
         "_IMPL_STEIT_FOR_{}",
         string::to_snake_case(&name.to_string()).to_uppercase()
     );
 
-    let (extern_crate, krate) = if own_crate {
-        (quote!(), quote!(crate))
-    } else {
-        (quote! { extern crate steit; }, quote!(steit))
-    };
+    let extern_crate = setting.extern_crate();
+    let krate = setting.krate();
 
     quote! {
         const #dummy_const: () = {
