@@ -7,7 +7,7 @@ use crate::{
 
 use super::{
     cached_size::CachedSize,
-    log::{Entry, Logger},
+    log::{LogEntry, Logger},
     node::Node,
 };
 
@@ -115,23 +115,23 @@ impl Runtime {
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::new_update(&self.nested(tag), value))
+            .log_entry(LogEntry::new_update(&self.nested(tag), value))
     }
 
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(Entry::new_update(self, value))
+        self.logger.log_entry(LogEntry::new_update(self, value))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(Entry::new_add(self, item))
+        self.logger.log_entry(LogEntry::new_add(self, item))
     }
 
     #[inline]
     pub fn log_remove<T: Serialize>(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .log_entry(Entry::<T>::new_remove(&self.nested(tag)))
+            .log_entry(LogEntry::<T>::new_remove(&self.nested(tag)))
     }
 
     #[inline]
@@ -187,10 +187,7 @@ impl Serialize for Runtime {
 mod tests {
     use iowrap::Eof;
 
-    use crate::{
-        rt::{node::Node, path::Path},
-        Deserialize, Serialize,
-    };
+    use crate::{rt::node::Node, Deserialize, Serialize};
 
     use super::Runtime;
 
@@ -201,7 +198,7 @@ mod tests {
 
         runtime.serialize(&mut bytes).unwrap();
 
-        let path = Path::deserialize(&mut Eof::new(&*bytes)).unwrap();
+        let path = Vec::<u16>::deserialize(&mut Eof::new(&*bytes)).unwrap();
 
         assert_eq!(&*path, &[10, 20]);
     }
