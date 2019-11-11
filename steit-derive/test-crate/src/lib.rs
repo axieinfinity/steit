@@ -228,22 +228,26 @@ mod tests {
         test.set_foo_foo(50);
         back_and_forth(&mut test);
 
-        test.replay(&mut Eof::new([7, 0, 2, 2, 0, 4, 8, 40].as_ref()))
+        println!("0");
+
+        test.set_foo_foo(0);
+        test.replay(&mut Eof::new([8, 0, 2, 2, 0, 4, 10, 1, 40].as_ref()))
             .unwrap();
 
-        println!("{:?}", test);
+        println!("1 {:?}", test);
 
-        test.replay(&mut Eof::new([7, 0, 2, 2, 28, 5, 8, 10].as_ref()))
+        test.set_bar_bar(0);
+        test.replay(&mut Eof::new([8, 0, 2, 2, 28, 5, 10, 1, 10].as_ref()))
             .unwrap();
 
-        println!("{:?}", test);
+        println!("2 {:?}", test);
 
         test.replay(&mut Eof::new(
-            [4, 0, 10, 1, 0, /**/ 7, 0, 2, 2, 0, 4, 8, 100].as_ref(),
+            [4, 0, 10, 1, 0, /**/ 8, 0, 2, 2, 0, 4, 10, 1, 100].as_ref(),
         ))
         .unwrap();
 
-        println!("{:?}", test);
+        println!("3 {:?}", test);
 
         /* let mut reader: &[u8] = &[6];
 

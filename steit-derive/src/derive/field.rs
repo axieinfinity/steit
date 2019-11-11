@@ -211,6 +211,12 @@ impl<'a> Field<'a> {
             }
         }
     }
+
+    pub fn replayer(&self, is_variant: bool) -> TokenStream {
+        let tag = self.attrs.tag;
+        let field = self.field(is_variant);
+        quote!(#tag => #field.handle(path, kind, reader))
+    }
 }
 
 pub struct Runtime<'a> {

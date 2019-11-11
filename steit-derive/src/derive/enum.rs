@@ -339,6 +339,33 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_state(&self) -> TokenStream {
+        let name = self.r#impl.name();
+
+        let replayers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let tag = variant.tag();
+            let qual = variant.qual();
+
+            let destructure = map_fields!(r#struct, destructure);
+            let replayer = r#struct.replayer();
+
+            quote! {
+                #tag => {
+                    if let #name #qual { #(#destructure,)* .. } = self {
+                        #replayer
+                    } else {
+                        Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!("expected variant with tag {}, got another", tag),
+                        ))
+                    }
+                }
+            }
+        });
+
         self.r#impl.impl_for(
             "State",
             quote! {
@@ -354,7 +381,18 @@ impl<'a> Enum<'a> {
                     kind: &ReplayKind,
                     reader: &mut Eof<impl io::Read>,
                 ) -> io::Result<()> {
-                    unimplemented!()
+                    if let Some(tag) = path.next() {
+                        match tag {
+                            #(#replayers,)*
+
+                            _ => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected variant tag {}", tag),
+                            )),
+                        }
+                    } else {
+                        self.handle_in_place(kind, reader)
+                    }
                 }
             },
         )

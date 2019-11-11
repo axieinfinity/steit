@@ -347,7 +347,29 @@ impl<'a> Struct<'a> {
         )
     }
 
+    pub fn replayer(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let replayers = map_fields!(self, replayer(is_variant));
+
+        quote! {
+            if let Some(tag) = path.next() {
+                match tag {
+                    #(#replayers,)*
+
+                    _ => Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("unexpected tag {}", tag),
+                    )),
+                }
+            } else {
+                self.handle_in_place(kind, reader)
+            }
+        }
+    }
+
     fn impl_state(&self) -> TokenStream {
+        let replayer = self.replayer();
+
         self.r#impl.impl_for(
             "State",
             quote! {
@@ -358,7 +380,7 @@ impl<'a> Struct<'a> {
                     kind: &ReplayKind,
                     reader: &mut Eof<impl io::Read>,
                 ) -> io::Result<()> {
-                    unimplemented!()
+                    #replayer
                 }
             },
         )
