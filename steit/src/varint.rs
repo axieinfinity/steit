@@ -182,7 +182,7 @@ fn size_64(mut value: i64) -> u32 {
 }
 
 #[cfg(test)]
-mod tests {
+mod test {
     use std::fmt;
 
     use iowrap::Eof;

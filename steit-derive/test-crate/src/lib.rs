@@ -1,5 +1,5 @@
 #[cfg(test)]
-mod tests {
+mod test {
     use std::fmt;
 
     use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, State};
