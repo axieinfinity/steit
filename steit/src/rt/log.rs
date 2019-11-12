@@ -1,51 +1,25 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{wire_type::WIRE_TYPE_SIZED, Serialize, WireType};
+use crate::{types::bytes::Bytes, Serialize};
 
 use super::runtime::Runtime;
 
-pub struct Value<'a, T: Serialize> {
-    value: &'a T,
-}
-
-impl<'a, T: Serialize> Value<'a, T> {
-    pub fn new(value: &'a T) -> Self {
-        Self { value }
-    }
-}
-
-impl<'a, T: Serialize> WireType for Value<'a, T> {
-    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
-}
-
-impl<'a, T: Serialize> Serialize for Value<'a, T> {
-    #[inline]
-    fn size(&self) -> u32 {
-        self.value.size()
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.value.serialize(writer)
-    }
-}
-
 // `path` is put in each variant and `Entry` is flattened to save serialization size.
 #[crate::steitize(Serialize, own_crate, no_runtime)]
-pub enum LogEntry<'a, T: Serialize> {
+pub enum LogEntry<'a> {
     #[steit(tag = 0)]
     Update {
         #[steit(tag = 0)]
         path: &'a Runtime,
         #[steit(tag = 1)]
-        value: Value<'a, T>,
+        value: Bytes,
     },
     #[steit(tag = 1)]
     Add {
         #[steit(tag = 0)]
         path: &'a Runtime,
         #[steit(tag = 1)]
-        item: Value<'a, T>,
+        item: Bytes,
     },
     #[steit(tag = 2)]
     Remove {
@@ -54,20 +28,20 @@ pub enum LogEntry<'a, T: Serialize> {
     },
 }
 
-impl<'a, T: Serialize> LogEntry<'a, T> {
+impl<'a> LogEntry<'a> {
     #[inline]
-    pub fn new_update(path: &'a Runtime, value: &'a T) -> Self {
+    pub fn new_update(path: &'a Runtime, value: &impl Serialize) -> Self {
         LogEntry::Update {
             path,
-            value: Value::new(value),
+            value: Bytes::new(value),
         }
     }
 
     #[inline]
-    pub fn new_add(path: &'a Runtime, item: &'a T) -> Self {
+    pub fn new_add(path: &'a Runtime, item: &impl Serialize) -> Self {
         LogEntry::Add {
             path,
-            item: Value::new(item),
+            item: Bytes::new(item),
         }
     }
 
@@ -100,7 +74,7 @@ impl Logger {
     }
 
     #[inline]
-    pub fn log_entry(&self, entry: LogEntry<impl Serialize>) -> io::Result<()> {
+    pub fn log_entry(&self, entry: LogEntry) -> io::Result<()> {
         println!("{:?}", entry.path());
         let mut buf = Vec::new();
         println!("{}", entry.path().size());

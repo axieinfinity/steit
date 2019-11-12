@@ -142,9 +142,9 @@ impl Runtime {
     }
 
     #[inline]
-    pub fn log_remove<T: Serialize>(&self, tag: u16) -> io::Result<()> {
+    pub fn log_remove(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .log_entry(LogEntry::<T>::new_remove(&self.nested(tag)))
+            .log_entry(LogEntry::new_remove(&self.nested(tag)))
     }
 
     #[inline]

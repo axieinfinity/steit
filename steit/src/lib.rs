@@ -6,9 +6,9 @@ pub mod types;
 pub mod wire_type;
 
 pub use de::{Deserialize, Merge};
-pub use rt::{replay::ReplayKind, runtime::Runtime, runtimed::Runtimed};
+pub use rt::{runtime::Runtime, runtimed::Runtimed};
 pub use ser::Serialize;
-pub use state::State;
+pub use state::{ReplayKind, State};
 pub use wire_type::WireType;
 
 pub use iowrap::Eof;
