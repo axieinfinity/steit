@@ -8,6 +8,7 @@ use super::{
     Eof,
 };
 
+#[derive(PartialEq, Eq)]
 pub enum ReplayKind {
     Update,
     Add,

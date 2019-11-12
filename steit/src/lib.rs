@@ -9,6 +9,7 @@ pub use de::{Deserialize, Merge};
 pub use rt::{runtime::Runtime, runtimed::Runtimed};
 pub use ser::Serialize;
 pub use state::{ReplayKind, State};
+pub use types::collections;
 pub use wire_type::WireType;
 
 pub use iowrap::Eof;
