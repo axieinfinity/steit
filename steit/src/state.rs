@@ -1,12 +1,11 @@
 use std::io;
 
-use iowrap::Eof;
-
 use super::{
     de::Deserialize,
     rt::runtimed::Runtimed,
     ser::Serialize,
     types::{bytes::Bytes, varint::Varint},
+    Eof,
 };
 
 pub enum ReplayKind {

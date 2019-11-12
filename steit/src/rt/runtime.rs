@@ -198,9 +198,7 @@ impl Serialize for Runtime {
 
 #[cfg(test)]
 mod test {
-    use iowrap::Eof;
-
-    use crate::{rt::node::Node, Deserialize, Serialize};
+    use crate::{rt::node::Node, Deserialize, Eof, Serialize};
 
     use super::Runtime;
 

@@ -1,10 +1,9 @@
 use std::io::{self, Read};
 
-use iowrap::Eof;
-
 use super::{
     types::varint::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
+    Eof,
 };
 
 pub trait Merge: WireType {

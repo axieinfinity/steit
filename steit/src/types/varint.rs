@@ -1,10 +1,8 @@
 use std::io::{self, Read};
 
-use iowrap::Eof;
-
 use crate::{
     wire_type::{WireType, WIRE_TYPE_VARINT},
-    Deserialize, Merge, Serialize,
+    Deserialize, Eof, Merge, Serialize,
 };
 
 pub trait Varint: Serialize + Deserialize {}
@@ -184,9 +182,7 @@ fn size_64(mut value: i64) -> u32 {
 mod test {
     use std::fmt;
 
-    use iowrap::Eof;
-
-    use crate::test_case;
+    use crate::{test_case, Eof};
 
     use super::Varint;
 
