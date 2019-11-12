@@ -2,10 +2,9 @@ use std::io::{self, Read};
 
 use iowrap::Eof;
 
-use super::{
-    de::{Deserialize, Merge},
-    ser::Serialize,
+use crate::{
     wire_type::{WireType, WIRE_TYPE_VARINT},
+    Deserialize, Merge, Serialize,
 };
 
 pub trait Varint: Serialize + Deserialize {}

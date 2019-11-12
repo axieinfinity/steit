@@ -2,7 +2,7 @@ pub mod de;
 pub mod rt;
 pub mod ser;
 pub mod state;
-pub mod varint;
+pub mod types;
 pub mod wire_type;
 
 pub use de::{Deserialize, Merge};

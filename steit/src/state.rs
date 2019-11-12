@@ -9,7 +9,7 @@ use super::{
         runtimed::Runtimed,
     },
     ser::Serialize,
-    varint::Varint,
+    types::varint::Varint,
 };
 
 pub trait State: Runtimed + Serialize + Deserialize {

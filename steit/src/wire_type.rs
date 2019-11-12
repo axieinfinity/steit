@@ -1,4 +1,4 @@
-use super::varint::Varint;
+use super::types::varint::Varint;
 
 pub const WIRE_TYPE_VARINT: u8 = 0;
 pub const WIRE_TYPE_SIZED: u8 = 2;
