@@ -25,7 +25,7 @@ impl<T: Varint> Merge for Vec<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
-            let item = T::deserialize(reader)?;
+            let item = T::deserialize_nested(reader)?;
             self.push(item);
         }
 
