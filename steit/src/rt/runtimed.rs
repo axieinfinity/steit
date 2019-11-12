@@ -1,4 +1,4 @@
-use crate::types::varint::Varint;
+use crate::types::Varint;
 
 use super::runtime::Runtime;
 

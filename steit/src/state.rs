@@ -2,9 +2,9 @@ use std::io;
 
 use super::{
     de::Deserialize,
-    rt::runtimed::Runtimed,
+    rt::Runtimed,
     ser::Serialize,
-    types::{bytes::Bytes, varint::Varint},
+    types::{Bytes, Varint},
     Eof,
 };
 

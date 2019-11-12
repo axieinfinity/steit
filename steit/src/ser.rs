@@ -1,7 +1,7 @@
 use std::io;
 
 use super::{
-    types::varint::Varint,
+    types::Varint,
     wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
 };
 

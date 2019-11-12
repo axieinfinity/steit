@@ -192,8 +192,8 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                de,
-                wire_type,
+                exhaust_nested,
+                wire_type::{self, WireType},
                 Deserialize,
                 Eof,
                 Merge,
@@ -201,7 +201,6 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
                 Runtime,
                 Runtimed,
                 Serialize,
-                WireType,
             };
 
             #tokens

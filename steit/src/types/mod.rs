@@ -1,3 +1,5 @@
-pub mod bytes;
-pub mod collections;
-pub mod varint;
+mod bytes;
+mod varint;
+
+pub use bytes::*;
+pub use varint::*;

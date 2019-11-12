@@ -1,7 +1,7 @@
 use std::io::{self, Read};
 
 use super::{
-    types::varint::Varint,
+    types::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
     Eof,
 };

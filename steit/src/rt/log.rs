@@ -1,6 +1,6 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{types::bytes::Bytes, Serialize};
+use crate::{types::Bytes, Serialize};
 
 use super::runtime::Runtime;
 
