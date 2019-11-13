@@ -352,6 +352,21 @@ impl<'a> Struct<'a> {
         let is_variant = self.variant.is_some();
         let replayers = map_fields!(self, replayer(is_variant));
 
+        let update = if is_variant {
+            quote! {
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "`update` is not supported on variants (but enums)",
+                ))
+            }
+        } else {
+            quote! {
+                *self = Self::with_runtime(self.runtime().clone());
+                self.runtime().clear_cached_size();
+                self.merge(reader)
+            }
+        };
+
         quote! {
             if let Some(tag) = path.next() {
                 match tag {
@@ -363,7 +378,16 @@ impl<'a> Struct<'a> {
                     )),
                 }
             } else {
-                self.handle_in_place(kind, reader)
+                match kind {
+                    ReplayKind::Update => {
+                        #update
+                    }
+
+                    ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "`add` and `remove` are not supported on structs and enums",
+                    )),
+                }
             }
         }
     }

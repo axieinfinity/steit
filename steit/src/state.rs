@@ -59,25 +59,6 @@ pub trait State: Runtimed + Serialize + Deserialize {
     ) -> io::Result<()>;
 
     #[inline]
-    fn handle_in_place<'a>(
-        &mut self,
-        kind: &ReplayKind,
-        reader: &mut Eof<impl io::Read>,
-    ) -> io::Result<()> {
-        match kind {
-            ReplayKind::Update => {
-                *self = Self::deserialize(reader)?;
-                Ok(())
-            }
-
-            ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "`add` and `remove` are not supported on the current `State` object",
-            )),
-        }
-    }
-
-    #[inline]
     fn is_root(&self) -> bool {
         self.runtime().is_root()
     }
@@ -131,7 +112,17 @@ impl<T: Varint> State for T {
                 format!("expected end-of-path but still got [{}] remaining", s),
             ))
         } else {
-            self.handle_in_place(kind, reader)
+            match kind {
+                ReplayKind::Update => {
+                    *self = Self::deserialize(reader)?;
+                    Ok(())
+                }
+
+                ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "`add` and `remove` are not supported on varints",
+                )),
+            }
         }
     }
 }

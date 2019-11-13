@@ -84,7 +84,7 @@ impl Serialize for Root {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Runtime {
     logger: Logger,
     path: Rc<Node<Child, Root>>,
