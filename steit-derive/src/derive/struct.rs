@@ -227,7 +227,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
-        let arg = self.runtime.as_ref().map(|_| quote!(Default::default()));
+        let arg = self.runtime.as_ref().map(|_| quote!(Runtime::default()));
 
         self.r#impl.impl_for(
             "Default",

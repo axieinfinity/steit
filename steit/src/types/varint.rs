@@ -39,7 +39,7 @@ macro_rules! impl_unsigned_varint {
 
             #[inline]
             fn is_empty(&self) -> bool {
-                *self == Default::default()
+                *self == Self::default()
             }
         }
 
@@ -93,7 +93,7 @@ macro_rules! impl_signed_varint {
 
             #[inline]
             fn is_empty(&self) -> bool {
-                *self == Default::default()
+                *self == Self::default()
             }
         }
 

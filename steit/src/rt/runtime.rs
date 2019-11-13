@@ -93,7 +93,7 @@ pub struct Runtime {
 impl Runtime {
     #[inline]
     pub fn new() -> Self {
-        Default::default()
+        Self::default()
     }
 
     #[inline]

@@ -71,7 +71,7 @@ impl<Child, Root> Node<Child, Root> {
 impl<Child, Root: Default> Default for Node<Child, Root> {
     #[inline]
     fn default() -> Self {
-        Self::root(Default::default())
+        Self::root(Root::default())
     }
 }
 

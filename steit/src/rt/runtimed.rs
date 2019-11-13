@@ -10,7 +10,7 @@ pub trait Runtimed {
 impl<T: Varint> Runtimed for T {
     #[inline]
     fn with_runtime(_runtime: Runtime) -> Self {
-        Default::default()
+        Self::default()
     }
 
     #[inline]
