@@ -23,6 +23,30 @@ impl<T: State> List<T> {
     }
 
     #[inline]
+    pub fn push(&mut self, item: T) {
+        self.runtime.log_add(&item).unwrap();
+        self.items.push(Some(item));
+    }
+
+    #[inline]
+    pub fn push_with(&mut self, f: impl FnOnce(Runtime) -> T) {
+        let tag = self.items.len();
+        let item = f(self.runtime.nested(tag as u16));
+        self.push(item);
+    }
+
+    #[inline]
+    pub fn remove(&mut self, index: usize) {
+        match self.items.get_mut(index) {
+            Some(item) => {
+                self.runtime.log_remove(index as u16).unwrap();
+                *item = None;
+            }
+            None => (),
+        }
+    }
+
+    #[inline]
     pub fn iter(&self) -> Iter<'_, T> {
         Iter::new(self.items.iter())
     }
