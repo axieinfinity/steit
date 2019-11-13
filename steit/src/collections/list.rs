@@ -31,15 +31,21 @@ impl<T: State> List<T> {
     #[inline]
     pub fn push_with(&mut self, f: impl FnOnce(Runtime) -> T) {
         let tag = self.items.len();
+
+        assert!(
+            tag <= u16::max_value() as usize,
+            "`List` indices must be within `u16`"
+        );
+
         let item = f(self.runtime.nested(tag as u16));
         self.push(item);
     }
 
     #[inline]
-    pub fn remove(&mut self, index: usize) {
-        match self.items.get_mut(index) {
+    pub fn remove(&mut self, tag: u16) {
+        match self.items.get_mut(tag as usize) {
             Some(item) => {
-                self.runtime.log_remove(index as u16).unwrap();
+                self.runtime.log_remove(tag).unwrap();
                 *item = None;
             }
             None => (),
@@ -96,6 +102,11 @@ impl<T: State> Runtimed for List<T> {
 impl<T: State> Serialize for List<T> {
     #[inline]
     fn size(&self) -> u32 {
+        assert!(
+            self.items.len() <= u16::max_value() as usize + 1,
+            "`List` indices must be within `u16`"
+        );
+
         let mut size = 0;
 
         for (tag, item) in self.items.iter().enumerate() {
@@ -109,6 +120,11 @@ impl<T: State> Serialize for List<T> {
 
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        assert!(
+            self.items.len() <= u16::max_value() as usize + 1,
+            "`List` indices must be within `u16`"
+        );
+
         for (tag, item) in self.items.iter().enumerate() {
             if let Some(item) = item {
                 item.serialize_nested(tag as u16, writer)?;
