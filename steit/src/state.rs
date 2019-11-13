@@ -69,6 +69,13 @@ pub trait State: Runtimed + Serialize + Deserialize {
     }
 
     #[inline]
+    fn handle_update(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+        *self = Self::with_runtime(self.runtime().clone());
+        self.runtime().clear_cached_size();
+        self.merge(reader)
+    }
+
+    #[inline]
     fn replay(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         if !self.is_root() {
             return Err(io::Error::new(
@@ -113,10 +120,7 @@ impl<T: Varint> State for T {
             ))
         } else {
             match kind {
-                ReplayKind::Update => {
-                    *self = Self::deserialize(reader)?;
-                    Ok(())
-                }
+                ReplayKind::Update => self.handle_update(reader),
 
                 ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
                     io::ErrorKind::InvalidData,
@@ -124,5 +128,11 @@ impl<T: Varint> State for T {
                 )),
             }
         }
+    }
+
+    #[inline]
+    fn handle_update(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+        *self = Self::deserialize(reader)?;
+        Ok(())
     }
 }

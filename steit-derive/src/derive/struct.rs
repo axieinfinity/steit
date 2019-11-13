@@ -360,11 +360,7 @@ impl<'a> Struct<'a> {
                 ))
             }
         } else {
-            quote! {
-                *self = Self::with_runtime(self.runtime().clone());
-                self.runtime().clear_cached_size();
-                self.merge(reader)
-            }
+            quote!(self.handle_update(reader))
         };
 
         quote! {
@@ -379,9 +375,7 @@ impl<'a> Struct<'a> {
                 }
             } else {
                 match kind {
-                    ReplayKind::Update => {
-                        #update
-                    }
+                    ReplayKind::Update => #update,
 
                     ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
                         io::ErrorKind::InvalidData,

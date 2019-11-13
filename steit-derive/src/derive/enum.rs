@@ -382,11 +382,7 @@ impl<'a> Enum<'a> {
                         }
                     } else {
                         match kind {
-                            ReplayKind::Update => {
-                                *self = Self::with_runtime(self.runtime().clone());
-                                self.runtime().clear_cached_size();
-                                self.merge(reader)
-                            }
+                            ReplayKind::Update => self.handle_update(reader),
 
                             ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
                                 io::ErrorKind::InvalidData,
