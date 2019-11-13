@@ -26,6 +26,7 @@ impl<T: State> List<T> {
     pub fn push(&mut self, item: T) {
         self.runtime.log_add(&item).unwrap();
         self.items.push(Some(item));
+        self.runtime.clear_cached_size();
     }
 
     #[inline]
@@ -47,6 +48,7 @@ impl<T: State> List<T> {
             Some(item) => {
                 self.runtime.log_remove(tag).unwrap();
                 *item = None;
+                self.runtime.clear_cached_size();
             }
             None => (),
         }
@@ -102,20 +104,22 @@ impl<T: State> Runtimed for List<T> {
 impl<T: State> Serialize for List<T> {
     #[inline]
     fn size(&self) -> u32 {
-        assert!(
-            self.items.len() <= u16::max_value() as usize + 1,
-            "`List` indices must be within `u16`"
-        );
+        self.runtime.get_or_set_cached_size_from(|| {
+            assert!(
+                self.items.len() <= u16::max_value() as usize + 1,
+                "`List` indices must be within `u16`"
+            );
 
-        let mut size = 0;
+            let mut size = 0;
 
-        for (tag, item) in self.items.iter().enumerate() {
-            if let Some(item) = item {
-                size += item.size_nested(tag as u16);
+            for (tag, item) in self.items.iter().enumerate() {
+                if let Some(item) = item {
+                    size += item.size_nested(tag as u16);
+                }
             }
-        }
 
-        size
+            size
+        })
     }
 
     #[inline]
@@ -138,6 +142,8 @@ impl<T: State> Serialize for List<T> {
 impl<T: State> Merge for List<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
+        let mut changed = false;
+
         while !reader.eof()? {
             let key = u32::deserialize(reader)?;
             let (tag, wire_type) = wire_type::split_key(key);
@@ -150,12 +156,17 @@ impl<T: State> Merge for List<T> {
                 }
 
                 self.items[tag as usize] = Some(item);
+                changed = true;
             } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!("unexpected wire type {}", wire_type),
                 ));
             }
+        }
+
+        if changed {
+            self.runtime.clear_cached_size();
         }
 
         Ok(())
@@ -177,6 +188,7 @@ impl<T: State> State for List<T> {
 
                     if kind == &ReplayKind::Remove && path.peek().is_none() {
                         self.items[tag as usize] = None;
+                        self.runtime.clear_cached_size();
                         Ok(())
                     } else {
                         item.handle(path, kind, reader)
@@ -194,32 +206,21 @@ impl<T: State> State for List<T> {
                 ))
             }
         } else {
-            self.handle_in_place(kind, reader)
-        }
-    }
+            match kind {
+                ReplayKind::Update => self.handle_update(reader),
 
-    #[inline]
-    fn handle_in_place<'a>(
-        &mut self,
-        kind: &ReplayKind,
-        reader: &mut Eof<impl io::Read>,
-    ) -> io::Result<()> {
-        match kind {
-            ReplayKind::Update => {
-                *self = Self::deserialize(reader)?;
-                Ok(())
+                ReplayKind::Add => {
+                    let item = T::deserialize(reader)?;
+                    self.items.push(Some(item));
+                    self.runtime.clear_cached_size();
+                    Ok(())
+                }
+
+                ReplayKind::Remove => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "`remove` are not supported on the current `List` but its items",
+                )),
             }
-
-            ReplayKind::Add => {
-                let item = T::deserialize(reader)?;
-                self.items.push(Some(item));
-                Ok(())
-            }
-
-            ReplayKind::Remove => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "`remove` are not supported on the current `List` but its items",
-            )),
         }
     }
 }
