@@ -201,6 +201,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
                 Runtime,
                 Runtimed,
                 Serialize,
+                State,
             };
 
             #tokens
