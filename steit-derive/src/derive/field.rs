@@ -245,7 +245,7 @@ impl<'a> Runtime<'a> {
             let fields: syn::FieldsNamed = syn::parse_quote!({ #name: #krate::Runtime });
             fields.named
         } else {
-            let fields: syn::FieldsUnnamed = syn::parse_quote!(#krate::Runtime);
+            let fields: syn::FieldsUnnamed = syn::parse_quote!((#krate::Runtime));
             fields.unnamed
         }
     }

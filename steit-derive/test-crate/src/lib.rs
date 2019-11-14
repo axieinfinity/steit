@@ -200,7 +200,8 @@ mod test {
         Qux,
     }
 
-    // struct Qux(i32);
+    #[steitize(State)]
+    struct Qux(#[steit(tag = 0)] i32);
 
     fn back_and_forth(value: &mut (impl fmt::Debug + Serialize + Merge)) {
         let mut bytes = Vec::new();

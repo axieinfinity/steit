@@ -131,7 +131,7 @@ impl AttrParse for syn::AttributeArgs {
 }
 
 // Cannot merge this with the implementation above
-// since that would cause a conflict with one of `&mut Vec<syn::Attribute>`.
+// since that would cause a conflict with the one of `&mut Vec<syn::Attribute>`.
 impl AttrParse for syn::punctuated::Punctuated<syn::NestedMeta, syn::Token![,]> {
     fn parse(
         self,
