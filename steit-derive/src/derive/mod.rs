@@ -147,6 +147,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
             &mut input.attrs,
             &mut data.fields,
             None,
+            None,
         )
         .ok()
         .into_token_stream(),

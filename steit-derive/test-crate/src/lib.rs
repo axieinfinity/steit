@@ -417,4 +417,17 @@ mod test {
         println!("{:?}", bytes);
         println!("check size {:#?}", hello);
     }
+
+    #[steitize(State)]
+    #[derive(Debug)]
+    enum EnumEnum {
+        #[steit(tag = 0)]
+        Foo(#[steit(tag = 4)] i32),
+
+        #[steit(tag = 28)]
+        Bar(#[steit(tag = 5)] u16),
+
+        #[steit(tag = 29)]
+        Qux,
+    }
 }

@@ -60,6 +60,7 @@ impl<'a> Struct<'a> {
         r#impl: &'a Impl<'a>,
         attrs: impl AttrParse,
         fields: &'a mut syn::Fields,
+        named: Option<bool>,
         variant: impl Into<Option<Variant>>,
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(context, attrs);
@@ -67,7 +68,10 @@ impl<'a> Struct<'a> {
         Self::parse_fields(setting, context, fields).and_then(|parsed| {
             let runtime = if !setting.no_runtime {
                 if let syn::Fields::Unit = fields {
-                    *fields = syn::Fields::Named(syn::parse_quote!({}));
+                    match named {
+                        Some(true) | None => *fields = syn::Fields::Named(syn::parse_quote!({})),
+                        Some(false) => *fields = syn::Fields::Unnamed(syn::parse_quote!(())),
+                    }
                 }
 
                 Some(match fields {

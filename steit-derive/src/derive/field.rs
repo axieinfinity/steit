@@ -150,7 +150,7 @@ impl<'a> Field<'a> {
                         }
                     },
                     quote! {
-                        if let #struct_name #qual { ref mut #destructure, .. } = self {
+                        if let #struct_name #qual { #destructure, .. } = self {
                             *#field = value;
                         }
                     },

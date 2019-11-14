@@ -62,22 +62,43 @@ impl<'a> Enum<'a> {
 
         let mut tags = HashSet::new();
         let mut unique = true;
+        let mut named = None;
 
-        for (variant, _, _) in &parsed_data {
+        for (variant, _, fields) in &parsed_data {
             let (tag, tokens) = variant.tag_with_tokens();
 
             if !tags.insert(tag) {
                 context.error(tokens, "duplicate tag");
                 unique = false;
             }
+
+            match fields {
+                syn::Fields::Named(_) => match named {
+                    Some(false) => unreachable!("enum is named and unnamed at the same time"),
+                    _ => named = Some(true),
+                },
+
+                syn::Fields::Unnamed(_) => match named {
+                    Some(true) => unreachable!("enum is named and unnamed at the same time"),
+                    _ => named = Some(false),
+                },
+
+                syn::Fields::Unit => (),
+            }
         }
 
         let mut parsed = Vec::with_capacity(len);
 
         for (variant, unknown_attrs, fields) in parsed_data {
-            if let Ok(r#struct) =
-                Struct::parse(setting, context, r#impl, unknown_attrs, fields, variant)
-            {
+            if let Ok(r#struct) = Struct::parse(
+                setting,
+                context,
+                r#impl,
+                unknown_attrs,
+                fields,
+                named,
+                variant,
+            ) {
                 parsed.push(r#struct);
             }
         }
