@@ -1,8 +1,8 @@
-use std::io::{self, Read};
+use std::io;
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_VARINT},
-    Eof, Merge, Serialize,
+    Deserialize, Eof, Merge, Serialize,
 };
 
 use super::varint::Varint;
@@ -26,9 +26,7 @@ impl Serialize for bool {
 impl Merge for bool {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        let mut buf = [0];
-        reader.read_exact(&mut buf)?;
-        *self = buf[0] != 0;
+        *self = u64::deserialize(reader)? != 0;
         Ok(())
     }
 }
