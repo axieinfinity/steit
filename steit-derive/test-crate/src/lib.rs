@@ -422,7 +422,7 @@ mod test {
     #[derive(Debug)]
     enum EnumEnum {
         #[steit(tag = 0)]
-        Foo(#[steit(tag = 4)] i32),
+        Foo(#[steit(tag = 4)] bool),
 
         #[steit(tag = 28)]
         Bar(#[steit(tag = 5)] u16),
