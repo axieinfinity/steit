@@ -1,5 +1,3 @@
-use super::types::Varint;
-
 pub const WIRE_TYPE_VARINT: u8 = 0;
 pub const WIRE_TYPE_SIZED: u8 = 2;
 
@@ -10,10 +8,6 @@ pub trait WireType {
     fn wire_type(&self) -> u8 {
         Self::WIRE_TYPE
     }
-}
-
-impl<T: Varint> WireType for Vec<T> {
-    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
 #[inline]

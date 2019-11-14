@@ -1,9 +1,6 @@
 use std::io;
 
-use super::{
-    types::Varint,
-    wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
-};
+use super::wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT};
 
 pub trait Serialize: WireType {
     fn size(&self) -> u32;
@@ -70,25 +67,5 @@ pub trait Serialize: WireType {
                 format!("unexpected wire type {}", wire_type),
             )),
         }
-    }
-}
-
-impl<T: Varint> Serialize for Vec<T> {
-    fn size(&self) -> u32 {
-        let mut size = 0;
-
-        for item in self {
-            size += item.size_nested(None);
-        }
-
-        size
-    }
-
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        for item in self {
-            item.serialize_nested(None, writer)?;
-        }
-
-        Ok(())
     }
 }

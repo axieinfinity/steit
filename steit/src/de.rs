@@ -1,7 +1,6 @@
 use std::io::{self, Read};
 
 use super::{
-    types::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT},
     Eof,
 };
@@ -18,18 +17,6 @@ pub trait Merge: WireType {
         } else {
             self.merge(reader)
         }
-    }
-}
-
-impl<T: Varint> Merge for Vec<T> {
-    #[inline]
-    fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        while !reader.eof()? {
-            let item = T::deserialize_nested(reader)?;
-            self.push(item);
-        }
-
-        Ok(())
     }
 }
 
