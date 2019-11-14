@@ -1,4 +1,3 @@
-pub mod collections;
 mod de;
 mod rt;
 mod ser;
