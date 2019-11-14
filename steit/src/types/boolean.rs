@@ -19,8 +19,7 @@ impl Serialize for bool {
 
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        writer.write(&[*self as u8])?;
-        Ok(())
+        writer.write_all(&[*self as u8])
     }
 }
 

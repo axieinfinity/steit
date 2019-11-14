@@ -28,10 +28,9 @@ macro_rules! impl_unsigned_varint {
 
                 loop {
                     if value & !0x7f == 0 {
-                        writer.write(&[value as u8])?;
-                        return Ok(());
+                        return writer.write_all(&[value as u8]);
                     } else {
-                        writer.write(&[value as u8 & 0x7f | 0x80])?;
+                        writer.write_all(&[value as u8 & 0x7f | 0x80])?;
                         value >>= 7;
                     }
                 }
