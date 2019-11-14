@@ -18,7 +18,7 @@ impl<'a> Enum<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
         context: &'a Context,
-        r#impl: &'a Impl<'_>,
+        r#impl: &'a Impl,
         data: &'a mut syn::DataEnum,
     ) -> derive::Result<Self> {
         if data.variants.is_empty() {
@@ -37,7 +37,7 @@ impl<'a> Enum<'a> {
     fn parse_variants(
         setting: &'a DeriveSetting,
         context: &'a Context,
-        r#impl: &'a Impl<'_>,
+        r#impl: &'a Impl,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Vec<Struct<'a>>> {
         let len = variants.iter().len();

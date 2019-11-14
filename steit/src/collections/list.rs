@@ -55,12 +55,12 @@ impl<T: State> List<T> {
     }
 
     #[inline]
-    pub fn iter(&self) -> Iter<'_, T> {
+    pub fn iter(&self) -> Iter<T> {
         Iter::new(self.items.iter())
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<'_, T> {
+    pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut::new(self.items.iter_mut())
     }
 }
