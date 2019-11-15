@@ -15,7 +15,7 @@ pub enum ReplayKind {
     Remove,
 }
 
-#[crate::steitize(Deserialize, own_crate, no_runtime)]
+#[crate::steitize(Deserialize, own_crate)]
 #[derive(Debug)]
 pub enum ReplayEntry {
     #[steit(tag = 0)]

@@ -66,7 +66,7 @@ impl<'a> Struct<'a> {
         let attrs = StructAttrs::parse(context, attrs);
 
         Self::parse_fields(setting, context, fields).and_then(|parsed| {
-            let runtime = if !setting.no_runtime {
+            let runtime = if setting.runtime() {
                 if let syn::Fields::Unit = fields {
                     match named {
                         Some(true) | None => *fields = syn::Fields::Named(syn::parse_quote!({})),
@@ -446,7 +446,7 @@ impl<'a> ToTokens for Struct<'a> {
 
         tokens.extend(self.impl_wire_type());
 
-        if self.setting.runtimed() {
+        if self.setting.runtime() {
             tokens.extend(self.impl_runtimed());
         }
 

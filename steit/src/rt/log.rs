@@ -5,7 +5,7 @@ use crate::{types::Bytes, Serialize};
 use super::runtime::Runtime;
 
 // `path` is put in each variant and `Entry` is flattened to save serialization size.
-#[crate::steitize(Serialize, own_crate, no_runtime)]
+#[crate::steitize(Serialize, own_crate)]
 pub enum LogEntry<'a> {
     #[steit(tag = 0)]
     Update {

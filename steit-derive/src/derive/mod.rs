@@ -27,7 +27,7 @@ pub struct DeriveSetting {
     state: bool,
 
     own_crate: bool,
-    no_runtime: bool,
+    no_cached_size: bool,
 }
 
 impl DeriveSetting {
@@ -37,8 +37,8 @@ impl DeriveSetting {
         let mut deserialize = Attr::new(context, "Deserialize");
         let mut state = Attr::new(context, "State");
 
-        let mut no_runtime = Attr::new(context, "no_runtime");
         let mut own_crate = Attr::new(context, "own_crate");
+        let mut no_cached_size = Attr::new(context, "no_cached_size");
 
         args.parse(context, true, &mut |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
@@ -46,11 +46,11 @@ impl DeriveSetting {
             syn::Meta::Path(path) if deserialize.parse_path(path) => true,
             syn::Meta::Path(path) if state.parse_path(path) => true,
 
-            syn::Meta::Path(path) if no_runtime.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_runtime.parse_bool(meta) => true,
-
             syn::Meta::Path(path) if own_crate.parse_path(path) => true,
             syn::Meta::NameValue(meta) if own_crate.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
 
             _ => false,
         });
@@ -60,34 +60,14 @@ impl DeriveSetting {
         let deserialize = deserialize.get().unwrap_or_default();
         let state = state.get().unwrap_or_default();
 
-        let no_runtime = no_runtime.get_with_tokens();
-
-        let deserialize = deserialize || state;
-
-        let no_runtime = if let Some((true, no_runtime_tokens)) = no_runtime {
-            if state {
-                context.error(
-                    no_runtime_tokens,
-                    "`no_runtime` cannot be enabled on `State`",
-                );
-
-                // Force it to be `false`
-                false
-            } else {
-                true
-            }
-        } else {
-            false
-        };
-
         Self {
             serialize: serialize || state,
             merge: merge || deserialize || state,
-            deserialize,
+            deserialize: deserialize || state,
             state,
 
             own_crate: own_crate.get().unwrap_or_default(),
-            no_runtime,
+            no_cached_size: no_cached_size.get().unwrap_or_default(),
         }
     }
 
@@ -114,7 +94,7 @@ impl DeriveSetting {
     }
 
     pub fn setters(&self) -> bool {
-        self.state || !self.no_runtime
+        self.state
     }
 
     pub fn default(&self, is_enum: bool) -> bool {
@@ -125,7 +105,7 @@ impl DeriveSetting {
         }
     }
 
-    pub fn runtimed(&self) -> bool {
+    pub fn runtime(&self) -> bool {
         self.state
     }
 }

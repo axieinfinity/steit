@@ -71,9 +71,9 @@ impl<'a> Field<'a> {
     pub fn init(&self) -> TokenStream {
         let tag = self.tag();
 
-        let value = match self.setting.no_runtime {
-            false => quote!(Runtimed::with_runtime(runtime.nested(#tag))),
-            true => quote!(Default::default()),
+        let value = match self.setting.runtime() {
+            true => quote!(Runtimed::with_runtime(runtime.nested(#tag))),
+            false => quote!(Default::default()),
         };
 
         init(self.access(), value)
@@ -108,8 +108,8 @@ impl<'a> Field<'a> {
     }
 
     pub fn setter(&self, struct_name: &syn::Ident, variant: Option<&Variant>) -> TokenStream {
-        if self.setting.no_runtime {
-            unreachable!("expected a `Runtime` field");
+        if !self.setting.runtime() {
+            unreachable!("setters are only available when a `Runtime` field is present");
         }
 
         let field_name = match &self.name {

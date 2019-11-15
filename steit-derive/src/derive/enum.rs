@@ -131,9 +131,9 @@ impl<'a> Enum<'a> {
 
         self.r#impl
             .r#impl(if let Some(default_ctor_name) = default_ctor_name {
-                let (declare_arg, call_arg) = match self.setting.no_runtime {
-                    false => (quote!(runtime: Runtime), quote!(runtime)),
-                    true => (quote!(), quote!()),
+                let (declare_arg, call_arg) = match self.setting.runtime() {
+                    true => (quote!(runtime: Runtime), quote!(runtime)),
+                    false => (quote!(), quote!()),
                 };
 
                 quote! {
@@ -162,9 +162,9 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
-        let arg = match self.setting.no_runtime {
-            false => quote!(Runtime::default()),
-            true => quote!(),
+        let arg = match self.setting.runtime() {
+            true => quote!(Runtime::default()),
+            false => quote!(),
         };
 
         self.r#impl.impl_for(
@@ -244,7 +244,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let (set_cached_size, cached_size, serialize) = if !self.setting.no_runtime {
+        let (set_cached_size, cached_size, serialize) = if self.setting.runtime() {
             (
                 quote! { self.runtime().set_cached_size(size); },
                 quote!(self.runtime().cached_size()),
@@ -319,9 +319,9 @@ impl<'a> Enum<'a> {
             let qual = variant.qual();
             let ctor_name = variant.ctor_name();
 
-            let arg = match self.setting.no_runtime {
-                false => quote!(self.runtime().parent()),
-                true => quote!(),
+            let arg = match self.setting.runtime() {
+                true => quote!(self.runtime().parent()),
+                false => quote!(),
             };
 
             let destructure = r#struct.destructure();
@@ -448,7 +448,7 @@ impl<'a> ToTokens for Enum<'a> {
 
         tokens.extend(self.impl_wire_type());
 
-        if self.setting.runtimed() {
+        if self.setting.runtime() {
             tokens.extend(self.impl_runtimed());
         }
 
