@@ -215,33 +215,29 @@ impl<'a> Field<'a> {
     }
 }
 
-pub struct Runtime<'a> {
-    setting: &'a DeriveSetting,
+pub struct ExtraField {
     name: Option<syn::Ident>,
+    ty: syn::Type,
     index: usize,
 }
 
-impl<'a> Runtime<'a> {
-    pub fn new(
-        setting: &'a DeriveSetting,
-        name: impl Into<Option<syn::Ident>>,
-        index: usize,
-    ) -> Self {
+impl ExtraField {
+    pub fn new(name: impl Into<Option<syn::Ident>>, ty: syn::Type, index: usize) -> Self {
         Self {
-            setting,
             name: name.into(),
+            ty,
             index,
         }
     }
 
     pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
-        let krate = self.setting.krate();
+        let ty = &self.ty;
 
         if let Some(name) = &self.name {
-            let fields: syn::FieldsNamed = syn::parse_quote!({ #name: #krate::Runtime });
+            let fields: syn::FieldsNamed = syn::parse_quote!({ #name: #ty });
             fields.named
         } else {
-            let fields: syn::FieldsUnnamed = syn::parse_quote!((#krate::Runtime));
+            let fields: syn::FieldsUnnamed = syn::parse_quote!((#ty));
             fields.unnamed
         }
     }
@@ -250,13 +246,13 @@ impl<'a> Runtime<'a> {
         access(&self.name, self.index)
     }
 
-    pub fn init(&self) -> TokenStream {
+    pub fn init(&self, value: TokenStream) -> TokenStream {
         let access = self.access();
 
-        if &access.to_string() != "runtime" {
-            init(self.access(), quote!(runtime))
+        if access.to_string() != value.to_string() {
+            init(self.access(), value)
         } else {
-            quote!(runtime)
+            value
         }
     }
 }

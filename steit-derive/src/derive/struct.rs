@@ -11,25 +11,29 @@ use crate::{
 };
 
 use super::{
-    field::{Field, Runtime},
+    field::{ExtraField, Field},
     variant::Variant,
     DeriveSetting,
 };
 
 struct StructAttrs {
+    cached_size_renamed: Option<(String, TokenStream)>,
     runtime_renamed: Option<(String, TokenStream)>,
 }
 
 impl StructAttrs {
     pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
+        let mut cached_size_renamed = Attr::new(context, "cached_size_renamed");
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
         attrs.parse(context, true, &mut |meta| match meta {
+            syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
             _ => false,
         });
 
         Self {
+            cached_size_renamed: cached_size_renamed.get_with_tokens(),
             runtime_renamed: runtime_renamed.get_with_tokens(),
         }
     }
@@ -49,7 +53,8 @@ pub struct Struct<'a> {
     setting: &'a DeriveSetting,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
-    runtime: Option<Runtime<'a>>,
+    cached_size: Option<ExtraField>,
+    runtime: Option<ExtraField>,
     variant: Option<Variant>,
 }
 
@@ -60,56 +65,60 @@ impl<'a> Struct<'a> {
         r#impl: &'a Impl<'a>,
         attrs: impl AttrParse,
         fields: &'a mut syn::Fields,
-        named: Option<bool>,
+        named_hint: Option<bool>,
         variant: impl Into<Option<Variant>>,
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(context, attrs);
 
         Self::parse_fields(setting, context, fields).and_then(|parsed| {
-            let runtime = if setting.runtime() {
-                if let syn::Fields::Unit = fields {
-                    match named {
-                        Some(true) | None => *fields = syn::Fields::Named(syn::parse_quote!({})),
-                        Some(false) => *fields = syn::Fields::Unnamed(syn::parse_quote!(())),
-                    }
+            let mut index = parsed.len();
+
+            let cached_size = if setting.cached_size() {
+                let krate = setting.krate();
+
+                Some(Self::add_field(
+                    context,
+                    fields,
+                    named_hint,
+                    attrs.cached_size_renamed,
+                    "cached_size",
+                    syn::parse_quote!(#krate::CachedSize),
+                    {
+                        index += 1;
+                        index - 1
+                    },
+                ))
+            } else {
+                if let Some((_, tokens)) = &attrs.runtime_renamed {
+                    context.error(
+                        tokens,
+                        "this has no effect because #[steit(no_cached_size)] was set",
+                    );
                 }
 
-                Some(match fields {
-                    syn::Fields::Named(fields) => {
-                        let name = match attrs.runtime_renamed {
-                            Some((runtime_renamed, _)) => runtime_renamed,
-                            None => "runtime".to_owned(),
-                        };
+                None
+            };
 
-                        let name = format_ident!("{}", name);
-                        let runtime = Runtime::new(setting, name, parsed.len());
-                        fields.named.extend(runtime.declare());
-                        runtime
-                    }
+            let runtime = if setting.runtime() {
+                let krate = setting.krate();
 
-                    syn::Fields::Unnamed(fields) => {
-                        if let Some((runtime_renamed, _)) = attrs.runtime_renamed {
-                            context.error(
-                                &fields,
-                                format!(
-                                    "unexpected {} on unnamed fields",
-                                    format!("#[steit(runtime_renamed = {:?})]", runtime_renamed),
-                                ),
-                            );
-                        }
-
-                        let runtime = Runtime::new(setting, None, parsed.len());
-                        fields.unnamed.extend(runtime.declare());
-                        runtime
-                    }
-
-                    syn::Fields::Unit => unreachable!("unexpected unit fields"),
-                })
+                Some(Self::add_field(
+                    context,
+                    fields,
+                    named_hint,
+                    attrs.runtime_renamed,
+                    "runtime",
+                    syn::parse_quote!(#krate::Runtime),
+                    {
+                        index += 1;
+                        index - 1
+                    },
+                ))
             } else {
-                if let Some((_, runtime_renamed_tokens)) = attrs.runtime_renamed {
+                if let Some((_, tokens)) = &attrs.runtime_renamed {
                     context.error(
-                        runtime_renamed_tokens,
-                        "this has no effect because #[steit(no_runtime)] is set",
+                        tokens,
+                        "this has no effect because the current object is not a `State`",
                     );
                 }
 
@@ -120,6 +129,7 @@ impl<'a> Struct<'a> {
                 setting,
                 r#impl,
                 fields: parsed,
+                cached_size,
                 runtime,
                 variant: variant.into(),
             })
@@ -163,7 +173,56 @@ impl<'a> Struct<'a> {
         }
     }
 
-    pub fn runtime(&self) -> Option<&Runtime> {
+    fn add_field(
+        context: &Context,
+        fields: &mut syn::Fields,
+        named_hint: Option<bool>,
+        renamed: Option<(String, TokenStream)>,
+        default_name: &str,
+        ty: syn::Type,
+        index: usize,
+    ) -> ExtraField {
+        if let syn::Fields::Unit = fields {
+            match named_hint {
+                Some(true) | None => *fields = syn::Fields::Named(syn::parse_quote!({})),
+                Some(false) => *fields = syn::Fields::Unnamed(syn::parse_quote!(())),
+            }
+        }
+
+        match fields {
+            syn::Fields::Named(fields) => {
+                let name = match renamed {
+                    Some((name, _)) => name,
+                    None => default_name.to_owned(),
+                };
+
+                let name = format_ident!("{}", name);
+                let field = ExtraField::new(name, ty, index);
+                fields.named.extend(field.declare());
+                field
+            }
+
+            syn::Fields::Unnamed(fields) => {
+                if let Some((name, _)) = renamed {
+                    context.error(
+                        &fields,
+                        format!(
+                            "unexpected {} on unnamed fields",
+                            format!("#[steit({}_renamed = {:?})]", default_name, name),
+                        ),
+                    );
+                }
+
+                let field = ExtraField::new(None, ty, index);
+                fields.unnamed.extend(field.declare());
+                field
+            }
+
+            syn::Fields::Unit => unreachable!("unexpected unit fields"),
+        }
+    }
+
+    pub fn runtime(&self) -> Option<&ExtraField> {
         self.runtime.as_ref()
     }
 
@@ -190,9 +249,14 @@ impl<'a> Struct<'a> {
         let qual = self.variant.as_ref().map(|variant| variant.qual());
         let mut inits: Vec<_> = map_fields!(self, init).collect();
 
+        match &self.cached_size {
+            Some(cached_size) => inits.push(cached_size.init(quote!(CachedSize::new()))),
+            None => (),
+        }
+
         let (arg, runtime) = match &self.runtime {
             Some(runtime) => {
-                inits.push(runtime.init());
+                inits.push(runtime.init(quote!(runtime)));
 
                 (
                     quote!(runtime: Runtime),

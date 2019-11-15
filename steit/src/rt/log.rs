@@ -1,6 +1,6 @@
 use std::{cell::RefCell, io, rc::Rc};
 
-use crate::{types::Bytes, Serialize};
+use crate::{types::Bytes, CachedSize, Serialize};
 
 use super::runtime::Runtime;
 
@@ -34,6 +34,7 @@ impl<'a> LogEntry<'a> {
         LogEntry::Update {
             path,
             value: Bytes::with_value(value),
+            cached_size: CachedSize::new(),
         }
     }
 
@@ -42,12 +43,16 @@ impl<'a> LogEntry<'a> {
         LogEntry::Add {
             path,
             item: Bytes::with_value(item),
+            cached_size: CachedSize::new(),
         }
     }
 
     #[inline]
     pub fn new_remove(path: &'a Runtime) -> Self {
-        LogEntry::Remove { path }
+        LogEntry::Remove {
+            path,
+            cached_size: CachedSize::new(),
+        }
     }
 
     #[inline]
@@ -55,7 +60,7 @@ impl<'a> LogEntry<'a> {
         match self {
             LogEntry::Update { path, .. } => path,
             LogEntry::Add { path, .. } => path,
-            LogEntry::Remove { path } => path,
+            LogEntry::Remove { path, .. } => path,
         }
     }
 }

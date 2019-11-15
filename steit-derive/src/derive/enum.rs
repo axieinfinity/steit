@@ -62,7 +62,7 @@ impl<'a> Enum<'a> {
 
         let mut tags = HashSet::new();
         let mut unique = true;
-        let mut named = None;
+        let mut named_hint = None;
 
         for (variant, _, fields) in &parsed_data {
             let (tag, tokens) = variant.tag_with_tokens();
@@ -73,14 +73,14 @@ impl<'a> Enum<'a> {
             }
 
             match fields {
-                syn::Fields::Named(_) => match named {
+                syn::Fields::Named(_) => match named_hint {
                     Some(false) => unreachable!("enum is named and unnamed at the same time"),
-                    _ => named = Some(true),
+                    _ => named_hint = Some(true),
                 },
 
-                syn::Fields::Unnamed(_) => match named {
+                syn::Fields::Unnamed(_) => match named_hint {
                     Some(true) => unreachable!("enum is named and unnamed at the same time"),
-                    _ => named = Some(false),
+                    _ => named_hint = Some(false),
                 },
 
                 syn::Fields::Unit => (),
@@ -96,7 +96,7 @@ impl<'a> Enum<'a> {
                 r#impl,
                 unknown_attrs,
                 fields,
-                named,
+                named_hint,
                 variant,
             ) {
                 parsed.push(r#struct);
@@ -201,7 +201,7 @@ impl<'a> Enum<'a> {
 
             let qual = variant.qual();
             // Technically we can use `destructure` and `init` interchangeably here.
-            let destructure = runtime.init();
+            let destructure = runtime.init(quote!(runtime));
 
             quote!(#name #qual { #destructure, .. } => runtime)
         });

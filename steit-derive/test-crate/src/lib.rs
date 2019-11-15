@@ -2,7 +2,7 @@
 mod test {
     use std::fmt;
 
-    use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, State};
+    use steit::{steitize, CachedSize, Deserialize, Eof, Merge, Runtime, Serialize, State};
 
     /* #[derive(State)]
     struct Good {
@@ -343,9 +343,10 @@ mod test {
     #[test]
     fn test2() {
         let test = Test {
-            runtime: Runtime::new(),
             x: 17,
             y: -223,
+            cached_size: CachedSize::new(),
+            runtime: Runtime::new(),
         };
 
         let mut bytes = Vec::new();
@@ -357,9 +358,10 @@ mod test {
         println!("check size {:#?}", test);
 
         let mut test_test = TestTest::Foo {
-            runtime: Runtime::new(),
             foo: -22,
             test,
+            cached_size: CachedSize::new(),
+            runtime: Runtime::new(),
         };
 
         let mut bytes = Vec::new();
@@ -372,9 +374,10 @@ mod test {
 
         if let TestTest::Foo { test, runtime, .. } = &mut test_test {
             *test = Test {
-                runtime: runtime.nested(27).nested(7),
                 x: 0,
                 y: 0,
+                cached_size: CachedSize::new(),
+                runtime: runtime.nested(27).nested(7),
             };
         }
 

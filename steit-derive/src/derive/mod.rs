@@ -105,6 +105,10 @@ impl DeriveSetting {
         }
     }
 
+    pub fn cached_size(&self) -> bool {
+        !self.no_cached_size
+    }
+
     pub fn runtime(&self) -> bool {
         self.state
     }
@@ -175,6 +179,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use #krate::{
                 exhaust_nested,
                 wire_type::{self, WireType},
+                CachedSize,
                 Deserialize,
                 Eof,
                 Merge,
