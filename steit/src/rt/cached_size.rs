@@ -1,61 +1,51 @@
-use std::{cell::RefCell, fmt};
+use std::{
+    hash::{Hash, Hasher},
+    sync::atomic::{AtomicU32, Ordering},
+};
 
+// Reference: https://bit.ly/2XhnF25
+#[derive(Debug, Default)]
 pub struct CachedSize {
-    size: RefCell<u32>,
+    size: AtomicU32,
 }
 
 impl CachedSize {
-    const UNSET: u32 = -1i8 as u32;
-
     #[inline]
-    pub fn unset() -> Self {
-        Self {
-            size: RefCell::new(Self::UNSET),
-        }
+    pub fn new() -> Self {
+        Self::default()
     }
 
     /// Get cached size
     #[inline]
     pub fn get(&self) -> u32 {
-        *self.size.borrow()
-    }
-
-    #[inline]
-    pub fn is_set(&self) -> bool {
-        self.get() != Self::UNSET
+        self.size.load(Ordering::Relaxed) as u32
     }
 
     /// Set cached size
     #[inline]
     pub fn set(&self, size: u32) {
-        self.size.replace(size);
-    }
-
-    #[inline]
-    pub fn get_or_set_from(&self, f: impl FnOnce() -> u32) -> u32 {
-        let size = &mut *self.size.borrow_mut();
-
-        match *size {
-            Self::UNSET => {
-                *size = f();
-                *size
-            }
-            size => size,
-        }
-    }
-
-    #[inline]
-    pub fn clear(&self) {
-        self.set(Self::UNSET)
+        self.size.store(size, Ordering::Relaxed);
     }
 }
 
-impl fmt::Debug for CachedSize {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self.get() {
-            Self::UNSET => write!(f, "<unset>"),
-            size => write!(f, "{}", size),
+impl Clone for CachedSize {
+    fn clone(&self) -> CachedSize {
+        CachedSize {
+            size: AtomicU32::new(self.get()),
         }
+    }
+}
+
+impl PartialEq for CachedSize {
+    fn eq(&self, _other: &CachedSize) -> bool {
+        true
+    }
+}
+
+impl Eq for CachedSize {}
+
+impl Hash for CachedSize {
+    fn hash<H: Hasher>(&self, _state: &mut H) {
+        // Ignore cached size in hash computation
     }
 }
