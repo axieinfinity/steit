@@ -27,11 +27,6 @@ macro_rules! impl_unsigned_varint {
             }
 
             #[inline]
-            fn cached_size(&self) -> u32 {
-                self.compute_size()
-            }
-
-            #[inline]
             fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
@@ -43,11 +38,6 @@ macro_rules! impl_unsigned_varint {
                         value >>= 7;
                     }
                 }
-            }
-
-            #[inline]
-            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                self.serialize_with_cached_size(writer)
             }
         }
 
@@ -99,18 +89,8 @@ macro_rules! impl_signed_varint {
             }
 
             #[inline]
-            fn cached_size(&self) -> u32 {
-                self.compute_size()
-            }
-
-            #[inline]
             fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 (impl_signed_varint!(@encode self, $t) as $ut).serialize_with_cached_size(writer)
-            }
-
-            #[inline]
-            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                self.serialize_with_cached_size(writer)
             }
         }
 

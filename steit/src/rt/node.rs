@@ -87,7 +87,6 @@ impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
                 inner.cached_size.set(size);
                 size
             }
-
             Node::Child { parent, inner } => {
                 let size = parent.compute_size() + inner.value.compute_size_nested(None);
                 inner.cached_size.set(size);
@@ -96,21 +95,21 @@ impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
         }
     }
 
-    fn cached_size(&self) -> u32 {
-        match self {
-            Node::Root { inner } => inner.cached_size.get(),
-            Node::Child { inner, .. } => inner.cached_size.get(),
-        }
-    }
-
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
             Node::Root { inner } => inner.value.serialize_nested_with_cached_size(None, writer),
-
             Node::Child { parent, inner } => {
                 parent.serialize_with_cached_size(writer)?;
                 inner.value.serialize_nested_with_cached_size(None, writer)
             }
+        }
+    }
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        match self {
+            Node::Root { inner } => inner.cached_size.get(),
+            Node::Child { inner, .. } => inner.cached_size.get(),
         }
     }
 }

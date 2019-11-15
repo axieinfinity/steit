@@ -40,13 +40,18 @@ impl Serialize for Child {
     }
 
     #[inline]
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.tag.serialize_with_cached_size(writer)
+    }
+
+    #[inline]
     fn cached_size(&self) -> u32 {
         self.tag.cached_size()
     }
 
     #[inline]
-    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.tag.serialize_with_cached_size(writer)
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.tag.serialize(writer)
     }
 }
 
@@ -81,11 +86,6 @@ impl Serialize for Root {
     #[inline]
     fn compute_size(&self) -> u32 {
         0
-    }
-
-    #[inline]
-    fn cached_size(&self) -> u32 {
-        self.compute_size()
     }
 
     #[inline]
@@ -194,13 +194,18 @@ impl Serialize for Runtime {
     }
 
     #[inline]
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.path.serialize_with_cached_size(writer)
+    }
+
+    #[inline]
     fn cached_size(&self) -> u32 {
         self.path.cached_size()
     }
 
     #[inline]
-    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.path.serialize_with_cached_size(writer)
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.path.serialize(writer)
     }
 }
 

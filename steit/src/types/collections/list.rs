@@ -120,11 +120,6 @@ impl<T: State> Serialize for List<T> {
     }
 
     #[inline]
-    fn cached_size(&self) -> u32 {
-        self.runtime.cached_size()
-    }
-
-    #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         assert!(
             self.items.len() <= u16::max_value() as usize + 1,
@@ -138,6 +133,11 @@ impl<T: State> Serialize for List<T> {
         }
 
         Ok(())
+    }
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.runtime.cached_size()
     }
 }
 

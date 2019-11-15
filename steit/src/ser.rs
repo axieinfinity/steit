@@ -4,8 +4,12 @@ use super::wire_type::{self, WireType, WIRE_TYPE_SIZED};
 
 pub trait Serialize: WireType {
     fn compute_size(&self) -> u32;
-    fn cached_size(&self) -> u32;
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()>;
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
+    }
 
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {

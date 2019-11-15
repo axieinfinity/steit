@@ -260,7 +260,7 @@ impl<'a> Struct<'a> {
             .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
             .access();
 
-        self.r#impl.r#impl_for(
+        self.r#impl.impl_for(
             "Runtimed",
             quote! {
                 #[inline]
@@ -292,23 +292,18 @@ impl<'a> Struct<'a> {
         let sizer = self.sizer();
         let serializer = self.serializer();
 
-        let (set_cached_size, cached_size, serialize) = if self.runtime.is_some() {
+        let (set_cached_size, cached_size) = if self.setting.runtime() {
             (
                 quote! { self.runtime().set_cached_size(size); },
-                quote!(self.runtime().cached_size()),
-                quote!(),
-            )
-        } else {
-            (
-                quote!(),
-                quote!(self.compute_size()),
                 quote! {
                     #[inline]
-                    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                        self.serialize_with_cached_size(writer)
+                    fn cached_size(&self) -> u32 {
+                        self.runtime().cached_size()
                     }
                 },
             )
+        } else {
+            (quote!(), quote!())
         };
 
         self.r#impl.impl_for(
@@ -321,17 +316,12 @@ impl<'a> Struct<'a> {
                     size
                 }
 
-                #[inline]
-                fn cached_size(&self) -> u32 {
-                    #cached_size
-                }
-
                 fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                     #serializer
                     Ok(())
                 }
 
-                #serialize
+                #cached_size
             },
         )
     }

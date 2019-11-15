@@ -35,18 +35,8 @@ impl Serialize for Bytes {
     }
 
     #[inline]
-    fn cached_size(&self) -> u32 {
-        self.compute_size()
-    }
-
-    #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&self.bytes)
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.serialize_with_cached_size(writer)
     }
 }
 
