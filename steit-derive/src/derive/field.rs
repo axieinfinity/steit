@@ -165,15 +165,12 @@ impl<'a> Field<'a> {
             quote!()
         };
 
-        let clear_cached_size = quote! { self.runtime().clear_cached_size(); };
-
         quote! {
             pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
                 #reset_variant
                 let runtime = self.runtime();
                 #log_update
                 #setter
-                #clear_cached_size
                 self
             }
 
@@ -183,7 +180,6 @@ impl<'a> Field<'a> {
                 let value = f(runtime.nested(#tag));
                 #log_update
                 #setter
-                #clear_cached_size
                 self
             }
         }

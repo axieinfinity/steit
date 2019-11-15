@@ -11,7 +11,7 @@ impl<T> WireType for Option<T> {
 
 impl<T: Serialize> Serialize for Option<T> {
     #[inline]
-    fn size(&self) -> u32 {
+    fn compute_size(&self) -> u32 {
         match self {
             Some(value) => value.size_nested(None),
             None => 0,
@@ -19,7 +19,7 @@ impl<T: Serialize> Serialize for Option<T> {
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
             Some(value) => value.serialize_nested(None, writer),
             None => Ok(()),

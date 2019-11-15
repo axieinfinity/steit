@@ -12,7 +12,7 @@ impl<T: Varint> WireType for Vec<T> {
 }
 
 impl<T: Varint> Serialize for Vec<T> {
-    fn size(&self) -> u32 {
+    fn compute_size(&self) -> u32 {
         let mut size = 0;
 
         for item in self {
@@ -22,7 +22,7 @@ impl<T: Varint> Serialize for Vec<T> {
         size
     }
 
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         for item in self {
             item.serialize_nested(None, writer)?;
         }

@@ -3,8 +3,19 @@ use std::io;
 use super::wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT};
 
 pub trait Serialize: WireType {
-    fn size(&self) -> u32;
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
+    fn compute_size(&self) -> u32;
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()>;
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
+    }
+
+    #[inline]
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.compute_size();
+        self.serialize_with_cached_size(writer)
+    }
 
     #[inline]
     fn key(tag: u16) -> u32 {
@@ -13,7 +24,7 @@ pub trait Serialize: WireType {
 
     #[inline]
     fn is_empty(&self) -> bool {
-        self.size() == 0
+        self.compute_size() == 0
     }
 
     #[inline]
@@ -27,14 +38,14 @@ pub trait Serialize: WireType {
             return 0;
         }
 
-        let mut size = self.size();
+        let mut size = self.compute_size();
 
         if Self::WIRE_TYPE == WIRE_TYPE_SIZED {
-            size += size.size();
+            size += size.compute_size();
         }
 
         if let Some(tag) = tag.into() {
-            size += Self::key(tag).size();
+            size += Self::key(tag).compute_size();
         }
 
         size
@@ -58,7 +69,7 @@ pub trait Serialize: WireType {
             WIRE_TYPE_VARINT => self.serialize(writer),
 
             WIRE_TYPE_SIZED => {
-                self.size().serialize(writer)?;
+                self.compute_size().serialize(writer)?;
                 self.serialize(writer)
             }
 

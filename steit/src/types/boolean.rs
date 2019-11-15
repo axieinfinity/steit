@@ -13,12 +13,12 @@ impl WireType for bool {
 
 impl Serialize for bool {
     #[inline]
-    fn size(&self) -> u32 {
+    fn compute_size(&self) -> u32 {
         1
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&[*self as u8])
     }
 }

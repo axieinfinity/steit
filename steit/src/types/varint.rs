@@ -18,12 +18,12 @@ macro_rules! impl_unsigned_varint {
 
         impl Serialize for $t {
             #[inline]
-            fn size(&self) -> u32 {
+            fn compute_size(&self) -> u32 {
                 $size_fn(*self as $size_t)
             }
 
             #[inline]
-            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+            fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
                 loop {
@@ -34,6 +34,11 @@ macro_rules! impl_unsigned_varint {
                         value >>= 7;
                     }
                 }
+            }
+
+            #[inline]
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                self.serialize_with_cached_size(writer)
             }
 
             #[inline]
@@ -81,13 +86,18 @@ macro_rules! impl_signed_varint {
 
         impl Serialize for $t {
             #[inline]
-            fn size(&self) -> u32 {
-                (impl_signed_varint!(@encode self, $t) as $ut).size()
+            fn compute_size(&self) -> u32 {
+                (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
+            }
+
+            #[inline]
+            fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
             }
 
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
+                self.serialize_with_cached_size(writer)
             }
 
             #[inline]

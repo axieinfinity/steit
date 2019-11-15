@@ -71,7 +71,6 @@ pub trait State: Runtimed + Serialize + Deserialize {
     #[inline]
     fn handle_update(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         *self = Self::with_runtime(self.runtime().clone());
-        self.runtime().clear_cached_size();
         self.merge(reader)
     }
 

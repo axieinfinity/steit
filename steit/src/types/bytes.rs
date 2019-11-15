@@ -40,13 +40,13 @@ impl WireType for Bytes {
 
 impl Serialize for Bytes {
     #[inline]
-    fn size(&self) -> u32 {
-        self.bytes.size()
+    fn compute_size(&self) -> u32 {
+        self.bytes.compute_size()
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.bytes.serialize(writer)
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.bytes.serialize_with_cached_size(writer)
     }
 }
 

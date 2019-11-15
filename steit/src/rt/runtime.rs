@@ -24,7 +24,7 @@ impl Child {
     pub fn new(tag: u16) -> Self {
         Self {
             tag,
-            cached_size: CachedSize::unset(),
+            cached_size: CachedSize::new(),
         }
     }
 }
@@ -35,13 +35,13 @@ impl WireType for Child {
 
 impl Serialize for Child {
     #[inline]
-    fn size(&self) -> u32 {
-        self.tag.size()
+    fn compute_size(&self) -> u32 {
+        self.tag.compute_size()
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.tag.serialize(writer)
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.tag.serialize_with_cached_size(writer)
     }
 }
 
@@ -56,7 +56,7 @@ impl Root {
     #[inline]
     pub fn new() -> Self {
         Self {
-            cached_size: CachedSize::unset(),
+            cached_size: CachedSize::new(),
         }
     }
 }
@@ -74,12 +74,12 @@ impl WireType for Root {
 
 impl Serialize for Root {
     #[inline]
-    fn size(&self) -> u32 {
+    fn compute_size(&self) -> u32 {
         0
     }
 
     #[inline]
-    fn serialize(&self, _writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_with_cached_size(&self, _writer: &mut impl io::Write) -> io::Result<()> {
         Ok(())
     }
 }
@@ -126,6 +126,22 @@ impl Runtime {
     }
 
     #[inline]
+    pub fn set_cached_size(&self, size: u32) {
+        match &*self.path {
+            Node::Root { inner } => inner.value().cached_size.set(size),
+            Node::Child { inner, .. } => inner.value().cached_size.set(size),
+        }
+    }
+
+    #[inline]
+    pub fn cached_size(&self) -> u32 {
+        match &*self.path {
+            Node::Root { inner } => inner.value().cached_size.get(),
+            Node::Child { inner, .. } => inner.value().cached_size.get(),
+        }
+    }
+
+    #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .log_entry(LogEntry::new_update(&self.nested(tag), value))
@@ -146,29 +162,6 @@ impl Runtime {
         self.logger
             .log_entry(LogEntry::new_remove(&self.nested(tag)))
     }
-
-    #[inline]
-    pub fn get_or_set_cached_size_from(&self, f: impl FnOnce() -> u32) -> u32 {
-        match &*self.path {
-            Node::Root { inner } => inner.value().cached_size.get_or_set_from(f),
-            Node::Child { inner, .. } => inner.value().cached_size.get_or_set_from(f),
-        }
-    }
-
-    #[inline]
-    pub fn clear_cached_size(&self) {
-        Self::clear_cached_size_branch(&self.path);
-    }
-
-    fn clear_cached_size_branch(path: &Node<Child, Root>) {
-        match path {
-            Node::Root { inner } => inner.value().cached_size.clear(),
-            Node::Child { parent, inner } => {
-                inner.value().cached_size.clear();
-                Self::clear_cached_size_branch(parent);
-            }
-        }
-    }
 }
 
 impl PartialEq for Runtime {
@@ -186,19 +179,19 @@ impl WireType for Runtime {
 
 impl Serialize for Runtime {
     #[inline]
-    fn size(&self) -> u32 {
-        self.path.size()
+    fn compute_size(&self) -> u32 {
+        self.path.compute_size()
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.path.serialize(writer)
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.path.serialize_with_cached_size(writer)
     }
 }
 
 #[cfg(test)]
 mod test {
-    use crate::{rt::node::Node, Deserialize, Eof, Serialize};
+    use crate::{Deserialize, Eof, Serialize};
 
     use super::Runtime;
 
@@ -212,55 +205,5 @@ mod test {
         let path = Vec::<u16>::deserialize(&mut Eof::new(&*bytes)).unwrap();
 
         assert_eq!(&*path, &[10, 20]);
-    }
-
-    #[test]
-    fn clear_cached_size_branch() {
-        // 2 level deep `Runtime`
-        let runtime = Runtime::new().nested(2);
-
-        // Set cached sizes of both `Runtime` nodes
-        match &*runtime.path {
-            Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner, .. } => {
-                inner.value().cached_size.set(7);
-
-                match &**parent {
-                    Node::Root { inner } => inner.value().cached_size.set(6),
-                    Node::Child { .. } => assert!(false),
-                }
-            }
-        }
-
-        runtime.parent().clear_cached_size();
-
-        match &*runtime.path {
-            Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner, .. } => {
-                // Cached size of the leaf `Runtime` is still set.
-                assert!(inner.value().cached_size.is_set());
-
-                match &**parent {
-                    // Cached size of the root `Runtime` has been cleared.
-                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
-                    Node::Child { .. } => assert!(false),
-                }
-            }
-        };
-
-        runtime.clear_cached_size();
-
-        match &*runtime.path {
-            Node::Root { .. } => assert!(false),
-            Node::Child { parent, inner, .. } => {
-                // Now cached size of the leaf runtime has also been cleared.
-                assert!(!inner.value().cached_size.is_set());
-
-                match &**parent {
-                    Node::Root { inner } => assert!(!inner.value().cached_size.is_set()),
-                    Node::Child { .. } => assert!(false),
-                }
-            }
-        };
     }
 }

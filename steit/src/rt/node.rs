@@ -22,7 +22,7 @@ impl<T> Inner<T> {
     pub fn new(value: T) -> Self {
         Self {
             value,
-            cached_size: CachedSize::unset(),
+            cached_size: CachedSize::new(),
         }
     }
 
@@ -80,19 +80,23 @@ impl<Child, Root> WireType for Node<Child, Root> {
 }
 
 impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
-    fn size(&self) -> u32 {
+    fn compute_size(&self) -> u32 {
         match self {
-            Node::Root { inner } => inner
-                .cached_size
-                .get_or_set_from(|| inner.value.size_nested(None)),
+            Node::Root { inner } => {
+                let size = inner.value.size_nested(None);
+                inner.cached_size.set(size);
+                size
+            }
 
-            Node::Child { parent, inner } => inner
-                .cached_size
-                .get_or_set_from(|| parent.size() + inner.value.size_nested(None)),
+            Node::Child { parent, inner } => {
+                let size = parent.compute_size() + inner.value.size_nested(None);
+                inner.cached_size.set(size);
+                size
+            }
         }
     }
 
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
             Node::Root { inner } => inner.value.serialize_nested(None, writer),
 

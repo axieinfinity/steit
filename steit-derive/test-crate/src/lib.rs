@@ -149,7 +149,7 @@ mod test {
     fn test() {
         let mut point_a = Point::new(Runtime::new());
         point_a.1 = 100;
-        println!("{:?}, size = {}", point_a, point_a.size());
+        println!("{:?}, size = {}", point_a, point_a.compute_size());
         debug(&point_a);
 
         println!("f#1 = {}", point_a.1);
@@ -159,13 +159,13 @@ mod test {
 
         let mut point_b = Point::new(Runtime::new());
         point_b.2 = 200;
-        println!("{:?}, size = {}", point_b, point_b.size());
+        println!("{:?}, size = {}", point_b, point_b.compute_size());
         debug(&point_b);
 
         let mut segment = Segment::new(Runtime::new());
         segment.1 = Point(segment.0.nested(0), point_a.1, point_a.2);
         segment.2 = Point(segment.0.nested(1), point_b.1, point_b.2);
-        println!("{:?}, size = {}", segment, segment.size());
+        println!("{:?}, size = {}", segment, segment.compute_size());
         println!();
         debug(&segment);
         check(&segment, &mut Segment::new(Runtime::new()));
@@ -217,7 +217,7 @@ mod test {
     fn test() {
         let mut test = TestPrev::new_foo(Runtime::new());
 
-        println!("size: {}", test.size());
+        println!("size: {}", test.compute_size());
         println!();
 
         test.set_foo_foo(20);
@@ -352,7 +352,7 @@ mod test {
 
         test.serialize(&mut bytes).unwrap();
 
-        println!("{} {}", test.size(), bytes.len());
+        println!("{} {}", test.compute_size(), bytes.len());
         println!("{:?}", bytes);
         println!("check size {:#?}", test);
 
@@ -366,13 +366,11 @@ mod test {
 
         test_test.serialize(&mut bytes).unwrap();
 
-        println!("{} {}", test_test.size(), bytes.len());
+        println!("{} {}", test_test.compute_size(), bytes.len());
         println!("{:?}", bytes);
         println!("check size {:#?}", test_test);
 
         if let TestTest::Foo { test, runtime, .. } = &mut test_test {
-            test.runtime.clear_cached_size();
-
             *test = Test {
                 runtime: runtime.nested(27).nested(7),
                 x: 0,
@@ -384,7 +382,7 @@ mod test {
 
         test_test.serialize(&mut bytes).unwrap();
 
-        println!("{} {}", test_test.size(), bytes.len());
+        println!("{} {}", test_test.compute_size(), bytes.len());
         println!("{:?}", bytes);
         println!("check size {:#?}", test_test);
 
@@ -413,7 +411,7 @@ mod test {
 
         hello.serialize(&mut bytes).unwrap();
 
-        println!("{} {}", hello.size(), bytes.len());
+        println!("{} {}", hello.compute_size(), bytes.len());
         println!("{:?}", bytes);
         println!("check size {:#?}", hello);
     }

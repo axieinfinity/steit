@@ -292,28 +292,33 @@ impl<'a> Struct<'a> {
         let sizer = self.sizer();
         let serializer = self.serializer();
 
-        let mut sizer = quote! {
-            let mut size = 0;
-            #sizer
-            size
+        let (set_cached_size, cached_size) = if self.runtime.is_some() {
+            (
+                quote! { self.runtime().set_cached_size(size); },
+                quote! {
+                    #[inline]
+                    fn cached_size(&self) -> u32 {
+                        self.runtime().cached_size()
+                    }
+                },
+            )
+        } else {
+            (quote!(), quote!())
         };
-
-        if self.runtime.is_some() {
-            sizer = quote! {
-                self.runtime().get_or_set_cached_size_from(|| {
-                    #sizer
-                })
-            }
-        }
 
         self.r#impl.impl_for(
             "Serialize",
             quote! {
-                fn size(&self) -> u32 {
+                fn compute_size(&self) -> u32 {
+                    let mut size = 0;
                     #sizer
+                    #set_cached_size
+                    size
                 }
 
-                fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                #cached_size
+
+                fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                     #serializer
                     Ok(())
                 }

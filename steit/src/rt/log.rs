@@ -77,11 +77,13 @@ impl Logger {
     pub fn log_entry(&self, entry: LogEntry) -> io::Result<()> {
         println!("{:?}", entry.path());
         let mut buf = Vec::new();
-        println!("{}", entry.path().size());
         entry.path().serialize(&mut buf)?;
+        println!("{}", entry.path().cached_size());
         println!("{:?}", buf);
-        entry.size().serialize(&mut *self.buf.borrow_mut())?;
-        entry.serialize(&mut *self.buf.borrow_mut())?;
+        entry
+            .compute_size()
+            .serialize(&mut *self.buf.borrow_mut())?;
+        entry.serialize_with_cached_size(&mut *self.buf.borrow_mut())?;
         // TODO: Remove the debug code below
         println!("=== entry: {:?}", self.buf.borrow());
         self.buf.borrow_mut().clear();
