@@ -8,7 +8,7 @@ use crate::{
     Eof, Merge, Serialize,
 };
 
-#[derive(Default)]
+#[derive(Default, Debug)]
 pub struct Bytes {
     bytes: Vec<u8>,
 }
@@ -27,13 +27,6 @@ impl Bytes {
     }
 }
 
-impl fmt::Debug for Bytes {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Bytes {:?}", self.bytes)
-    }
-}
-
 impl WireType for Bytes {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
@@ -41,12 +34,17 @@ impl WireType for Bytes {
 impl Serialize for Bytes {
     #[inline]
     fn compute_size(&self) -> u32 {
-        self.bytes.compute_size()
+        self.bytes.len() as u32
+    }
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
     }
 
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.bytes.serialize_with_cached_size(writer)
+        writer.write_all(&self.bytes)
     }
 }
 
