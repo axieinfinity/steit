@@ -33,7 +33,7 @@ impl<'a> LogEntry<'a> {
     pub fn new_update(path: &'a Runtime, value: &impl Serialize) -> Self {
         LogEntry::Update {
             path,
-            value: Bytes::new(value),
+            value: Bytes::with_value(value),
         }
     }
 
@@ -41,7 +41,7 @@ impl<'a> LogEntry<'a> {
     pub fn new_add(path: &'a Runtime, item: &impl Serialize) -> Self {
         LogEntry::Add {
             path,
-            item: Bytes::new(item),
+            item: Bytes::with_value(item),
         }
     }
 
@@ -80,10 +80,8 @@ impl Logger {
         entry.path().serialize(&mut buf)?;
         println!("{}", entry.path().cached_size());
         println!("{:?}", buf);
-        entry
-            .compute_size()
-            .serialize(&mut *self.buf.borrow_mut())?;
-        entry.serialize_with_cached_size(&mut *self.buf.borrow_mut())?;
+        entry.compute_size();
+        entry.serialize_nested_with_cached_size(None, &mut *self.buf.borrow_mut())?;
         // TODO: Remove the debug code below
         println!("=== entry: {:?}", self.buf.borrow());
         self.buf.borrow_mut().clear();

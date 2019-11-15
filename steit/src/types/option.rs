@@ -13,17 +13,27 @@ impl<T: Serialize> Serialize for Option<T> {
     #[inline]
     fn compute_size(&self) -> u32 {
         match self {
-            Some(value) => value.size_nested(None),
+            Some(value) => value.compute_size_nested(None),
             None => 0,
         }
     }
 
     #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
+    }
+
+    #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
-            Some(value) => value.serialize_nested(None, writer),
+            Some(value) => value.serialize_nested_with_cached_size(None, writer),
             None => Ok(()),
         }
+    }
+
+    #[inline]
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.serialize_with_cached_size(writer)
     }
 }
 

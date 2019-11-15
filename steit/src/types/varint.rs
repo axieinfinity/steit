@@ -19,7 +19,16 @@ macro_rules! impl_unsigned_varint {
         impl Serialize for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
-                $size_fn(*self as $size_t)
+                if *self != Self::default() {
+                    $size_fn(*self as $size_t)
+                } else {
+                    0
+                }
+            }
+
+            #[inline]
+            fn cached_size(&self) -> u32 {
+                self.compute_size()
             }
 
             #[inline]
@@ -39,11 +48,6 @@ macro_rules! impl_unsigned_varint {
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 self.serialize_with_cached_size(writer)
-            }
-
-            #[inline]
-            fn is_empty(&self) -> bool {
-                *self == Self::default()
             }
         }
 
@@ -87,22 +91,26 @@ macro_rules! impl_signed_varint {
         impl Serialize for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
-                (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
+                if *self != Self::default() {
+                    (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
+                } else {
+                    0
+                }
+            }
+
+            #[inline]
+            fn cached_size(&self) -> u32 {
+                self.compute_size()
             }
 
             #[inline]
             fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
+                (impl_signed_varint!(@encode self, $t) as $ut).serialize_with_cached_size(writer)
             }
 
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 self.serialize_with_cached_size(writer)
-            }
-
-            #[inline]
-            fn is_empty(&self) -> bool {
-                *self == Self::default()
             }
         }
 

@@ -18,8 +18,18 @@ impl Serialize for bool {
     }
 
     #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
+    }
+
+    #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&[*self as u8])
+    }
+
+    #[inline]
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.serialize_with_cached_size(writer)
     }
 }
 

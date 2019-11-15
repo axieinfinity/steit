@@ -188,13 +188,13 @@ impl<'a> Field<'a> {
     pub fn sizer(&self, is_variant: bool) -> TokenStream {
         let tag = self.attrs.tag;
         let field = self.field(is_variant);
-        quote! { size += #field.size_nested(#tag); }
+        quote! { size += #field.compute_size_nested(#tag); }
     }
 
     pub fn serializer(&self, is_variant: bool) -> TokenStream {
         let tag = self.attrs.tag;
         let field = self.field(is_variant);
-        quote! { #field.serialize_nested(#tag, writer)?; }
+        quote! { #field.serialize_nested_with_cached_size(#tag, writer)?; }
     }
 
     pub fn merger(&self, is_variant: bool) -> TokenStream {

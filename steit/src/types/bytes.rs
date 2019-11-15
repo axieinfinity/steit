@@ -1,7 +1,4 @@
-use std::{
-    fmt,
-    io::{self, Read},
-};
+use std::io::{self, Read};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
@@ -15,7 +12,7 @@ pub struct Bytes {
 
 impl Bytes {
     #[inline]
-    pub fn new(value: &impl Serialize) -> Self {
+    pub fn with_value(value: &impl Serialize) -> Self {
         let mut bytes = Vec::new();
         value.serialize(&mut bytes).unwrap();
         Self { bytes }
@@ -45,6 +42,11 @@ impl Serialize for Bytes {
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&self.bytes)
+    }
+
+    #[inline]
+    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+        self.serialize_with_cached_size(writer)
     }
 }
 

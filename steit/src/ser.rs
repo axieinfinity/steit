@@ -1,15 +1,11 @@
 use std::io;
 
-use super::wire_type::{self, WireType, WIRE_TYPE_SIZED, WIRE_TYPE_VARINT};
+use super::wire_type::{self, WireType, WIRE_TYPE_SIZED};
 
 pub trait Serialize: WireType {
     fn compute_size(&self) -> u32;
+    fn cached_size(&self) -> u32;
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()>;
-
-    #[inline]
-    fn cached_size(&self) -> u32 {
-        self.compute_size()
-    }
 
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
@@ -23,22 +19,12 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
-    fn is_empty(&self) -> bool {
-        self.compute_size() == 0
-    }
+    fn compute_size_nested(&self, tag: impl Into<Option<u16>>) -> u32 {
+        let mut size = self.compute_size();
 
-    #[inline]
-    fn non_empty(&self) -> bool {
-        !self.is_empty()
-    }
-
-    #[inline]
-    fn size_nested(&self, tag: impl Into<Option<u16>>) -> u32 {
-        if self.is_empty() {
+        if size == 0 {
             return 0;
         }
-
-        let mut size = self.compute_size();
 
         if Self::WIRE_TYPE == WIRE_TYPE_SIZED {
             size += size.compute_size();
@@ -52,31 +38,23 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
-    fn serialize_nested(
+    fn serialize_nested_with_cached_size(
         &self,
         tag: impl Into<Option<u16>>,
         writer: &mut impl io::Write,
     ) -> io::Result<()> {
-        if self.is_empty() {
+        if self.cached_size() == 0 {
             return Ok(());
         }
 
         if let Some(tag) = tag.into() {
-            Self::key(tag).serialize(writer)?;
+            Self::key(tag).serialize_with_cached_size(writer)?;
         }
 
-        match Self::WIRE_TYPE {
-            WIRE_TYPE_VARINT => self.serialize(writer),
-
-            WIRE_TYPE_SIZED => {
-                self.compute_size().serialize(writer)?;
-                self.serialize(writer)
-            }
-
-            wire_type => Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("unexpected wire type {}", wire_type),
-            )),
+        if Self::WIRE_TYPE == WIRE_TYPE_SIZED {
+            self.cached_size().serialize_with_cached_size(writer)?;
         }
+
+        self.serialize_with_cached_size(writer)
     }
 }

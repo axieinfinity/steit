@@ -244,18 +244,23 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let (set_cached_size, cached_size) = if !self.setting.no_runtime {
+        let (set_cached_size, cached_size, serialize) = if !self.setting.no_runtime {
             (
                 quote! { self.runtime().set_cached_size(size); },
+                quote!(self.runtime().cached_size()),
+                quote!(),
+            )
+        } else {
+            (
+                quote!(),
+                quote!(self.compute_size()),
                 quote! {
                     #[inline]
-                    fn cached_size(&self) -> u32 {
-                        self.runtime().cached_size()
+                    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                        self.serialize_with_cached_size(writer)
                     }
                 },
             )
-        } else {
-            (quote!(), quote!())
         };
 
         let serializers = self.variants.iter().map(|r#struct| {
@@ -287,12 +292,17 @@ impl<'a> Enum<'a> {
                     size
                 }
 
-                #cached_size
+                #[inline]
+                fn cached_size(&self) -> u32 {
+                    #cached_size
+                }
 
                 fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                     match self { #(#serializers)* }
                     Ok(())
                 }
+
+                #serialize
             },
         )
     }

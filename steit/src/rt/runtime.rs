@@ -40,6 +40,11 @@ impl Serialize for Child {
     }
 
     #[inline]
+    fn cached_size(&self) -> u32 {
+        self.tag.cached_size()
+    }
+
+    #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.tag.serialize_with_cached_size(writer)
     }
@@ -76,6 +81,11 @@ impl Serialize for Root {
     #[inline]
     fn compute_size(&self) -> u32 {
         0
+    }
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.compute_size()
     }
 
     #[inline]
@@ -181,6 +191,11 @@ impl Serialize for Runtime {
     #[inline]
     fn compute_size(&self) -> u32 {
         self.path.compute_size()
+    }
+
+    #[inline]
+    fn cached_size(&self) -> u32 {
+        self.path.cached_size()
     }
 
     #[inline]

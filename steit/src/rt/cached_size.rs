@@ -4,7 +4,7 @@ use std::{
 };
 
 // Reference: https://bit.ly/2XhnF25
-#[derive(Debug, Default)]
+#[derive(Default, Debug)]
 pub struct CachedSize {
     size: AtomicU32,
 }
