@@ -1,11 +1,10 @@
 use std::io;
 
 use crate::{
+    types::Varint,
     wire_type::{WireType, WIRE_TYPE_VARINT},
     Deserialize, Eof, Merge, Serialize,
 };
-
-use super::varint::Varint;
 
 impl WireType for bool {
     const WIRE_TYPE: u8 = WIRE_TYPE_VARINT;

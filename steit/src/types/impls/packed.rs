@@ -1,11 +1,10 @@
 use std::io;
 
 use crate::{
+    types::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
     Eof, Merge, Serialize,
 };
-
-use super::varint::Varint;
 
 impl<T: Varint> WireType for Vec<T> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
