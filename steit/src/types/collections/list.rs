@@ -2,23 +2,25 @@ use std::io;
 
 use crate::{
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
-    Deserialize, Eof, Merge, ReplayKind, Runtime, Runtimed, Serialize, State,
+    CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Runtimed, Serialize, State,
 };
 
 use super::iter::{Iter, IterMut};
 
 #[derive(Default, Debug)]
 pub struct List<T: State> {
-    runtime: Runtime,
     items: Vec<Option<T>>,
+    cached_size: CachedSize,
+    runtime: Runtime,
 }
 
 impl<T: State> List<T> {
     #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
-            runtime,
             items: Vec::new(),
+            cached_size: CachedSize::new(),
+            runtime,
         }
     }
 
@@ -115,7 +117,7 @@ impl<T: State> Serialize for List<T> {
             }
         }
 
-        self.runtime.set_cached_size(size);
+        self.cached_size.set(size);
         size
     }
 
@@ -137,7 +139,7 @@ impl<T: State> Serialize for List<T> {
 
     #[inline]
     fn cached_size(&self) -> u32 {
-        self.runtime.cached_size()
+        self.cached_size.get()
     }
 }
 

@@ -222,6 +222,10 @@ impl<'a> Struct<'a> {
         }
     }
 
+    pub fn cached_size(&self) -> Option<&ExtraField> {
+        self.cached_size.as_ref()
+    }
+
     pub fn runtime(&self) -> Option<&ExtraField> {
         self.runtime.as_ref()
     }
@@ -246,7 +250,7 @@ impl<'a> Struct<'a> {
         let ctor_name = self.ctor_name();
         let name = self.r#impl.name();
 
-        let qual = self.variant.as_ref().map(|variant| variant.qual());
+        let qual = self.variant.as_ref().map(|r#struct| r#struct.qual());
         let mut inits: Vec<_> = map_fields!(self, init).collect();
 
         match &self.cached_size {
@@ -260,8 +264,8 @@ impl<'a> Struct<'a> {
 
                 (
                     quote!(runtime: Runtime),
-                    self.variant.as_ref().map(|variant| {
-                        let tag = variant.tag();
+                    self.variant.as_ref().map(|r#struct| {
+                        let tag = r#struct.tag();
                         quote! { let runtime = runtime.nested(#tag); }
                     }),
                 )
@@ -356,18 +360,22 @@ impl<'a> Struct<'a> {
         let sizer = self.sizer();
         let serializer = self.serializer();
 
-        let (set_cached_size, cached_size) = if self.setting.runtime() {
-            (
-                quote! { self.runtime().set_cached_size(size); },
-                quote! {
-                    #[inline]
-                    fn cached_size(&self) -> u32 {
-                        self.runtime().cached_size()
-                    }
-                },
-            )
-        } else {
-            (quote!(), quote!())
+        let (set_cached_size, cached_size) = match &self.cached_size {
+            Some(cached_size) => {
+                let access = cached_size.access();
+
+                (
+                    quote! { self.#access.set(size); },
+                    quote! {
+                        #[inline]
+                        fn cached_size(&self) -> u32 {
+                            self.#access.get()
+                        }
+                    },
+                )
+            }
+
+            None => (quote!(), quote!()),
         };
 
         self.r#impl.impl_for(

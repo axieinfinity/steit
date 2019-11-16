@@ -25,11 +25,6 @@ impl<T> Inner<T> {
             cached_size: CachedSize::new(),
         }
     }
-
-    #[inline]
-    pub fn value(&self) -> &T {
-        &self.value
-    }
 }
 
 #[derive(Debug)]

@@ -108,10 +108,6 @@ impl<'a> Field<'a> {
     }
 
     pub fn setter(&self, struct_name: &syn::Ident, variant: Option<&Variant>) -> TokenStream {
-        if !self.setting.runtime() {
-            unreachable!("setters are only available when a `Runtime` field is present");
-        }
-
         let field_name = match &self.name {
             Some(name) => name.clone(),
             None => format_ident!("f_{}", self.index),
@@ -134,7 +130,7 @@ impl<'a> Field<'a> {
                 let qual = variant.qual();
                 let ctor_name = variant.ctor_name();
 
-                let log_update = if self.setting.state {
+                let log_update = if self.setting.runtime() {
                     quote! { value.runtime().parent().log_update_in_place(&value).unwrap(); }
                 } else {
                     quote!()
@@ -159,7 +155,7 @@ impl<'a> Field<'a> {
             None => (quote!(), quote! { #field = value; }),
         };
 
-        let log_update = if self.setting.state {
+        let log_update = if self.setting.runtime() {
             quote! { runtime.log_update(#tag, &value).unwrap(); }
         } else {
             quote!()

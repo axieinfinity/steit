@@ -136,22 +136,6 @@ impl Runtime {
     }
 
     #[inline]
-    pub fn set_cached_size(&self, size: u32) {
-        match &*self.path {
-            Node::Root { inner } => inner.value().cached_size.set(size),
-            Node::Child { inner, .. } => inner.value().cached_size.set(size),
-        }
-    }
-
-    #[inline]
-    pub fn cached_size(&self) -> u32 {
-        match &*self.path {
-            Node::Root { inner } => inner.value().cached_size.get(),
-            Node::Child { inner, .. } => inner.value().cached_size.get(),
-        }
-    }
-
-    #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .log_entry(LogEntry::new_update(&self.nested(tag), value))
