@@ -97,12 +97,8 @@ impl DeriveSetting {
         self.state
     }
 
-    pub fn default(&self, is_enum: bool) -> bool {
-        if is_enum {
-            self.merge
-        } else {
-            self.deserialize
-        }
+    pub fn default(&self) -> bool {
+        self.deserialize
     }
 
     pub fn cached_size(&self) -> bool {

@@ -145,7 +145,7 @@ impl<'a> Enum<'a> {
                     #(#ctors)*
                 }
             } else {
-                if self.setting.default(true) {
+                if self.setting.default() {
                     self.context.error(
                         self.r#impl.name(),
                         "expected a variant with tag 0 as the default variant of this enum",
@@ -432,7 +432,7 @@ impl<'a> ToTokens for Enum<'a> {
             tokens.extend(self.impl_setters());
         }
 
-        if self.setting.default(true) {
+        if self.setting.default() {
             tokens.extend(self.impl_default());
         }
 

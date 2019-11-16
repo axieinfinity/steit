@@ -494,7 +494,7 @@ impl<'a> ToTokens for Struct<'a> {
             tokens.extend(self.impl_setters());
         }
 
-        if self.setting.default(false) {
+        if self.setting.default() {
             tokens.extend(self.impl_default());
         }
 
