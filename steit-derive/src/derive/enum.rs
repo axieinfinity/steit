@@ -214,41 +214,6 @@ impl<'a> Enum<'a> {
         )
     }
 
-    fn impl_runtimed(&self) -> TokenStream {
-        let name = self.r#impl.name();
-
-        let runtimes = self.variants.iter().map(|r#struct| {
-            let runtime = r#struct
-                .runtime()
-                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
-
-            let variant = r#struct
-                .variant()
-                .unwrap_or_else(|| unreachable!("expected a variant"));
-
-            let qual = variant.qual();
-            // Technically we can use `destructure` and `init` interchangeably here.
-            let destructure = runtime.init(quote!(runtime));
-
-            quote!(#name #qual { #destructure, .. } => runtime)
-        });
-
-        self.r#impl.impl_for(
-            "Runtimed",
-            quote! {
-                #[inline]
-                fn with_runtime(runtime: Runtime) -> Self {
-                    Self::new(runtime)
-                }
-
-                #[inline]
-                fn runtime(&self) -> &Runtime {
-                    match self { #(#runtimes,)* }
-                }
-            },
-        )
-    }
-
     fn impl_serialize(&self) -> TokenStream {
         let name = self.r#impl.name();
 
@@ -384,6 +349,22 @@ impl<'a> Enum<'a> {
     fn impl_state(&self) -> TokenStream {
         let name = self.r#impl.name();
 
+        let runtimes = self.variants.iter().map(|r#struct| {
+            let runtime = r#struct
+                .runtime()
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let qual = variant.qual();
+            // Technically we can use `destructure` and `init` interchangeably here.
+            let destructure = runtime.init(quote!(runtime));
+
+            quote!(#name #qual { #destructure, .. } => runtime)
+        });
+
         let replayers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
                 .variant()
@@ -413,8 +394,13 @@ impl<'a> Enum<'a> {
             "State",
             quote! {
                 #[inline]
-                fn is_root(&self) -> bool {
-                    self.runtime().parent().is_root()
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                #[inline]
+                fn runtime(&self) -> &Runtime {
+                    match self { #(#runtimes,)* }
                 }
 
                 #[inline]
@@ -439,10 +425,15 @@ impl<'a> Enum<'a> {
 
                             ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
                                 io::ErrorKind::InvalidData,
-                                "`add` and `remove` are not supported on structs and enums",
+                                "`add` and `remove` are not supported on enums",
                             )),
                         }
                     }
+                }
+
+                #[inline]
+                fn is_root(&self) -> bool {
+                    self.runtime().parent().is_root()
                 }
             },
         )
@@ -468,10 +459,6 @@ impl<'a> ToTokens for Enum<'a> {
         }
 
         tokens.extend(self.impl_wire_type());
-
-        if self.setting.runtime() {
-            tokens.extend(self.impl_runtimed());
-        }
 
         if self.setting.serialize {
             tokens.extend(self.impl_serialize());

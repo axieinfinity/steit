@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
-    CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Runtimed, Serialize, State,
+    CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
 use super::iter::{Iter, IterMut};
@@ -89,18 +89,6 @@ impl<T: State> WireType for List<T> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<T: State> Runtimed for List<T> {
-    #[inline]
-    fn with_runtime(runtime: Runtime) -> Self {
-        Self::new(runtime)
-    }
-
-    #[inline]
-    fn runtime(&self) -> &Runtime {
-        &self.runtime
-    }
-}
-
 impl<T: State> Serialize for List<T> {
     #[inline]
     fn compute_size(&self) -> u32 {
@@ -171,6 +159,16 @@ impl<T: State> Merge for List<T> {
 }
 
 impl<T: State> State for List<T> {
+    #[inline]
+    fn with_runtime(runtime: Runtime) -> Self {
+        Self::new(runtime)
+    }
+
+    #[inline]
+    fn runtime(&self) -> &Runtime {
+        &self.runtime
+    }
+
     #[inline]
     fn handle<'a>(
         &mut self,

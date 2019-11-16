@@ -181,7 +181,6 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
                 Merge,
                 ReplayKind,
                 Runtime,
-                Runtimed,
                 Serialize,
                 State,
             };

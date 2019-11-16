@@ -2,7 +2,7 @@ use std::io;
 
 use super::{
     de::Deserialize,
-    rt::Runtimed,
+    rt::Runtime,
     ser::Serialize,
     types::{Bytes, Varint},
     Eof,
@@ -50,7 +50,10 @@ impl ReplayEntry {
     }
 }
 
-pub trait State: Runtimed + Serialize + Deserialize {
+pub trait State: Serialize + Deserialize {
+    fn with_runtime(runtime: Runtime) -> Self;
+    fn runtime(&self) -> &Runtime;
+
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,
@@ -99,6 +102,16 @@ pub trait State: Runtimed + Serialize + Deserialize {
 }
 
 impl<T: Varint> State for T {
+    #[inline]
+    fn with_runtime(_runtime: Runtime) -> Self {
+        Self::default()
+    }
+
+    #[inline]
+    fn runtime(&self) -> &Runtime {
+        panic!("cannot get a `Runtime` from a varint")
+    }
+
     #[inline]
     fn handle<'a>(
         &mut self,

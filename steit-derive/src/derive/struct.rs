@@ -321,29 +321,6 @@ impl<'a> Struct<'a> {
         )
     }
 
-    fn impl_runtimed(&self) -> TokenStream {
-        let runtime = self
-            .runtime
-            .as_ref()
-            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
-            .access();
-
-        self.r#impl.impl_for(
-            "Runtimed",
-            quote! {
-                #[inline]
-                fn with_runtime(runtime: Runtime) -> Self {
-                    Self::new(runtime)
-                }
-
-                #[inline]
-                fn runtime(&self) -> &Runtime {
-                    &self.#runtime
-                }
-            },
-        )
-    }
-
     pub fn sizer(&self) -> TokenStream {
         let is_variant = self.variant.is_some();
         let sizers = map_fields!(self, sizer(is_variant));
@@ -460,7 +437,7 @@ impl<'a> Struct<'a> {
 
                     ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
                         io::ErrorKind::InvalidData,
-                        "`add` and `remove` are not supported on structs and enums",
+                        "`add` and `remove` are not supported on structs and variants",
                     )),
                 }
             }
@@ -468,11 +445,27 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_state(&self) -> TokenStream {
+        let runtime = self
+            .runtime
+            .as_ref()
+            .unwrap_or_else(|| unreachable!("expected a `Runtime` field"))
+            .access();
+
         let replayer = self.replayer();
 
         self.r#impl.impl_for(
             "State",
             quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                #[inline]
+                fn runtime(&self) -> &Runtime {
+                    &self.#runtime
+                }
+
                 #[inline]
                 fn handle<'a>(
                     &mut self,
@@ -507,10 +500,6 @@ impl<'a> ToTokens for Struct<'a> {
         }
 
         tokens.extend(self.impl_wire_type());
-
-        if self.setting.runtime() {
-            tokens.extend(self.impl_runtimed());
-        }
 
         if self.setting.serialize {
             tokens.extend(self.impl_serialize());
