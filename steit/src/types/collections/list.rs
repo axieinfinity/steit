@@ -5,7 +5,10 @@ use crate::{
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
-use super::iter::{Iter, IterMut};
+use super::{
+    enumerate::{Enumerate, EnumerateMut},
+    iter::{Iter, IterMut},
+};
 
 #[derive(Default, Debug)]
 pub struct List<T: State> {
@@ -62,6 +65,16 @@ impl<T: State> List<T> {
     #[inline]
     pub fn iter_mut(&mut self) -> IterMut<T> {
         IterMut::new(self.items.iter_mut())
+    }
+
+    #[inline]
+    pub fn enumerate(&self) -> Enumerate<T> {
+        Enumerate::new(self.items.iter())
+    }
+
+    #[inline]
+    pub fn enumerate_mut(&mut self) -> EnumerateMut<T> {
+        EnumerateMut::new(self.items.iter_mut())
     }
 }
 

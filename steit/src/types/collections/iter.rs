@@ -4,7 +4,7 @@ pub struct Iter<'a, T> {
 
 impl<'a, T> Iter<'a, T> {
     #[inline]
-    pub fn new(inner: impl Iterator<Item = &'a Option<T>> + 'a) -> Self {
+    pub(super) fn new(inner: impl Iterator<Item = &'a Option<T>> + 'a) -> Self {
         Self {
             inner: Box::new(inner),
         }
@@ -32,7 +32,7 @@ pub struct IterMut<'a, T> {
 
 impl<'a, T> IterMut<'a, T> {
     #[inline]
-    pub fn new(inner: impl Iterator<Item = &'a mut Option<T>> + 'a) -> Self {
+    pub(super) fn new(inner: impl Iterator<Item = &'a mut Option<T>> + 'a) -> Self {
         Self {
             inner: Box::new(inner),
         }
