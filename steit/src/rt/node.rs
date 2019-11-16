@@ -2,89 +2,60 @@ use std::{io, rc::Rc};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Serialize,
+    CachedSize, Serialize,
 };
 
-use super::cached_size::CachedSize;
-
 #[derive(Debug)]
-pub struct Inner<T> {
-    value: T,
-
-    /// Cached size of the current branch, starting from this node's value to root.
-    ///
-    /// Since this tree structure is immutable, this cached size should never be touched.
-    cached_size: CachedSize,
-}
-
-impl<T> Inner<T> {
-    #[inline]
-    pub fn new(value: T) -> Self {
-        Self {
-            value,
-            cached_size: CachedSize::new(),
-        }
-    }
-}
-
-#[derive(Debug)]
-pub enum Node<Child, Root = Child> {
-    Root {
-        inner: Inner<Root>,
-    },
+pub enum Node<T> {
+    Root,
     Child {
         parent: Rc<Self>,
-        inner: Inner<Child>,
+        value: T,
+        cached_size: CachedSize,
     },
 }
 
-impl<Child, Root> Node<Child, Root> {
+impl<T> Node<T> {
     #[inline]
-    pub fn root(value: Root) -> Self {
-        Node::Root {
-            inner: Inner::new(value),
-        }
-    }
-
-    #[inline]
-    pub fn child(parent: &Rc<Self>, value: Child) -> Self {
+    pub fn child(parent: &Rc<Self>, value: T) -> Self {
         Node::Child {
             parent: parent.clone(),
-            inner: Inner::new(value),
+            value,
+            cached_size: CachedSize::new(),
         }
     }
 
     #[inline]
     pub fn parent(&self) -> Option<Rc<Self>> {
         match self {
-            Node::Root { .. } => None,
+            Node::Root => None,
             Node::Child { parent, .. } => Some(parent.clone()),
         }
     }
 }
 
-impl<Child, Root: Default> Default for Node<Child, Root> {
+impl<T> Default for Node<T> {
     #[inline]
     fn default() -> Self {
-        Self::root(Root::default())
+        Node::Root
     }
 }
 
-impl<Child, Root> WireType for Node<Child, Root> {
+impl<T> WireType for Node<T> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
+impl<T: Serialize> Serialize for Node<T> {
     fn compute_size(&self) -> u32 {
         match self {
-            Node::Root { inner } => {
-                let size = inner.value.compute_size_nested(None);
-                inner.cached_size.set(size);
-                size
-            }
-            Node::Child { parent, inner } => {
-                let size = parent.compute_size() + inner.value.compute_size_nested(None);
-                inner.cached_size.set(size);
+            Node::Root => 0,
+            Node::Child {
+                parent,
+                value,
+                cached_size,
+            } => {
+                let size = parent.compute_size() + value.compute_size_nested(None);
+                cached_size.set(size);
                 size
             }
         }
@@ -92,10 +63,10 @@ impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
 
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
-            Node::Root { inner } => inner.value.serialize_nested_with_cached_size(None, writer),
-            Node::Child { parent, inner } => {
+            Node::Root => Ok(()),
+            Node::Child { parent, value, .. } => {
                 parent.serialize_with_cached_size(writer)?;
-                inner.value.serialize_nested_with_cached_size(None, writer)
+                value.serialize_nested_with_cached_size(None, writer)
             }
         }
     }
@@ -103,8 +74,8 @@ impl<Child: Serialize, Root: Serialize> Serialize for Node<Child, Root> {
     #[inline]
     fn cached_size(&self) -> u32 {
         match self {
-            Node::Root { inner } => inner.cached_size.get(),
-            Node::Child { inner, .. } => inner.cached_size.get(),
+            Node::Root => 0,
+            Node::Child { cached_size, .. } => cached_size.get(),
         }
     }
 }

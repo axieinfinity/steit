@@ -1,103 +1,16 @@
 use std::{io, rc::Rc};
 
-use crate::{
-    wire_type::{WireType, WIRE_TYPE_SIZED},
-    Serialize,
-};
+use crate::{wire_type::WireType, Serialize};
 
 use super::{
-    cached_size::CachedSize,
     log::{LogEntry, Logger},
     node::Node,
 };
 
-#[derive(Debug)]
-struct Child {
-    tag: u16,
-    /// Cached size of the serialized object
-    /// which the current `Runtime` attaches to
-    cached_size: CachedSize,
-}
-
-impl Child {
-    #[inline]
-    pub fn new(tag: u16) -> Self {
-        Self {
-            tag,
-            cached_size: CachedSize::new(),
-        }
-    }
-}
-
-impl WireType for Child {
-    const WIRE_TYPE: u8 = <u16 as WireType>::WIRE_TYPE;
-}
-
-impl Serialize for Child {
-    #[inline]
-    fn compute_size(&self) -> u32 {
-        self.tag.compute_size()
-    }
-
-    #[inline]
-    fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.tag.serialize_with_cached_size(writer)
-    }
-
-    #[inline]
-    fn cached_size(&self) -> u32 {
-        self.tag.cached_size()
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        self.tag.serialize(writer)
-    }
-}
-
-#[derive(Debug)]
-struct Root {
-    /// Cached size of the serialized object
-    /// which the current `Runtime` attaches to
-    cached_size: CachedSize,
-}
-
-impl Root {
-    #[inline]
-    pub fn new() -> Self {
-        Self {
-            cached_size: CachedSize::new(),
-        }
-    }
-}
-
-impl Default for Root {
-    #[inline]
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl WireType for Root {
-    const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
-}
-
-impl Serialize for Root {
-    #[inline]
-    fn compute_size(&self) -> u32 {
-        0
-    }
-
-    #[inline]
-    fn serialize_with_cached_size(&self, _writer: &mut impl io::Write) -> io::Result<()> {
-        Ok(())
-    }
-}
-
 #[derive(Clone, Default, Debug)]
 pub struct Runtime {
     logger: Logger,
-    path: Rc<Node<Child, Root>>,
+    path: Rc<Node<u16>>,
 }
 
 impl Runtime {
@@ -110,7 +23,7 @@ impl Runtime {
     pub fn nested(&self, tag: u16) -> Self {
         Self {
             logger: self.logger.clone(),
-            path: Rc::new(Node::child(&self.path, Child::new(tag))),
+            path: Rc::new(Node::child(&self.path, tag)),
         }
     }
 
