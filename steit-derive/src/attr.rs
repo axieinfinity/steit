@@ -46,7 +46,7 @@ impl<'a, T> Attr<'a, T> {
     pub fn parse_name_value(
         &mut self,
         meta: &syn::MetaNameValue,
-        f: &mut impl FnMut(&syn::Lit) -> Result<T, &'a str>,
+        mut f: impl FnMut(&syn::Lit) -> Result<T, &'a str>,
     ) -> bool {
         if meta.path.is_ident(self.name) {
             match f(&meta.lit) {
@@ -75,7 +75,7 @@ impl Attr<'_, bool> {
     }
 
     pub fn parse_bool(&mut self, meta: &syn::MetaNameValue) -> bool {
-        self.parse_name_value(meta, &mut |lit| match lit {
+        self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Bool(lit) => Ok(lit.value),
             _ => Err("a boolean"),
         })
@@ -88,7 +88,7 @@ where
     T::Err: fmt::Display,
 {
     pub fn parse_int(&mut self, meta: &syn::MetaNameValue) -> bool {
-        self.parse_name_value(meta, &mut |lit| match lit {
+        self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an int"),
             _ => Err("an integer"),
         })
@@ -97,7 +97,7 @@ where
 
 impl Attr<'_, String> {
     pub fn parse_str(&mut self, meta: &syn::MetaNameValue) -> bool {
-        self.parse_name_value(meta, &mut |lit| match lit {
+        self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Str(lit) => Ok(lit.value()),
             _ => Err("a string"),
         })
