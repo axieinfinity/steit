@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse},
+    attr::{Attr, AttrParse, VecAttr},
     ctx::Context,
     derive,
     r#impl::Impl,
@@ -19,22 +19,26 @@ use super::{
 struct StructAttrs {
     cached_size_renamed: Option<(String, TokenStream)>,
     runtime_renamed: Option<(String, TokenStream)>,
+    reserved: Vec<u16>,
 }
 
 impl StructAttrs {
     pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
         let mut cached_size_renamed = Attr::new(context, "cached_size_renamed");
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
+        let mut reserved = VecAttr::new(context, "reserved");
 
         attrs.parse(context, true, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
+            syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
             _ => false,
         });
 
         Self {
             cached_size_renamed: cached_size_renamed.get_with_tokens(),
             runtime_renamed: runtime_renamed.get_with_tokens(),
+            reserved: reserved.get(),
         }
     }
 }
@@ -70,7 +74,7 @@ impl<'a> Struct<'a> {
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(context, attrs);
 
-        Self::parse_fields(setting, context, fields).and_then(|parsed| {
+        Self::parse_fields(setting, context, &attrs, fields).and_then(|parsed| {
             let mut index = parsed.len();
 
             let cached_size = if setting.cached_size() {
@@ -139,6 +143,7 @@ impl<'a> Struct<'a> {
     fn parse_fields(
         setting: &'a DeriveSetting,
         context: &Context,
+        attrs: &StructAttrs,
         fields: &mut syn::Fields,
     ) -> derive::Result<Vec<Field<'a>>> {
         let len = fields.iter().len();
@@ -154,11 +159,16 @@ impl<'a> Struct<'a> {
             return Err(());
         }
 
+        let reserved: HashSet<_> = attrs.reserved.iter().collect();
         let mut tags = HashSet::new();
         let mut unique = true;
 
         for field in &parsed {
             let (tag, tokens) = field.tag_with_tokens();
+
+            if reserved.contains(&tag) {
+                context.error(tokens, format!("tag {} has been reserved", tag));
+            }
 
             if !tags.insert(tag) {
                 context.error(tokens, "duplicate tag");

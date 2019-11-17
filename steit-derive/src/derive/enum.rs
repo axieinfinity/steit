@@ -3,9 +3,33 @@ use std::collections::HashSet;
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::{ctx::Context, derive, r#impl::Impl};
+use crate::{
+    attr::{AttrParse, VecAttr},
+    ctx::Context,
+    derive,
+    r#impl::Impl,
+};
 
 use super::{r#struct::Struct, variant::Variant, DeriveSetting};
+
+struct EnumAttrs {
+    reserved: Vec<u16>,
+}
+
+impl EnumAttrs {
+    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
+        let mut reserved = VecAttr::new(context, "reserved");
+
+        attrs.parse(context, true, &mut |meta| match meta {
+            syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
+            _ => false,
+        });
+
+        Self {
+            reserved: reserved.get(),
+        }
+    }
+}
 
 pub struct Enum<'a> {
     setting: &'a DeriveSetting,
@@ -19,6 +43,7 @@ impl<'a> Enum<'a> {
         setting: &'a DeriveSetting,
         context: &'a Context,
         r#impl: &'a Impl,
+        attrs: impl AttrParse,
         data: &'a mut syn::DataEnum,
     ) -> derive::Result<Self> {
         if data.variants.is_empty() {
@@ -26,11 +51,13 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
-        Self::parse_variants(setting, context, r#impl, &mut data.variants).map(|variants| Self {
-            setting,
-            context,
-            r#impl,
-            variants,
+        Self::parse_variants(setting, context, r#impl, attrs, &mut data.variants).map(|variants| {
+            Self {
+                setting,
+                context,
+                r#impl,
+                variants,
+            }
         })
     }
 
@@ -38,6 +65,7 @@ impl<'a> Enum<'a> {
         setting: &'a DeriveSetting,
         context: &'a Context,
         r#impl: &'a Impl,
+        attrs: impl AttrParse,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Vec<Struct<'a>>> {
         let len = variants.iter().len();
@@ -50,6 +78,8 @@ impl<'a> Enum<'a> {
             }
         }
 
+        let attrs = EnumAttrs::parse(context, attrs);
+
         for variant in variants.iter_mut() {
             if let Ok((parsed, unknown_attrs)) = Variant::parse(context, variant) {
                 parsed_data.push((parsed, unknown_attrs, &mut variant.fields));
@@ -60,12 +90,17 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
+        let reserved: HashSet<_> = attrs.reserved.iter().collect();
         let mut tags = HashSet::new();
         let mut unique = true;
         let mut named_hint = None;
 
         for (variant, _, fields) in &parsed_data {
             let (tag, tokens) = variant.tag_with_tokens();
+
+            if reserved.contains(&tag) {
+                context.error(tokens, format!("tag {} has been reserved", tag));
+            }
 
             if !tags.insert(tag) {
                 context.error(tokens, "duplicate tag");

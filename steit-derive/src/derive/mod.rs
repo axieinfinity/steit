@@ -116,7 +116,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
     let r#impl = Impl::new(&input.ident, &input.generics);
 
     let output = match &mut input.data {
-        syn::Data::Enum(data) => Enum::parse(&setting, &context, &r#impl, data)
+        syn::Data::Enum(data) => Enum::parse(&setting, &context, &r#impl, &mut input.attrs, data)
             .ok()
             .into_token_stream(),
 

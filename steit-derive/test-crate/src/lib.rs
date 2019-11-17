@@ -419,10 +419,11 @@ mod test {
         println!("check size {:#?}", hello);
     }
 
-    #[steitize(State)]
+    /* #[steitize(State)]
+    #[steit(reserved(28))]
     #[derive(Debug)]
     enum EnumEnum {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, reserved(4))]
         Foo(#[steit(tag = 4)] bool),
 
         #[steit(tag = 28)]
@@ -430,5 +431,5 @@ mod test {
 
         #[steit(tag = 29)]
         Qux,
-    }
+    } */
 }
