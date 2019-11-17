@@ -137,15 +137,13 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
             .into_token_stream(),
     };
 
-    let output = if let Err(errors) = context.check() {
-        to_compile_errors(errors)
-    } else {
-        wrap_in_const(&setting, &input.ident, output.into_token_stream())
-    };
+    let output = wrap_in_const(&setting, &input.ident, output);
+    let errors = context.check().err().map(to_compile_errors);
 
     let derived = quote! {
         #input
         #output
+        #errors
     };
 
     println!("{}", derived.to_string());
