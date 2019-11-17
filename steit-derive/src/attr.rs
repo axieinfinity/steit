@@ -46,7 +46,7 @@ impl<'a, T> Attr<'a, T> {
     pub fn parse_name_value(
         &mut self,
         meta: &syn::MetaNameValue,
-        mut f: impl FnMut(&syn::Lit) -> Result<T, &'a str>,
+        mut f: impl FnMut(&syn::Lit) -> Result<T, &str>,
     ) -> bool {
         if meta.path.is_ident(self.name) {
             match f(&meta.lit) {
@@ -89,7 +89,7 @@ where
 {
     pub fn parse_int(&mut self, meta: &syn::MetaNameValue) -> bool {
         self.parse_name_value(meta, |lit| match lit {
-            syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an int"),
+            syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an integer"),
             _ => Err("an integer"),
         })
     }
@@ -100,6 +100,71 @@ impl Attr<'_, String> {
         self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Str(lit) => Ok(lit.value()),
             _ => Err("a string"),
+        })
+    }
+}
+
+pub struct VecAttr<'a, T> {
+    context: &'a Context,
+    name: &'static str,
+    values: Vec<T>,
+}
+
+impl<'a, T> VecAttr<'a, T> {
+    pub fn new(context: &'a Context, name: &'static str) -> Self {
+        Self {
+            context,
+            name,
+            values: Vec::new(),
+        }
+    }
+
+    pub fn insert(&mut self, value: T) {
+        self.values.push(value);
+    }
+
+    pub fn get(self) -> Vec<T> {
+        self.values
+    }
+
+    pub fn parse_list(
+        &mut self,
+        meta: &syn::MetaList,
+        mut f: impl FnMut(&syn::Lit) -> Result<T, &str>,
+    ) -> bool {
+        if meta.path.is_ident(self.name) {
+            for meta in &meta.nested {
+                match meta {
+                    syn::NestedMeta::Lit(lit) => match f(lit) {
+                        Ok(value) => self.insert(value),
+                        Err(ty) => self.context.error(
+                            lit,
+                            format!("expected `{}` attribute to be a list of {}", self.name, ty),
+                        ),
+                    },
+                    _ => self.context.error(
+                        meta,
+                        format!("expected `{}` attribute to be a literal", self.name),
+                    ),
+                }
+            }
+
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl<T> VecAttr<'_, T>
+where
+    T: FromStr,
+    T::Err: fmt::Display,
+{
+    pub fn parse_int_list(&mut self, meta: &syn::MetaList) -> bool {
+        self.parse_list(meta, |lit| match lit {
+            syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "integer"),
+            _ => Err("integer"),
         })
     }
 }
