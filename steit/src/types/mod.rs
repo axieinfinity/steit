@@ -1,10 +1,11 @@
 mod bytes;
-mod collections;
 mod impls;
+mod stateful;
 mod varint;
 
 pub use bytes::*;
-pub use collections::*;
+pub use impls::*;
+pub use stateful::*;
 pub use varint::*;
 
 #[macro_export]
