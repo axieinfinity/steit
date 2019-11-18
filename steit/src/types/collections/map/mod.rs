@@ -1,19 +1,23 @@
-use std::{collections::HashMap, convert::TryFrom, io, marker::PhantomData};
+use std::{collections::HashMap, convert::TryFrom, fmt, io, marker::PhantomData};
 
 use crate::{
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
+mod iter;
+
+pub use iter::*;
+
 #[derive(Debug)]
-pub struct Map<K: TryFrom<u16> + AsRef<u16>, V: State> {
+pub struct Map<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> {
     entries: HashMap<u16, V>,
     phantom: PhantomData<*const K>,
     cached_size: CachedSize,
     runtime: Runtime,
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> Map<K, V> {
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Map<K, V> {
     #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
@@ -22,6 +26,16 @@ impl<K: TryFrom<u16> + AsRef<u16>, V: State> Map<K, V> {
             cached_size: CachedSize::new(),
             runtime,
         }
+    }
+
+    #[inline]
+    pub fn get(&self, key: &K) -> Option<&V> {
+        self.entries.get(key.as_ref())
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
+        self.entries.get_mut(key.as_ref())
     }
 
     #[inline]
@@ -44,20 +58,50 @@ impl<K: TryFrom<u16> + AsRef<u16>, V: State> Map<K, V> {
         self.runtime.log_remove(tag).unwrap();
         self.entries.remove(&tag)
     }
+
+    #[inline]
+    pub fn iter(&self) -> Iter<K, V> {
+        Iter::new(self.entries.iter())
+    }
+
+    #[inline]
+    pub fn iter_mut(&mut self) -> IterMut<K, V> {
+        IterMut::new(self.entries.iter_mut())
+    }
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> Default for Map<K, V> {
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Default for Map<K, V> {
     #[inline]
     fn default() -> Self {
         Self::new(Runtime::default())
     }
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> WireType for Map<K, V> {
+impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator for &'a Map<K, V> {
+    type Item = (K, &'a V);
+    type IntoIter = Iter<'a, K, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator
+    for &'a mut Map<K, V>
+{
+    type Item = (K, &'a mut V);
+    type IntoIter = IterMut<'a, K, V>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter_mut()
+    }
+}
+
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> WireType for Map<K, V> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> Serialize for Map<K, V> {
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Serialize for Map<K, V> {
     #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
@@ -85,7 +129,7 @@ impl<K: TryFrom<u16> + AsRef<u16>, V: State> Serialize for Map<K, V> {
     }
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> Merge for Map<K, V> {
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Merge for Map<K, V> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
@@ -107,7 +151,7 @@ impl<K: TryFrom<u16> + AsRef<u16>, V: State> Merge for Map<K, V> {
     }
 }
 
-impl<K: TryFrom<u16> + AsRef<u16>, V: State> State for Map<K, V> {
+impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> State for Map<K, V> {
     #[inline]
     fn with_runtime(runtime: Runtime) -> Self {
         Self::new(runtime)
