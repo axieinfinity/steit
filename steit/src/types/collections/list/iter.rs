@@ -1,4 +1,4 @@
-pub struct Iter<'a, T> {
+pub struct Iter<'a, T: 'a> {
     inner: Box<dyn Iterator<Item = &'a Option<T>> + 'a>,
 }
 
@@ -26,7 +26,7 @@ impl<'a, T> Iterator for Iter<'a, T> {
     }
 }
 
-pub struct IterMut<'a, T> {
+pub struct IterMut<'a, T: 'a> {
     inner: Box<dyn Iterator<Item = &'a mut Option<T>> + 'a>,
 }
 

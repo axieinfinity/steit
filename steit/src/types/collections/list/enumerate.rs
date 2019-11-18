@@ -1,4 +1,4 @@
-pub struct Enumerate<'a, T> {
+pub struct Enumerate<'a, T: 'a> {
     iter: Box<dyn Iterator<Item = &'a Option<T>> + 'a>,
     count: u16,
 }
