@@ -1,8 +1,9 @@
 use std::io::{self, Read};
 
 use crate::{
+    impl_state_for_plain,
     wire_type::{WireType, WIRE_TYPE_VARINT},
-    Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
+    Deserialize, Eof, Merge, Serialize, State,
 };
 
 pub trait Varint: Serialize + Deserialize {}
@@ -122,51 +123,7 @@ impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
 
 impl<T: Varint> State for T {
-    #[inline]
-    fn with_runtime(_runtime: Runtime) -> Self {
-        Self::default()
-    }
-
-    #[inline]
-    fn runtime(&self) -> &Runtime {
-        panic!("cannot get a `Runtime` from a varint")
-    }
-
-    #[inline]
-    fn handle<'a>(
-        &mut self,
-        path: &mut impl Iterator<Item = &'a u16>,
-        kind: &ReplayKind,
-        reader: &mut Eof<impl io::Read>,
-    ) -> io::Result<()> {
-        if let Some(tag) = path.next() {
-            let mut s = format!("{}", tag);
-
-            for tag in path {
-                s.push_str(&format!(", {}", tag));
-            }
-
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                format!("expected end-of-path but still got [{}] remaining", s),
-            ))
-        } else {
-            match kind {
-                ReplayKind::Update => self.handle_update(reader),
-
-                ReplayKind::Add | ReplayKind::Remove => Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "`add` and `remove` are not supported on varints",
-                )),
-            }
-        }
-    }
-
-    #[inline]
-    fn handle_update(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        *self = Self::deserialize(reader)?;
-        Ok(())
-    }
+    impl_state_for_plain!("varint");
 }
 
 // Reference: https://bit.ly/2BJbkd5

@@ -1,8 +1,9 @@
 use std::io::{self, Read};
 
 use crate::{
+    impl_state_for_plain,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Eof, Merge, Serialize,
+    Eof, Merge, Serialize, State,
 };
 
 #[derive(Default, Debug)]
@@ -46,4 +47,8 @@ impl Merge for Bytes {
         reader.read_to_end(&mut self.bytes)?;
         Ok(())
     }
+}
+
+impl State for Bytes {
+    impl_state_for_plain!("bytes");
 }
