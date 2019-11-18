@@ -5,10 +5,11 @@ use crate::{
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
-use super::{
-    enumerate::{Enumerate, EnumerateMut},
-    iter::{Iter, IterMut},
-};
+mod enumerate;
+mod iter;
+
+pub use enumerate::*;
+pub use iter::*;
 
 #[derive(Default, Debug)]
 pub struct List<T: State> {
