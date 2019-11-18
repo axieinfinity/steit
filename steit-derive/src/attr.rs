@@ -82,11 +82,7 @@ impl Attr<'_, bool> {
     }
 }
 
-impl<T> Attr<'_, T>
-where
-    T: FromStr,
-    T::Err: fmt::Display,
-{
+impl<T: FromStr<Err: fmt::Display>> Attr<'_, T> {
     pub fn parse_int(&mut self, meta: &syn::MetaNameValue) -> bool {
         self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "an integer"),
@@ -156,11 +152,7 @@ impl<'a, T> VecAttr<'a, T> {
     }
 }
 
-impl<T> VecAttr<'_, T>
-where
-    T: FromStr,
-    T::Err: fmt::Display,
-{
+impl<T: FromStr<Err: fmt::Display>> VecAttr<'_, T> {
     pub fn parse_int_list(&mut self, meta: &syn::MetaList) -> bool {
         self.parse_list(meta, |lit| match lit {
             syn::Lit::Int(lit) => lit.base10_parse().map_err(|_| "integer"),
