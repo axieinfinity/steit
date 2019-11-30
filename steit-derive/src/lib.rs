@@ -1,5 +1,4 @@
 #![feature(associated_type_bounds)]
-#![feature(bind_by_move_pattern_guards)]
 
 extern crate proc_macro;
 #[macro_use]
