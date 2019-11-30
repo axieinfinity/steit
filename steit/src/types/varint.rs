@@ -20,11 +20,7 @@ macro_rules! impl_unsigned_varint {
         impl Serialize for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
-                if *self != Self::default() {
-                    $size_fn(*self as $size_t)
-                } else {
-                    0
-                }
+                $size_fn(*self as $size_t)
             }
 
             #[inline]
@@ -82,11 +78,7 @@ macro_rules! impl_signed_varint {
         impl Serialize for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
-                if *self != Self::default() {
-                    (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
-                } else {
-                    0
-                }
+                (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
             }
 
             #[inline]
