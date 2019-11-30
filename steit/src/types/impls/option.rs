@@ -30,9 +30,13 @@ impl<T: Serialize> Serialize for Option<T> {
 impl<T: Deserialize> Merge for Option<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        while !reader.eof()? {
-            let value = T::deserialize_nested(reader)?;
-            *self = Some(value);
+        if !reader.eof()? {
+            while !reader.eof()? {
+                let value = T::deserialize_nested(reader)?;
+                *self = Some(value);
+            }
+        } else {
+            *self = None;
         }
 
         Ok(())
