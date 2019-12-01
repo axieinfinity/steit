@@ -233,7 +233,7 @@ impl<T: State> State for List<T> {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use crate::{Deserialize, Eof, Merge, Runtime, State};
 
     use super::List;

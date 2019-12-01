@@ -183,7 +183,7 @@ fn size_64(mut value: i64) -> u32 {
 }
 
 #[cfg(test)]
-mod test {
+mod tests {
     use std::fmt;
 
     use crate::{test_case, Eof};
