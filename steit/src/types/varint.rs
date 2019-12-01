@@ -36,6 +36,11 @@ macro_rules! impl_unsigned_varint {
                     }
                 }
             }
+
+            #[inline]
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                self.serialize_with_cached_size(writer)
+            }
         }
 
         impl Merge for $t {
@@ -84,6 +89,11 @@ macro_rules! impl_signed_varint {
             #[inline]
             fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 (impl_signed_varint!(@encode self, $t) as $ut).serialize_with_cached_size(writer)
+            }
+
+            #[inline]
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                self.serialize_with_cached_size(writer)
             }
         }
 
