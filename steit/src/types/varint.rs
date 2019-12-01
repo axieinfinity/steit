@@ -109,7 +109,7 @@ macro_rules! impl_signed_varint {
         impl Varint for $t {}
     };
 
-    // ZigZag encoding: https://bit.ly/2Pl9Gq8
+    // Reference: https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
     (@encode $value:ident, $t:ty) => {
         ($value << 1) ^ ($value >> ((std::mem::size_of::<$t>() << 3) - 1))
     };
@@ -128,7 +128,7 @@ impl<T: Varint> State for T {
     impl_state_for_plain!("varint");
 }
 
-// Reference: https://bit.ly/2BJbkd5
+/// Reference: https://github.com/protocolbuffers/protobuf/blob/342a2d6/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L727-L741
 #[inline]
 fn size_32(value: i32) -> u32 {
     if value & (!0 << 7) == 0 {
@@ -150,7 +150,7 @@ fn size_32(value: i32) -> u32 {
     5
 }
 
-// Reference: https://bit.ly/2MPq54D
+/// Reference: https://github.com/protocolbuffers/protobuf/blob/342a2d6/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L770-L792
 #[inline]
 fn size_64(mut value: i64) -> u32 {
     // Handle two popular special cases upfront ...
