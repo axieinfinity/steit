@@ -10,16 +10,6 @@ impl<T> WireType for Option<T> {
 }
 
 impl<T: Serialize> Serialize for Option<T> {
-    /// Computes serialized size for `Option`.
-    ///
-    /// ```
-    /// use steit::Serialize;
-    ///
-    /// assert_eq!(None::<u8>.compute_size(), 0);
-    /// assert_eq!(Some(0).compute_size(), 1);
-    /// assert_eq!(Some(1).compute_size(), 1);
-    /// assert_eq!(Some(1337).compute_size(), 2);
-    /// ```
     #[inline]
     fn compute_size(&self) -> u32 {
         match self {
@@ -28,23 +18,6 @@ impl<T: Serialize> Serialize for Option<T> {
         }
     }
 
-    /// Serializes `Option`.
-    ///
-    /// ```
-    /// use steit::Serialize;
-    ///
-    /// let mut bytes = Vec::new();
-    /// None::<u8>.serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[]);
-    ///
-    /// let mut bytes = Vec::new();
-    /// Some(0).serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[0]);
-    ///
-    /// let mut bytes = Vec::new();
-    /// Some(1337).serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[242, 20]);
-    /// ```
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         match self {
@@ -55,22 +28,6 @@ impl<T: Serialize> Serialize for Option<T> {
 }
 
 impl<T: Deserialize> Merge for Option<T> {
-    /// Merges a serialized value with an existing `Option`.
-    ///
-    /// ```
-    /// use steit::{Merge, Eof};
-    ///
-    /// let mut value = Some(1);
-    ///
-    /// value.merge(&mut Eof::new([].as_ref())).unwrap();
-    /// assert_eq!(value, None);
-    ///
-    /// value.merge(&mut Eof::new([0].as_ref())).unwrap();
-    /// assert_eq!(value, Some(0));
-    ///
-    /// value.merge(&mut Eof::new([0, 242, 20].as_ref())).unwrap();
-    /// assert_eq!(value, Some(1337));
-    /// ```
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         if !reader.eof()? {
@@ -84,4 +41,25 @@ impl<T: Deserialize> Merge for Option<T> {
 
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        test_case,
+        test_util::{assert_merge, assert_serialize, assert_size},
+    };
+
+    test_case!(size_01: assert_size; None::<u8> => 0);
+    test_case!(size_02: assert_size; Some(0) => 1);
+    test_case!(size_03: assert_size; Some(1) => 1);
+    test_case!(size_04: assert_size; Some(1337) => 2);
+
+    test_case!(serialize_01: assert_serialize; None::<u8> => &[]);
+    test_case!(serialize_02: assert_serialize; Some(0) => &[0]);
+    test_case!(serialize_03: assert_serialize; Some(1337) => &[242, 20]);
+
+    test_case!(merge_01: assert_merge; Some(1), &[] => None);
+    test_case!(merge_02: assert_merge; None, &[0] => Some(0));
+    test_case!(merge_03: assert_merge; Some(0), &[242, 20] => Some(1337));
 }

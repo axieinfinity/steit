@@ -11,16 +11,6 @@ impl<T: Varint> WireType for Vec<T> {
 }
 
 impl<T: Varint> Serialize for Vec<T> {
-    /// Computes serialized size for `Vec<impl Varint>`.
-    ///
-    /// ```
-    /// use steit::Serialize;
-    ///
-    /// assert_eq!(Vec::<u8>::new().compute_size(), 0);
-    /// assert_eq!(vec![0].compute_size(), 1);
-    /// assert_eq!(vec![0, 0, 0].compute_size(), 3);
-    /// assert_eq!(vec![1337].compute_size(), 2);
-    /// ```
     #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
@@ -32,23 +22,6 @@ impl<T: Varint> Serialize for Vec<T> {
         size
     }
 
-    /// Serializes `Vec<impl Varint>`.
-    ///
-    /// ```
-    /// use steit::Serialize;
-    ///
-    /// let mut bytes = Vec::new();
-    /// Vec::<u8>::new().serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[]);
-    ///
-    /// let mut bytes = Vec::new();
-    /// vec![0, 0, 0].serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[0, 0, 0]);
-    ///
-    /// let mut bytes = Vec::new();
-    /// vec![1337].serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[242, 20]);
-    /// ```
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         for item in self {
@@ -60,22 +33,6 @@ impl<T: Varint> Serialize for Vec<T> {
 }
 
 impl<T: Varint> Merge for Vec<T> {
-    /// Merges a serialized value with an existing `Vec<impl Varint>`.
-    ///
-    /// ```
-    /// use steit::{Merge, Eof};
-    ///
-    /// let mut value = Vec::<i32>::new();
-    ///
-    /// value.merge(&mut Eof::new([1].as_ref())).unwrap();
-    /// assert_eq!(&value, &[-1]);
-    ///
-    /// value.merge(&mut Eof::new([].as_ref())).unwrap();
-    /// assert_eq!(&value, &[-1]);
-    ///
-    /// value.merge(&mut Eof::new([0, 242, 20, 0, 3, 0].as_ref())).unwrap();
-    /// assert_eq!(&value, &[-1, 0, 1337, 0, -2, 0]);
-    /// ```
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
@@ -85,4 +42,26 @@ impl<T: Varint> Merge for Vec<T> {
 
         Ok(())
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        test_case,
+        test_util::{assert_merge, assert_serialize, assert_size},
+    };
+
+    test_case!(size_01: assert_size::<Vec<u8>>; vec![] => 0);
+    test_case!(size_02: assert_size; vec![0] => 1);
+    test_case!(size_03: assert_size; vec![0, 0, 0] => 3);
+    test_case!(size_04: assert_size; vec![1337] => 2);
+
+    test_case!(serialize_01: assert_serialize::<Vec<u8>>; vec![] => &[]);
+    test_case!(serialize_02: assert_serialize; vec![0, 0, 0] => &[0, 0, 0]);
+    test_case!(serialize_03: assert_serialize; vec![1337] => &[242, 20]);
+
+    test_case!(merge_01: assert_merge::<Vec<u8>>; vec![], &[] => vec![]);
+    test_case!(merge_02: assert_merge; vec![], &[1] => vec![-1]);
+    test_case!(merge_03: assert_merge; vec![-1], &[] => vec![-1]);
+    test_case!(merge_04: assert_merge; vec![-1], &[0, 242, 20, 0, 3, 0] => vec![-1, 0, 1337, 0, -2, 0]);
 }

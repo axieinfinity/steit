@@ -184,49 +184,26 @@ fn size_64(mut value: i64) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::fmt;
+    use crate::{
+        test_case,
+        test_util::{assert_deserialize, assert_ser_de, assert_serialize},
+    };
 
-    use crate::{test_case, Eof};
+    test_case!(encode_zig_zag_01: assert_serialize;  0 => &[0]);
+    test_case!(encode_zig_zag_02: assert_serialize; -1 => &[1]);
+    test_case!(encode_zig_zag_03: assert_serialize;  1 => &[2]);
+    test_case!(encode_zig_zag_04: assert_serialize; -2 => &[3]);
+    test_case!(encode_zig_zag_05: assert_serialize;  2 => &[4]);
 
-    use super::Varint;
+    test_case!(decode_zig_zag_01: assert_deserialize; &[0] =>  0);
+    test_case!(decode_zig_zag_02: assert_deserialize; &[1] => -1);
+    test_case!(decode_zig_zag_03: assert_deserialize; &[2] =>  1);
+    test_case!(decode_zig_zag_04: assert_deserialize; &[3] => -2);
+    test_case!(decode_zig_zag_05: assert_deserialize; &[4] =>  2);
 
-    fn encode(value: impl Varint) -> Vec<u8> {
-        let mut bytes = Vec::with_capacity(10);
-        value.serialize(&mut bytes).unwrap();
-        bytes
-    }
-
-    fn assert_encode(value: impl Varint, expected_bytes: &[u8]) {
-        assert_eq!(&*encode(value), expected_bytes);
-    }
-
-    test_case!(encode_zig_zag_01: assert_encode;  0 => &[0]);
-    test_case!(encode_zig_zag_02: assert_encode; -1 => &[1]);
-    test_case!(encode_zig_zag_03: assert_encode;  1 => &[2]);
-    test_case!(encode_zig_zag_04: assert_encode; -2 => &[3]);
-    test_case!(encode_zig_zag_05: assert_encode;  2 => &[4]);
-
-    fn decode<T: Varint>(bytes: &[u8]) -> T {
-        T::deserialize(&mut Eof::new(bytes)).unwrap()
-    }
-
-    fn assert_decode<T: PartialEq + fmt::Debug + Varint>(bytes: &[u8], expected_value: T) {
-        assert_eq!(decode::<T>(bytes), expected_value);
-    }
-
-    test_case!(decode_zig_zag_01: assert_decode; &[0] =>  0);
-    test_case!(decode_zig_zag_02: assert_decode; &[1] => -1);
-    test_case!(decode_zig_zag_03: assert_decode; &[2] =>  1);
-    test_case!(decode_zig_zag_04: assert_decode; &[3] => -2);
-    test_case!(decode_zig_zag_05: assert_decode; &[4] =>  2);
-
-    fn assert_back_and_forth<T: Copy + PartialEq + fmt::Debug + Varint>(value: T) {
-        assert_eq!(decode::<T>(&*encode(value)), value);
-    }
-
-    test_case!(back_and_forth_01: assert_back_and_forth; -1i8 as u64);
-    test_case!(back_and_forth_02: assert_back_and_forth; !0u64);
-    test_case!(back_and_forth_03: assert_back_and_forth; -1i8 as u32);
-    test_case!(back_and_forth_04: assert_back_and_forth; 1_000_000);
-    test_case!(back_and_forth_05: assert_back_and_forth; 42);
+    test_case!(back_and_forth_01: assert_ser_de; -1i8 as u64);
+    test_case!(back_and_forth_02: assert_ser_de; !0u64);
+    test_case!(back_and_forth_03: assert_ser_de; -1i8 as u32);
+    test_case!(back_and_forth_04: assert_ser_de; 1_000_000);
+    test_case!(back_and_forth_05: assert_ser_de; 42);
 }

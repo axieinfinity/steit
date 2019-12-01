@@ -79,3 +79,40 @@ impl<T: Serialize> Serialize for Node<T> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::rc::Rc;
+
+    use crate::{
+        test_case,
+        test_util::{assert_serialize, assert_size},
+        Serialize,
+    };
+
+    use super::Node;
+
+    fn node<T>(branch: impl IntoIterator<Item = T>) -> Node<T> {
+        branch
+            .into_iter()
+            .fold(Node::Root, |node, value| Node::child(&Rc::new(node), value))
+    }
+
+    #[test]
+    fn cached_size() {
+        let node = node(vec![0, 1337, 0, 1]);
+        assert_eq!(node.cached_size(), 0);
+        assert_eq!(node.compute_size(), 5);
+        assert_eq!(node.cached_size(), 5);
+    }
+
+    test_case!(size_01: assert_size::<Node<i32>>; node(vec![]) => 0);
+    test_case!(size_02: assert_size; node(vec![9]) => 1);
+    test_case!(size_03: assert_size; node(vec![1337]) => 2);
+    test_case!(size_04: assert_size; node(vec![9, 1337, 128]) => 5);
+
+    test_case!(serialize_01: assert_serialize::<Node<i32>>; node(vec![]) => &[]);
+    test_case!(serialize_02: assert_serialize; node(vec![9]) => &[18]);
+    test_case!(serialize_03: assert_serialize; node(vec![1337]) => &[242, 20]);
+    test_case!(serialize_04: assert_serialize; node(vec![9, 1337, 128]) => &[18, 242, 20, 128, 2]);
+}

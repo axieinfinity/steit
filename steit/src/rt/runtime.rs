@@ -85,17 +85,6 @@ impl WireType for Runtime {
 }
 
 impl Serialize for Runtime {
-    /// Computes serialized size for `Runtime`.
-    ///
-    /// ```
-    /// use steit::{Runtime, Serialize};
-    ///
-    /// let f1 = Runtime::new().nested(9);
-    /// let f2 = f1.nested(1337);
-    ///
-    /// assert_eq!(f1.compute_size(), 1);
-    /// assert_eq!(f2.compute_size(), 3);
-    /// ```
     #[inline]
     fn compute_size(&self) -> u32 {
         self.path.compute_size()
@@ -111,18 +100,6 @@ impl Serialize for Runtime {
         self.path.cached_size()
     }
 
-    /// Serializes `Runtime`.
-    ///
-    /// ```
-    /// use steit::{Runtime, Serialize};
-    ///
-    /// let runtime = Runtime::new().nested(9).nested(1337);
-    /// let mut bytes = Vec::new();
-    ///
-    /// runtime.serialize(&mut bytes).unwrap();
-    ///
-    /// assert_eq!(&bytes, &[9, 185, 10]);
-    /// ```
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.path.serialize(writer)

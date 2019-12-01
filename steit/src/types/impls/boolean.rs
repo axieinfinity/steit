@@ -16,19 +16,6 @@ impl Serialize for bool {
         1
     }
 
-    /// Serializes `bool`.
-    ///
-    /// ```
-    /// use steit::Serialize;
-    ///
-    /// let mut bytes = Vec::new();
-    /// false.serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[0]);
-    ///
-    /// let mut bytes = Vec::new();
-    /// true.serialize_with_cached_size(&mut bytes).unwrap();
-    /// assert_eq!(&bytes, &[1]);
-    /// ```
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&[*self as u8])
@@ -41,19 +28,6 @@ impl Serialize for bool {
 }
 
 impl Merge for bool {
-    /// Merges a serialized value with an existing `bool`.
-    ///
-    /// ```
-    /// use steit::{Merge, Eof};
-    ///
-    /// let mut value = false;
-    ///
-    /// value.merge(&mut Eof::new([128, 2].as_ref())).unwrap();
-    /// assert_eq!(value, true);
-    ///
-    /// value.merge(&mut Eof::new([0].as_ref())).unwrap();
-    /// assert_eq!(value, false);
-    /// ```
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         let mut value = false;
@@ -72,3 +46,20 @@ impl Merge for bool {
 }
 
 impl Varint for bool {}
+
+#[cfg(test)]
+mod tests {
+    use crate::{
+        test_case,
+        test_util::{assert_merge, assert_serialize},
+    };
+
+    test_case!(serialize_01: assert_serialize; false => &[0]);
+    test_case!(serialize_02: assert_serialize; true => &[1]);
+
+    test_case!(merge_01: assert_merge; false, &[0] => false);
+    test_case!(merge_02: assert_merge; false, &[1] => true);
+    test_case!(merge_03: assert_merge; false, &[128, 128, 128, 128, 128, 128, 128, 128, 128, 2] /* 2^64 */ => true);
+    test_case!(merge_04: assert_merge; true, &[0] => false);
+    test_case!(merge_05: assert_merge; true, &[42] => true);
+}
