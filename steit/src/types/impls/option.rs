@@ -32,8 +32,13 @@ impl<T: Deserialize> Merge for Option<T> {
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         if !reader.eof()? {
             while !reader.eof()? {
-                let value = T::deserialize_nested(reader)?;
-                *self = Some(value);
+                if self.is_none() {
+                    *self = Some(T::default());
+                }
+
+                if let Some(value) = self {
+                    value.merge_nested(reader)?;
+                }
             }
         } else {
             *self = None;
@@ -46,9 +51,32 @@ impl<T: Deserialize> Merge for Option<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        test_case,
+        steitize, test_case,
         test_util::{assert_merge, assert_serialize, assert_size},
+        Serialize,
     };
+
+    #[steitize(Serialize, Deserialize, own_crate)]
+    #[derive(PartialEq, Debug)]
+    struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);
+
+    impl Foo {
+        fn with(f_0: i32, f_1: i32) -> Self {
+            Self {
+                0: f_0,
+                1: f_1,
+                ..Foo::new()
+            }
+        }
+    }
+
+    #[test]
+    fn cached_size() {
+        let value = Some(Foo::with(-1, 0));
+        assert_eq!(value.as_ref().unwrap().cached_size(), 0);
+        assert_eq!(value.cached_size(), 5);
+        assert_eq!(value.unwrap().cached_size(), 4);
+    }
 
     test_case!(size_01: assert_size; None::<u8> => 0);
     test_case!(size_02: assert_size; Some(0) => 1);
@@ -58,8 +86,11 @@ mod tests {
     test_case!(serialize_01: assert_serialize; None::<u8> => &[]);
     test_case!(serialize_02: assert_serialize; Some(0) => &[0]);
     test_case!(serialize_03: assert_serialize; Some(1337) => &[242, 20]);
+    test_case!(serialize_04: assert_serialize; Some(Foo::with(-1, -2)) => &[4, 0, 1, 8, 3]);
 
     test_case!(merge_01: assert_merge; Some(1), &[] => None);
     test_case!(merge_02: assert_merge; None, &[0] => Some(0));
     test_case!(merge_03: assert_merge; Some(0), &[242, 20] => Some(1337));
+    test_case!(merge_04: assert_merge; Some(Foo::with(-1, -2)), &[2, 8, 4] => Some(Foo::with(-1, 2)));
+    test_case!(merge_05: assert_merge; None, &[2, 8, 4] => Some(Foo::with(0, 2)));
 }
