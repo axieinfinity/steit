@@ -1,9 +1,9 @@
-use std::io;
+use std::io::{self, Read};
 
 use crate::{
     types::Varint,
     wire_type::{WireType, WIRE_TYPE_VARINT},
-    Deserialize, Eof, Merge, Serialize,
+    Eof, Merge, Serialize,
 };
 
 impl WireType for bool {
@@ -56,9 +56,18 @@ impl Merge for bool {
     /// ```
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        // Known issue: 2^x with x >= 64 will always deserialize to `false`.
-        *self = u64::deserialize(reader)? != 0;
-        Ok(())
+        let mut value = false;
+        let mut buf = [0];
+
+        loop {
+            reader.read_exact(&mut buf)?;
+            value |= buf[0] & 0x7f != 0;
+
+            if buf[0] & 0x80 == 0 {
+                *self = value;
+                return Ok(());
+            }
+        }
     }
 }
 
