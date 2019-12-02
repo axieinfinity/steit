@@ -1,4 +1,4 @@
-use std::{io, rc::Rc};
+use std::{cell::RefCell, io, rc::Rc};
 
 use crate::{wire_type::WireType, Serialize};
 
@@ -9,7 +9,7 @@ use super::{
 
 #[derive(Clone, Default, Debug)]
 pub struct Runtime {
-    logger: Logger,
+    logger: Rc<RefCell<Logger>>,
     path: Rc<Node<u16>>,
 }
 
@@ -51,22 +51,28 @@ impl Runtime {
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
+            .borrow_mut()
             .log_entry(LogEntry::new_update(&self.nested(tag), value))
     }
 
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(LogEntry::new_update(self, value))
+        self.logger
+            .borrow_mut()
+            .log_entry(LogEntry::new_update(self, value))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
-        self.logger.log_entry(LogEntry::new_add(self, item))
+        self.logger
+            .borrow_mut()
+            .log_entry(LogEntry::new_add(self, item))
     }
 
     #[inline]
     pub fn log_remove(&self, tag: u16) -> io::Result<()> {
         self.logger
+            .borrow_mut()
             .log_entry(LogEntry::new_remove(&self.nested(tag)))
     }
 }
