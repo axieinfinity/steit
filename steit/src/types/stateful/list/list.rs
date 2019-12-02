@@ -25,6 +25,22 @@ impl<T: State> List<T> {
     }
 
     #[inline]
+    pub fn get(&self, tag: u16) -> Option<&T> {
+        match self.items.get(tag as usize) {
+            Some(item) => item.as_ref(),
+            None => None,
+        }
+    }
+
+    #[inline]
+    pub fn get_mut(&mut self, tag: u16) -> Option<&mut T> {
+        match self.items.get_mut(tag as usize) {
+            Some(item) => item.as_mut(),
+            None => None,
+        }
+    }
+
+    #[inline]
     pub fn push(&mut self, item: T) {
         self.runtime.log_add(&item).unwrap();
         self.items.push(Some(item));
