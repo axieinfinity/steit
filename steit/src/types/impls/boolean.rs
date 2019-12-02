@@ -25,6 +25,11 @@ impl Serialize for bool {
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.serialize_with_cached_size(writer)
     }
+
+    #[inline]
+    fn is_default_nested_with_cached_size(&self) -> bool {
+        !*self
+    }
 }
 
 impl Merge for bool {

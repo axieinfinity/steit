@@ -41,6 +41,11 @@ macro_rules! impl_unsigned_varint {
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 self.serialize_with_cached_size(writer)
             }
+
+            #[inline]
+            fn is_default_nested_with_cached_size(&self) -> bool {
+                *self == 0
+            }
         }
 
         impl Merge for $t {
@@ -94,6 +99,11 @@ macro_rules! impl_signed_varint {
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 self.serialize_with_cached_size(writer)
+            }
+
+            #[inline]
+            fn is_default_nested_with_cached_size(&self) -> bool {
+                *self == 0
             }
         }
 

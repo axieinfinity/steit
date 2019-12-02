@@ -23,10 +23,16 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
+    fn is_default_nested_with_cached_size(&self) -> bool {
+        self.cached_size() == 0
+    }
+
+    #[inline]
     fn compute_size_nested(&self, tag: impl Into<Option<u16>>) -> u32 {
+        let tag = tag.into();
         let mut size = self.compute_size();
 
-        if size == 0 {
+        if tag.is_some() && self.is_default_nested_with_cached_size() {
             return 0;
         }
 
@@ -47,11 +53,13 @@ pub trait Serialize: WireType {
         tag: impl Into<Option<u16>>,
         writer: &mut impl io::Write,
     ) -> io::Result<()> {
-        if self.cached_size() == 0 {
+        let tag = tag.into();
+
+        if tag.is_some() && self.is_default_nested_with_cached_size() {
             return Ok(());
         }
 
-        if let Some(tag) = tag.into() {
+        if let Some(tag) = tag {
             Self::key(tag).serialize_with_cached_size(writer)?;
         }
 

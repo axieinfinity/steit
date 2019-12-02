@@ -74,8 +74,8 @@ mod tests {
     fn cached_size() {
         let value = Some(Foo::with(-1, 0));
         assert_eq!(value.as_ref().unwrap().cached_size(), 0);
-        assert_eq!(value.cached_size(), 5);
-        assert_eq!(value.unwrap().cached_size(), 4);
+        assert_eq!(value.cached_size(), 3);
+        assert_eq!(value.unwrap().cached_size(), 2);
     }
 
     test_case!(size_01: assert_size; None::<u8> => 0);
@@ -86,7 +86,8 @@ mod tests {
     test_case!(serialize_01: assert_serialize; None::<u8> => &[]);
     test_case!(serialize_02: assert_serialize; Some(0) => &[0]);
     test_case!(serialize_03: assert_serialize; Some(1337) => &[242, 20]);
-    test_case!(serialize_04: assert_serialize; Some(Foo::with(-1, -2)) => &[4, 0, 1, 8, 3]);
+    test_case!(serialize_04: assert_serialize; Some(Foo::new()) => &[0]);
+    test_case!(serialize_05: assert_serialize; Some(Foo::with(-1, -2)) => &[4, 0, 1, 8, 3]);
 
     test_case!(merge_01: assert_merge; Some(1), &[] => None);
     test_case!(merge_02: assert_merge; None, &[0] => Some(0));
