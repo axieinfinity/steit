@@ -47,6 +47,20 @@ pub fn assert_serialize<T: Serialize>(value: T, bytes: &[u8]) {
     assert_eq!(&*serialize(value), bytes);
 }
 
+pub fn serialize_nested<T: Serialize>(value: T, tag: Option<u16>) -> Vec<u8> {
+    let mut bytes = Vec::new();
+    value.compute_size();
+    value
+        .serialize_nested_with_cached_size(tag, &mut bytes)
+        .unwrap();
+    bytes
+}
+
+#[allow(dead_code)] // Since this function is mostly used in macros.
+pub fn assert_serialize_nested<T: Serialize>(value: T, tag: Option<u16>, bytes: &[u8]) {
+    assert_eq!(&*serialize_nested(value, tag), bytes);
+}
+
 pub fn merge<T: Merge>(mut value: T, bytes: &[u8]) -> T {
     value.merge(&mut Eof::new(bytes)).unwrap();
     value

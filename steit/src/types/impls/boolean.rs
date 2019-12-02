@@ -56,11 +56,16 @@ impl Varint for bool {}
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_merge, assert_serialize},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested},
     };
 
     test_case!(serialize_01: assert_serialize; false => &[0]);
     test_case!(serialize_02: assert_serialize; true => &[1]);
+
+    test_case!(serialize_nested_01: assert_serialize_nested; false, None => &[0]);
+    test_case!(serialize_nested_02: assert_serialize_nested; true, None => &[1]);
+    test_case!(serialize_nested_03: assert_serialize_nested; false, Some(10) => &[]);
+    test_case!(serialize_nested_04: assert_serialize_nested; true, Some(10) => &[80, 1]);
 
     test_case!(merge_01: assert_merge; false, &[0] => false);
     test_case!(merge_02: assert_merge; false, &[1] => true);

@@ -48,7 +48,7 @@ impl<T: Varint> Merge for Vec<T> {
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_merge, assert_serialize, assert_size},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
     };
 
     test_case!(size_01: assert_size::<Vec<u8>>; vec![] => 0);
@@ -59,6 +59,11 @@ mod tests {
     test_case!(serialize_01: assert_serialize::<Vec<u8>>; vec![] => &[]);
     test_case!(serialize_02: assert_serialize; vec![0, 0, 0] => &[0, 0, 0]);
     test_case!(serialize_03: assert_serialize; vec![1337] => &[242, 20]);
+
+    test_case!(serialize_nested_01: assert_serialize_nested::<Vec<u8>>; vec![], None => &[0]);
+    test_case!(serialize_nested_02: assert_serialize_nested; vec![0], None => &[1, 0]);
+    test_case!(serialize_nested_03: assert_serialize_nested::<Vec<u8>>; vec![], Some(10) => &[]);
+    test_case!(serialize_nested_04: assert_serialize_nested; vec![0], Some(10) => &[82, 1, 0]);
 
     test_case!(merge_01: assert_merge::<Vec<u8>>; vec![], &[] => vec![]);
     test_case!(merge_02: assert_merge; vec![], &[1] => vec![-1]);

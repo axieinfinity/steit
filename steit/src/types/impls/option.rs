@@ -52,7 +52,7 @@ impl<T: Deserialize> Merge for Option<T> {
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_merge, assert_serialize, assert_size, Foo},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
         Serialize,
     };
 
@@ -74,6 +74,13 @@ mod tests {
     test_case!(serialize_03: assert_serialize; Some(1337) => &[242, 20]);
     test_case!(serialize_04: assert_serialize; Some(Foo::new()) => &[0]);
     test_case!(serialize_05: assert_serialize; Some(Foo::with(-1, -2)) => &[4, 0, 1, 8, 3]);
+
+    test_case!(serialize_nested_01: assert_serialize_nested; None::<u8>, None => &[0]);
+    test_case!(serialize_nested_02: assert_serialize_nested; Some(1), None => &[1, 2]);
+    test_case!(serialize_nested_03: assert_serialize_nested; None::<u8>, Some(10) => &[]);
+    test_case!(serialize_nested_04: assert_serialize_nested; Some(1), Some(10) => &[82, 1, 2]);
+    test_case!(serialize_nested_05: assert_serialize_nested; Some(Foo::new()), Some(10) => &[82, 1, 0]);
+    test_case!(serialize_nested_06: assert_serialize_nested; Some(Foo::with(-1, -2)), Some(10) => &[82, 5, 4, 0, 1, 8, 3]);
 
     test_case!(merge_01: assert_merge; Some(1), &[] => None);
     test_case!(merge_02: assert_merge; None, &[0] => Some(0));

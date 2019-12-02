@@ -196,7 +196,7 @@ fn size_64(mut value: i64) -> u32 {
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_deserialize, assert_ser_de, assert_serialize},
+        test_util::{assert_deserialize, assert_ser_de, assert_serialize, assert_serialize_nested},
     };
 
     test_case!(encode_zig_zag_01: assert_serialize;  0 => &[0]);
@@ -216,4 +216,9 @@ mod tests {
     test_case!(back_and_forth_03: assert_ser_de; -1i8 as u32);
     test_case!(back_and_forth_04: assert_ser_de; 1_000_000);
     test_case!(back_and_forth_05: assert_ser_de; 42);
+
+    test_case!(serialize_nested_01: assert_serialize_nested; 0, None => &[0]);
+    test_case!(serialize_nested_02: assert_serialize_nested; 1, None => &[2]);
+    test_case!(serialize_nested_03: assert_serialize_nested; 0, Some(10) => &[]);
+    test_case!(serialize_nested_04: assert_serialize_nested; 1, Some(10) => &[80, 2]);
 }
