@@ -37,8 +37,8 @@ impl ReplayEntry {
     #[inline]
     pub fn decompose(self) -> (Vec<u16>, ReplayKind, Vec<u8>) {
         match self {
-            ReplayEntry::Update { path, value, .. } => (path, ReplayKind::Update, value.bytes()),
-            ReplayEntry::Add { path, item, .. } => (path, ReplayKind::Add, item.bytes()),
+            ReplayEntry::Update { path, value, .. } => (path, ReplayKind::Update, value.into_vec()),
+            ReplayEntry::Add { path, item, .. } => (path, ReplayKind::Add, item.into_vec()),
             ReplayEntry::Remove { path, .. } => (path, ReplayKind::Remove, Vec::new()),
         }
     }

@@ -88,7 +88,7 @@ impl Logger {
         entry.compute_size();
         entry.serialize_nested_with_cached_size(None, &mut *self.buf.borrow_mut())?;
         // TODO: Remove the debug code below
-        println!("=== entry: {:?}", self.buf.borrow());
+        println!("=== entry: {:?}", self.buf);
         self.buf.borrow_mut().clear();
         Ok(())
     }

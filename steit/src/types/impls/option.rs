@@ -51,24 +51,10 @@ impl<T: Deserialize> Merge for Option<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        steitize, test_case,
-        test_util::{assert_merge, assert_serialize, assert_size},
+        test_case,
+        test_util::{assert_merge, assert_serialize, assert_size, Foo},
         Serialize,
     };
-
-    #[steitize(Serialize, Deserialize, own_crate)]
-    #[derive(PartialEq, Debug)]
-    struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);
-
-    impl Foo {
-        fn with(f_0: i32, f_1: i32) -> Self {
-            Self {
-                0: f_0,
-                1: f_1,
-                ..Foo::new()
-            }
-        }
-    }
 
     #[test]
     fn cached_size() {

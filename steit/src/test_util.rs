@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{Deserialize, Eof, Merge, Serialize};
+use super::{steitize, Deserialize, Eof, Merge, Serialize};
 
 #[macro_export]
 macro_rules! test_case {
@@ -14,6 +14,21 @@ macro_rules! test_case {
     ($name:ident : $assert:expr ; $($input:expr),+ => $($output:expr),+) => {
         test_case!($name : $assert ; $($input),+, $($output),+);
     };
+}
+
+#[steitize(Serialize, Deserialize, own_crate)]
+#[derive(PartialEq, Debug)]
+pub struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);
+
+impl Foo {
+    #[allow(dead_code)] // Since this function is mostly used in macros.
+    pub fn with(f_0: i32, f_1: i32) -> Self {
+        Self {
+            0: f_0,
+            1: f_1,
+            ..Foo::new()
+        }
+    }
 }
 
 #[allow(dead_code)] // Since this function is mostly used in macros.
