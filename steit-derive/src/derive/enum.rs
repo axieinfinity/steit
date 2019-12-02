@@ -6,11 +6,14 @@ use quote::ToTokens;
 use crate::{
     attr::{AttrParse, VecAttr},
     ctx::Context,
-    derive,
     r#impl::Impl,
 };
 
-use super::{r#struct::Struct, variant::Variant, DeriveSetting};
+use super::{
+    derive::{self, DeriveSetting},
+    r#struct::Struct,
+    variant::Variant,
+};
 
 struct EnumAttrs {
     reserved: Vec<u16>,

@@ -4,10 +4,12 @@ use quote::ToTokens;
 use crate::{
     attr::{Attr, AttrParse},
     ctx::Context,
-    derive,
 };
 
-use super::{variant::Variant, DeriveSetting};
+use super::{
+    derive::{self, DeriveSetting},
+    variant::Variant,
+};
 
 struct FieldAttrs {
     tag: u16,

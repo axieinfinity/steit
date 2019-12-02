@@ -6,14 +6,13 @@ use quote::ToTokens;
 use crate::{
     attr::{Attr, AttrParse, VecAttr},
     ctx::Context,
-    derive,
     r#impl::Impl,
 };
 
 use super::{
+    derive::{self, DeriveSetting},
     field::{ExtraField, Field},
     variant::Variant,
-    DeriveSetting,
 };
 
 struct StructAttrs {

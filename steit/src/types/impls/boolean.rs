@@ -56,7 +56,7 @@ impl Varint for bool {}
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_merge, assert_serialize, assert_serialize_nested},
+        test_utils::{assert_merge, assert_serialize, assert_serialize_nested},
     };
 
     test_case!(serialize_01: assert_serialize; false => &[0]);

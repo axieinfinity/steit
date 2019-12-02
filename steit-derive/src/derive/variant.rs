@@ -3,8 +3,10 @@ use proc_macro2::TokenStream;
 use crate::{
     attr::{Attr, AttrParse},
     ctx::Context,
-    derive, string,
+    string_utils,
 };
+
+use super::derive;
 
 struct VariantAttrs {
     tag: u16,
@@ -62,7 +64,7 @@ impl Variant {
     }
 
     pub fn snake_case_name(&self) -> String {
-        string::to_snake_case(&self.name.to_string())
+        string_utils::to_snake_case(&self.name.to_string())
     }
 
     pub fn qual(&self) -> TokenStream {

@@ -1,11 +1,12 @@
 use std::{cell::RefCell, fmt, io, rc::Rc};
 
-use crate::{wire_type::WireType, PrintLogger, Serialize};
-
-use super::{
-    log::{LogEntry, Logger},
-    node::Node,
+use crate::{
+    log::{loggers::PrintLogger, LogEntry, Logger},
+    wire_type::WireType,
+    Serialize,
 };
+
+use super::node::Node;
 
 #[derive(Clone)]
 pub struct Runtime {

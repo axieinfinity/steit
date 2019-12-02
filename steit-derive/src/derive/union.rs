@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::{ctx::Context, derive, r#impl::Impl};
+use crate::{ctx::Context, r#impl::Impl};
 
-use super::DeriveSetting;
+use super::derive::{self, DeriveSetting};
 
 pub struct Union;
 

@@ -86,7 +86,7 @@ mod tests {
 
     use crate::{
         test_case,
-        test_util::{assert_serialize, assert_size},
+        test_utils::{assert_serialize, assert_size},
         Serialize,
     };
 

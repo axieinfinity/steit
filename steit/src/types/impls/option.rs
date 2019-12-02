@@ -52,7 +52,7 @@ impl<T: Deserialize> Merge for Option<T> {
 mod tests {
     use crate::{
         test_case,
-        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
+        test_utils::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
         Serialize,
     };
 
