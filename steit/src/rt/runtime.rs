@@ -1,22 +1,25 @@
-use std::{cell::RefCell, io, rc::Rc};
+use std::{cell::RefCell, fmt, io, rc::Rc};
 
-use crate::{wire_type::WireType, Serialize};
+use crate::{wire_type::WireType, PrintLogger, Serialize};
 
 use super::{
     log::{LogEntry, Logger},
     node::Node,
 };
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone)]
 pub struct Runtime {
-    logger: Rc<RefCell<Logger>>,
+    logger: Rc<RefCell<dyn Logger>>,
     path: Rc<Node<u16>>,
 }
 
 impl Runtime {
     #[inline]
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            logger: Rc::new(RefCell::new(PrintLogger::with_stdout())),
+            path: Rc::new(Node::Root),
+        }
     }
 
     #[inline]
@@ -52,28 +55,26 @@ impl Runtime {
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .borrow_mut()
-            .log_entry(LogEntry::new_update(&self.nested(tag), value))
+            .log(LogEntry::new_update(&self.nested(tag), value))
     }
 
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .borrow_mut()
-            .log_entry(LogEntry::new_update(self, value))
+            .log(LogEntry::new_update(self, value))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
-        self.logger
-            .borrow_mut()
-            .log_entry(LogEntry::new_add(self, item))
+        self.logger.borrow_mut().log(LogEntry::new_add(self, item))
     }
 
     #[inline]
     pub fn log_remove(&self, tag: u16) -> io::Result<()> {
         self.logger
             .borrow_mut()
-            .log_entry(LogEntry::new_remove(&self.nested(tag)))
+            .log(LogEntry::new_remove(&self.nested(tag)))
     }
 }
 
@@ -85,6 +86,18 @@ impl PartialEq for Runtime {
 }
 
 impl Eq for Runtime {}
+
+impl Default for Runtime {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl fmt::Debug for Runtime {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("Runtime").field("path", &self.path).finish()
+    }
+}
 
 impl WireType for Runtime {
     const WIRE_TYPE: u8 = Node::<u16>::WIRE_TYPE;

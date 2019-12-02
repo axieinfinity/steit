@@ -1,4 +1,4 @@
-use std::io;
+use std::io::{self, Write};
 
 use crate::Serialize;
 
@@ -6,29 +6,53 @@ mod entry;
 
 pub use entry::LogEntry;
 
-#[derive(Clone, Default, Debug)]
-pub struct Logger {
-    buf: Vec<u8>,
+pub trait Logger {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()>;
 }
 
-impl Logger {
+pub struct PrintLogger {
+    writer: Box<dyn io::Write>,
+}
+
+impl PrintLogger {
     #[inline]
-    pub fn new() -> Self {
-        Logger { buf: Vec::new() }
+    pub fn new(writer: Box<dyn io::Write>) -> Self {
+        Self { writer }
     }
 
     #[inline]
-    pub fn log_entry(&mut self, entry: LogEntry) -> io::Result<()> {
-        println!("{:?}", entry.path());
-        let mut buf = Vec::new();
-        entry.path().serialize(&mut buf)?;
-        println!("{}", entry.path().cached_size());
-        println!("{:?}", buf);
+    pub fn with_stdout() -> Self {
+        Self::new(Box::new(io::stdout()))
+    }
+
+    #[inline]
+    pub fn with_stderr() -> Self {
+        Self::new(Box::new(io::stderr()))
+    }
+}
+
+impl Logger for PrintLogger {
+    #[inline]
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
+        writeln!(self.writer, "{:?}", entry)
+    }
+}
+
+pub struct BufferLogger {
+    buf: Vec<u8>,
+}
+
+impl BufferLogger {
+    #[inline]
+    pub fn new() -> Self {
+        Self { buf: Vec::new() }
+    }
+}
+
+impl Logger for BufferLogger {
+    #[inline]
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         entry.compute_size();
-        entry.serialize_nested_with_cached_size(None, &mut self.buf)?;
-        // TODO: Remove the debug code below
-        println!("=== entry: {:?}", self.buf);
-        self.buf.clear();
-        Ok(())
+        entry.serialize_nested_with_cached_size(None, &mut self.buf)
     }
 }

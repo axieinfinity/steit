@@ -48,8 +48,8 @@ impl CachedSize {
 }
 
 impl Clone for CachedSize {
-    fn clone(&self) -> CachedSize {
-        CachedSize {
+    fn clone(&self) -> Self {
+        Self {
             size: AtomicU32::new(self.get()),
         }
     }

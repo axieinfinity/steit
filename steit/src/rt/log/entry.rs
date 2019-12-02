@@ -2,6 +2,7 @@ use crate::{types::Bytes, CachedSize, Runtime, Serialize};
 
 // `path` is put in each variant and `Entry` is flattened to save serialization size.
 #[crate::steitize(Serialize, own_crate)]
+#[derive(Debug)]
 pub enum LogEntry<'a> {
     #[steit(tag = 0)]
     Update {
