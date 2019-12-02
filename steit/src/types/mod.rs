@@ -12,7 +12,7 @@ pub use varint::*;
 macro_rules! impl_state_for_plain {
     ($name:literal) => {
         fn with_runtime(_runtime: $crate::Runtime) -> Self {
-            <Self as Default>::default()
+            Self::default()
         }
 
         #[inline]

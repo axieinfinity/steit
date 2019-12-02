@@ -81,7 +81,7 @@ impl PartialEq for Runtime {
 impl Eq for Runtime {}
 
 impl WireType for Runtime {
-    const WIRE_TYPE: u8 = <Node<u16> as WireType>::WIRE_TYPE;
+    const WIRE_TYPE: u8 = Node::<u16>::WIRE_TYPE;
 }
 
 impl Serialize for Runtime {
