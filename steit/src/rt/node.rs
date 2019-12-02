@@ -1,11 +1,10 @@
-use std::{io, rc::Rc};
+use std::{fmt, io, rc::Rc};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
     CachedSize, Serialize,
 };
 
-#[derive(Debug)]
 pub enum Node<T> {
     Root,
     Child {
@@ -38,6 +37,40 @@ impl<T> Default for Node<T> {
     #[inline]
     fn default() -> Self {
         Node::Root
+    }
+}
+
+struct DebugNode<'a, T>(&'a Node<T>);
+
+impl<'a, T: fmt::Debug> fmt::Debug for DebugNode<'a, T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self.0 {
+            Node::Root => f.debug_struct("Root").finish(),
+            Node::Child {
+                value, cached_size, ..
+            } => f
+                .debug_struct("Child")
+                .field("value", value)
+                .field("cached_size", cached_size)
+                .finish(),
+        }
+    }
+}
+
+impl<T: fmt::Debug> fmt::Debug for Node<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let mut nodes = Vec::new();
+        let mut node = self;
+
+        while let Node::Child { parent, .. } = node {
+            nodes.push(DebugNode(node));
+            node = parent;
+        }
+
+        nodes.push(DebugNode(&Node::Root));
+
+        nodes.reverse();
+        f.debug_list().entries(nodes).finish()
     }
 }
 

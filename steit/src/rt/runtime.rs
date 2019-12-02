@@ -96,7 +96,8 @@ impl Default for Runtime {
 
 impl fmt::Debug for Runtime {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.debug_struct("Runtime").field("path", &self.path).finish()
+        self.path.compute_size();
+        self.path.fmt(f)
     }
 }
 

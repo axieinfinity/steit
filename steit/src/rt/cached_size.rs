@@ -1,4 +1,5 @@
 use std::{
+    fmt,
     hash::{Hash, Hasher},
     sync::atomic::{AtomicU32, Ordering},
 };
@@ -8,7 +9,7 @@ use std::{
 /// It is always equal to itself so the containing object can use `#[derive(Eq)]`.
 ///
 /// Reference: https://github.com/stepancheg/rust-protobuf/blob/68c7a5a/protobuf/src/cached_size.rs
-#[derive(Default, Debug)]
+#[derive(Default)]
 pub struct CachedSize {
     size: AtomicU32,
 }
@@ -62,6 +63,12 @@ impl PartialEq for CachedSize {
 }
 
 impl Eq for CachedSize {}
+
+impl fmt::Debug for CachedSize {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.get().fmt(f)
+    }
+}
 
 impl Hash for CachedSize {
     fn hash<H: Hasher>(&self, _state: &mut H) {

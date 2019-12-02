@@ -1,4 +1,7 @@
-use std::io::{self, Read};
+use std::{
+    fmt,
+    io::{self, Read},
+};
 
 use crate::{
     impl_state_for_plain,
@@ -6,7 +9,7 @@ use crate::{
     Eof, Merge, Serialize, State,
 };
 
-#[derive(PartialEq, Default, Debug)]
+#[derive(PartialEq, Default)]
 pub struct Bytes {
     bytes: Vec<u8>,
 }
@@ -27,6 +30,12 @@ impl Bytes {
     #[inline]
     pub fn into_vec(self) -> Vec<u8> {
         self.bytes
+    }
+}
+
+impl fmt::Debug for Bytes {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        self.bytes.fmt(f)
     }
 }
 
