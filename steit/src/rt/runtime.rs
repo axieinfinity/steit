@@ -54,28 +54,31 @@ impl Runtime {
 
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
-        self.logger
-            .borrow_mut()
-            .log(LogEntry::new_update(&self.nested(tag), value))
+        self.logger.borrow_mut().log(LogEntry::new_update(
+            Rc::new(Node::child(&self.path, tag)),
+            value,
+        ))
     }
 
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
         self.logger
             .borrow_mut()
-            .log(LogEntry::new_update(self, value))
+            .log(LogEntry::new_update(self.path.clone(), value))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
-        self.logger.borrow_mut().log(LogEntry::new_add(self, item))
+        self.logger
+            .borrow_mut()
+            .log(LogEntry::new_add(self.path.clone(), item))
     }
 
     #[inline]
     pub fn log_remove(&self, tag: u16) -> io::Result<()> {
         self.logger
             .borrow_mut()
-            .log(LogEntry::new_remove(&self.nested(tag)))
+            .log(LogEntry::new_remove(Rc::new(Node::child(&self.path, tag))))
     }
 }
 

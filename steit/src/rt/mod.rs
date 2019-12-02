@@ -1,5 +1,5 @@
 mod cached_size;
-mod node;
+pub mod node;
 mod runtime;
 
 pub use cached_size::*;
