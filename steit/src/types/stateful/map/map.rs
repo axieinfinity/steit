@@ -105,7 +105,7 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Serialize for Ma
         let mut size = 0;
 
         for (&tag, value) in &self.entries {
-            size += value.compute_size_nested(tag);
+            size += value.compute_size_nested_omittable(tag, false);
         }
 
         self.cached_size.set(size);
@@ -115,7 +115,7 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Serialize for Ma
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         for (&tag, value) in &self.entries {
-            value.serialize_nested_with_cached_size(tag, writer)?;
+            value.serialize_nested_with_cached_size_omittable(tag, false, writer)?;
         }
 
         Ok(())

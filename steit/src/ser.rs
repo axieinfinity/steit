@@ -28,11 +28,11 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
-    fn compute_size_nested(&self, tag: impl Into<Option<u16>>) -> u32 {
+    fn compute_size_nested_omittable(&self, tag: impl Into<Option<u16>>, omittable: bool) -> u32 {
         let tag = tag.into();
         let mut size = self.compute_size();
 
-        if tag.is_some() && self.is_default_nested_with_cached_size() {
+        if tag.is_some() && omittable && self.is_default_nested_with_cached_size() {
             return 0;
         }
 
@@ -48,14 +48,20 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
-    fn serialize_nested_with_cached_size(
+    fn compute_size_nested(&self, tag: impl Into<Option<u16>>) -> u32 {
+        self.compute_size_nested_omittable(tag, true)
+    }
+
+    #[inline]
+    fn serialize_nested_with_cached_size_omittable(
         &self,
         tag: impl Into<Option<u16>>,
+        omittable: bool,
         writer: &mut impl io::Write,
     ) -> io::Result<()> {
         let tag = tag.into();
 
-        if tag.is_some() && self.is_default_nested_with_cached_size() {
+        if tag.is_some() && omittable && self.is_default_nested_with_cached_size() {
             return Ok(());
         }
 
@@ -68,5 +74,14 @@ pub trait Serialize: WireType {
         }
 
         self.serialize_with_cached_size(writer)
+    }
+
+    #[inline]
+    fn serialize_nested_with_cached_size(
+        &self,
+        tag: impl Into<Option<u16>>,
+        writer: &mut impl io::Write,
+    ) -> io::Result<()> {
+        self.serialize_nested_with_cached_size_omittable(tag, true, writer)
     }
 }
