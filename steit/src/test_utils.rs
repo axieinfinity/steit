@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{steitize, Deserialize, Eof, Merge, Serialize};
+use super::{steitize, Deserialize, Eof, Merge, Runtime, Serialize};
 
 #[macro_export]
 macro_rules! test_case {
@@ -28,6 +28,32 @@ impl Foo {
             1: f_1,
             ..Foo::new()
         }
+    }
+}
+
+#[steitize(State, own_crate)]
+#[derive(PartialEq, Debug)]
+pub struct Point {
+    #[steit(tag = 0)]
+    x: i32,
+    #[steit(tag = 1)]
+    y: i32,
+    #[steit(tag = 2)]
+    z: i32,
+}
+
+impl Point {
+    pub fn with(runtime: Runtime, x: i32, y: i32, z: i32) -> Self {
+        Self {
+            x,
+            y,
+            z,
+            ..Point::new(runtime)
+        }
+    }
+
+    pub fn x(&self) -> i32 {
+        self.x
     }
 }
 
