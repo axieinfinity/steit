@@ -24,6 +24,14 @@ impl Runtime {
     }
 
     #[inline]
+    pub fn with_logger(logger: Rc<RefCell<dyn Logger>>) -> Self {
+        Self {
+            logger,
+            path: Rc::new(Node::Root),
+        }
+    }
+
+    #[inline]
     pub fn nested(&self, tag: u16) -> Self {
         Self {
             logger: self.logger.clone(),
