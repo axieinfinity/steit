@@ -149,13 +149,17 @@ impl<T: State> Merge for List<T> {
             let (tag, wire_type) = wire_type::split_key(key);
 
             if wire_type == T::WIRE_TYPE {
-                let item = T::deserialize_nested(reader)?;
-
                 if tag as usize >= self.items.len() {
                     self.items.resize_with(tag as usize + 1, || None);
                 }
 
-                self.items[tag as usize] = Some(item);
+                let item = self.items.get_mut(tag as usize).unwrap();
+
+                if item.is_none() {
+                    *item = Some(T::with_runtime(self.runtime.nested(tag)));
+                }
+
+                item.as_mut().unwrap().merge_nested(reader)?;
             } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
