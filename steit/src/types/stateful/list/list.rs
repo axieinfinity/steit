@@ -5,7 +5,10 @@ use crate::{
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
-use super::{enumerate::*, iter::*};
+use super::{
+    enumerate::{Enumerate, EnumerateMut},
+    iter::{Iter, IterMut},
+};
 
 #[derive(Default, Debug)]
 pub struct List<T: State> {
@@ -400,41 +403,48 @@ mod tests {
     }
 
     #[test]
-    fn merge_update_nested() {
+    fn merge_no_log() {
         let (mut list, logger) = list_with_logger();
 
-        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
-        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+        list.push(10);
+        list.push(20);
 
         logger.borrow_mut().clear();
 
-        let list = merge(list, &[2, 2, 8, 5]);
+        let list = merge(list, &[40, 60]);
 
-        assert_eq!(list.get(0), Some(&Point::with(Runtime::new(), -1, -3, -1)));
+        assert_eq!(list.get(5), Some(&30));
         assert_eq!(logger.borrow().bytes(), &[]);
     }
 
     #[test]
-    fn merge_push_new() {
-        let (mut list, logger) = list_with_logger();
+    fn merge_update_nested() {
+        let mut list = list();
 
         list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
 
-        logger.borrow_mut().clear();
+        let list = merge(list, &[2, 2, 8, 5]);
+
+        assert_eq!(list.get(0), Some(&Point::with(Runtime::new(), -1, -3, -1)));
+    }
+
+    #[test]
+    fn merge_push_new() {
+        let mut list = list();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
 
         let list = merge(list, &[18, 2, 16, 7]);
 
         assert_eq!(list.get(1), None);
         assert_eq!(list.get(2), Some(&Point::with(Runtime::new(), 0, 0, -4)));
-        assert_eq!(logger.borrow().bytes(), &[]);
     }
 
     #[test]
     fn replay_push_no_log() {
-        let (list, logger) = list_with_logger::<i32>();
-
+        let (list, logger) = list_with_logger();
         let list = replay(list, &[4, 1, 10, 1, 1]);
-
         assert_eq!(list.get(0), Some(&-1));
         assert_eq!(logger.borrow().bytes(), &[]);
     }
