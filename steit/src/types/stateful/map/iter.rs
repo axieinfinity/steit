@@ -1,11 +1,13 @@
-use std::{convert::TryFrom, fmt, marker::PhantomData};
+use std::marker::PhantomData;
 
-pub struct Iter<'a, K: TryFrom<u16, Error: fmt::Debug>, V: 'a> {
+use super::key::MapKey;
+
+pub struct Iter<'a, K: MapKey, V: 'a> {
     inner: Box<dyn Iterator<Item = (&'a u16, &'a V)> + 'a>,
     phantom: PhantomData<*const K>,
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> Iter<'a, K, V> {
+impl<'a, K: MapKey, V> Iter<'a, K, V> {
     #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u16, &'a V)> + 'a) -> Self {
         Self {
@@ -15,24 +17,24 @@ impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> Iter<'a, K, V> {
     }
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> Iterator for Iter<'a, K, V> {
+impl<'a, K: MapKey, V> Iterator for Iter<'a, K, V> {
     type Item = (K, &'a V);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(&tag, value)| {
-            let key = K::try_from(tag).unwrap();
+            let key = K::try_from_tag(tag).unwrap();
             (key, value)
         })
     }
 }
 
-pub struct IterMut<'a, K: TryFrom<u16, Error: fmt::Debug>, V: 'a> {
+pub struct IterMut<'a, K: MapKey, V: 'a> {
     inner: Box<dyn Iterator<Item = (&'a u16, &'a mut V)> + 'a>,
     phantom: PhantomData<*const K>,
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> IterMut<'a, K, V> {
+impl<'a, K: MapKey, V> IterMut<'a, K, V> {
     #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u16, &'a mut V)> + 'a) -> Self {
         Self {
@@ -42,13 +44,13 @@ impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> IterMut<'a, K, V> {
     }
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug>, V> Iterator for IterMut<'a, K, V> {
+impl<'a, K: MapKey, V> Iterator for IterMut<'a, K, V> {
     type Item = (K, &'a mut V);
 
     #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(&tag, value)| {
-            let key = K::try_from(tag).unwrap();
+            let key = K::try_from_tag(tag).unwrap();
             (key, value)
         })
     }

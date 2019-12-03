@@ -1,4 +1,4 @@
-use std::{collections::HashMap, convert::TryFrom, fmt, io, marker::PhantomData};
+use std::{io, marker::PhantomData};
 
 use indexmap::map::IndexMap;
 
@@ -7,17 +7,20 @@ use crate::{
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
 
-use super::iter::*;
+use super::{
+    iter::{Iter, IterMut},
+    key::MapKey,
+};
 
 #[derive(Debug)]
-pub struct Map<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> {
+pub struct Map<K: MapKey, V: State> {
     entries: IndexMap<u16, V>,
     phantom: PhantomData<*const K>,
     cached_size: CachedSize,
     runtime: Runtime,
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Map<K, V> {
+impl<K: MapKey, V: State> Map<K, V> {
     #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
@@ -30,31 +33,31 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Map<K, V> {
 
     #[inline]
     pub fn get(&self, key: &K) -> Option<&V> {
-        self.entries.get(key.as_ref())
+        self.entries.get(&key.as_tag())
     }
 
     #[inline]
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
-        self.entries.get_mut(key.as_ref())
+        self.entries.get_mut(&key.as_tag())
     }
 
     #[inline]
     pub fn insert(&mut self, key: K, value: V) {
-        let tag = *key.as_ref();
+        let tag = key.as_tag();
         self.runtime.log_update(tag, &value).unwrap();
         self.entries.insert(tag, value);
     }
 
     #[inline]
     pub fn insert_with(&mut self, key: K, f: impl FnOnce(Runtime) -> V) {
-        let tag = *key.as_ref();
+        let tag = key.as_tag();
         let value = f(self.runtime.nested(tag));
         self.insert(key, value);
     }
 
     #[inline]
     pub fn remove(&mut self, key: &K) -> Option<V> {
-        let tag = *key.as_ref();
+        let tag = key.as_tag();
         self.runtime.log_remove(tag).unwrap();
         self.entries.remove(&tag)
     }
@@ -70,14 +73,14 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Map<K, V> {
     }
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Default for Map<K, V> {
+impl<K: MapKey, V: State> Default for Map<K, V> {
     #[inline]
     fn default() -> Self {
         Self::new(Runtime::default())
     }
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator for &'a Map<K, V> {
+impl<'a, K: MapKey, V: State> IntoIterator for &'a Map<K, V> {
     type Item = (K, &'a V);
     type IntoIter = Iter<'a, K, V>;
 
@@ -86,9 +89,7 @@ impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator
     }
 }
 
-impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator
-    for &'a mut Map<K, V>
-{
+impl<'a, K: MapKey, V: State> IntoIterator for &'a mut Map<K, V> {
     type Item = (K, &'a mut V);
     type IntoIter = IterMut<'a, K, V>;
 
@@ -97,11 +98,11 @@ impl<'a, K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> IntoIterator
     }
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> WireType for Map<K, V> {
+impl<K: MapKey, V: State> WireType for Map<K, V> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Serialize for Map<K, V> {
+impl<K: MapKey, V: State> Serialize for Map<K, V> {
     #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
@@ -129,7 +130,7 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Serialize for Ma
     }
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Merge for Map<K, V> {
+impl<K: MapKey, V: State> Merge for Map<K, V> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
@@ -151,7 +152,7 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Merge for Map<K,
     }
 }
 
-impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> State for Map<K, V> {
+impl<K: MapKey, V: State> State for Map<K, V> {
     #[inline]
     fn with_runtime(runtime: Runtime) -> Self {
         Self::new(runtime)
