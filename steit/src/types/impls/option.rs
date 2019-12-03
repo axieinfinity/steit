@@ -30,18 +30,14 @@ impl<T: Serialize> Serialize for Option<T> {
 impl<T: Deserialize> Merge for Option<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
-        if !reader.eof()? {
-            while !reader.eof()? {
-                if self.is_none() {
-                    *self = Some(T::default());
-                }
-
-                if let Some(value) = self {
-                    value.merge_nested(reader)?;
-                }
+        while !reader.eof()? {
+            if self.is_none() {
+                *self = Some(T::default());
             }
-        } else {
-            *self = None;
+
+            if let Some(value) = self {
+                value.merge_nested(reader)?;
+            }
         }
 
         Ok(())
@@ -82,7 +78,7 @@ mod tests {
     test_case!(serialize_nested_05: assert_serialize_nested; Some(Foo::new()), Some(10) => &[82, 1, 0]);
     test_case!(serialize_nested_06: assert_serialize_nested; Some(Foo::with(-1, -2)), Some(10) => &[82, 5, 4, 0, 1, 8, 3]);
 
-    test_case!(merge_01: assert_merge; Some(1), &[] => None);
+    test_case!(merge_01: assert_merge; Some(1), &[] => Some(1));
     test_case!(merge_02: assert_merge; None, &[0] => Some(0));
     test_case!(merge_03: assert_merge; Some(0), &[242, 20] => Some(1337));
     test_case!(merge_04: assert_merge; Some(Foo::with(-1, -2)), &[2, 8, 4] => Some(Foo::with(-1, 2)));
