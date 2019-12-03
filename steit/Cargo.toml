@@ -23,5 +23,6 @@ is-it-maintained-open-issues = { repository = "skymavis/steit" }
 maintenance = { status = "actively-developed" }
 
 [dependencies]
+indexmap = "1.3.0"
 iowrap = "0.2.0"
 steit-derive = { path = "../steit-derive" }

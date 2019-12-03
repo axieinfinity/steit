@@ -1,5 +1,7 @@
 use std::{collections::HashMap, convert::TryFrom, fmt, io, marker::PhantomData};
 
+use indexmap::map::IndexMap;
+
 use crate::{
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
@@ -9,7 +11,7 @@ use super::iter::*;
 
 #[derive(Debug)]
 pub struct Map<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> {
-    entries: HashMap<u16, V>,
+    entries: IndexMap<u16, V>,
     phantom: PhantomData<*const K>,
     cached_size: CachedSize,
     runtime: Runtime,
@@ -19,7 +21,7 @@ impl<K: TryFrom<u16, Error: fmt::Debug> + AsRef<u16>, V: State> Map<K, V> {
     #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
-            entries: HashMap::new(),
+            entries: IndexMap::new(),
             phantom: PhantomData,
             cached_size: CachedSize::new(),
             runtime,
