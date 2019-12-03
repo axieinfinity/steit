@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::{steitize, Deserialize, Eof, Merge, Runtime, Serialize};
+use super::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, State};
 
 #[macro_export]
 macro_rules! test_case {
@@ -109,4 +109,9 @@ pub fn assert_deserialize<T: PartialEq + fmt::Debug + Deserialize>(bytes: &[u8],
 #[allow(dead_code)] // Since this function is mostly used in macros.
 pub fn assert_ser_de<T: Clone + PartialEq + fmt::Debug + Serialize + Deserialize>(value: T) {
     assert_eq!(deserialize::<T>(&*serialize(value.clone())), value);
+}
+
+pub fn replay<T: State>(mut value: T, bytes: &[u8]) -> T {
+    value.replay(&mut Eof::new(bytes)).unwrap();
+    value
 }

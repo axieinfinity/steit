@@ -250,36 +250,255 @@ impl<T: State> State for List<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Deserialize, Eof, Merge, Runtime, State};
+    use std::{cell::RefCell, rc::Rc};
+
+    use crate::{
+        log::loggers::BufferLogger,
+        test_utils::{assert_serialize, merge, replay, Point},
+        Runtime, State,
+    };
 
     use super::List;
 
-    #[test]
-    fn merge() {
-        let mut list = List::<u16>::new(Runtime::new());
+    fn list_with_logger<T: State>() -> (List<T>, Rc<RefCell<BufferLogger>>) {
+        let logger = Rc::new(RefCell::new(BufferLogger::new()));
+        let list = List::new(Runtime::with_logger(logger.clone()));
+        (list, logger)
+    }
 
-        list.merge(&mut Eof::new([8, 1, 24, 3, 0, 0].as_ref()))
-            .unwrap();
-
-        let items: Vec<_> = list.iter().map(|item| *item).collect();
-
-        assert_eq!(&items, &[0, 1, 3]);
+    fn list<T: State>() -> List<T> {
+        list_with_logger().0
     }
 
     #[test]
-    fn replay() {
-        let mut list =
-            List::<u16>::deserialize(&mut Eof::new([8, 1, 24, 3, 0, 0].as_ref())).unwrap();
+    fn push_and_get() {
+        let mut list = list();
+        list.push(1);
+        assert_eq!(list.get(0), Some(&1));
+    }
 
-        let items: Vec<_> = list.iter().map(|item| *item).collect();
+    #[test]
+    fn push_and_check_log_01() {
+        let (mut list, logger) = list_with_logger();
 
-        assert_eq!(&items, &[0, 1, 3]);
+        list.push(1);
+        list.push(2);
 
-        list.replay(&mut Eof::new([7, 0, 2, 1, 1, 10, 1, 2].as_ref()))
-            .unwrap();
+        assert_eq!(
+            logger.borrow().bytes(),
+            &[4, 1, 10, 1, 2, /**/ 4, 1, 10, 1, 4]
+        );
+    }
 
-        let items: Vec<_> = list.iter().map(|item| *item).collect();
+    #[test]
+    fn push_and_check_log_02() {
+        let (mut list, logger) = list_with_logger();
 
-        assert_eq!(&items, &[0, 2, 3]);
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+
+        assert_eq!(
+            logger.borrow().bytes(),
+            &[9, 1, 10, 6, 0, 1, 8, 1, 16, 1, /**/ 9, 1, 10, 6, 0, 4, 8, 4, 16, 4]
+        );
+    }
+
+    #[test]
+    fn remove_and_get() {
+        let mut list = list();
+
+        list.push(0);
+        list.push(1);
+
+        list.remove(0);
+
+        assert_eq!(list.get(0), None);
+    }
+
+    #[test]
+    fn remove_and_check_log() {
+        let (mut list, logger) = list_with_logger();
+
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        logger.borrow_mut().clear();
+
+        list.remove(2);
+
+        assert_eq!(logger.borrow().bytes(), &[4, 2, 2, 1, 2]);
+    }
+
+    #[test]
+    fn iter() {
+        let mut list = list();
+
+        list.push(1);
+        list.push(2);
+        list.push(3);
+
+        list.remove(1);
+
+        assert_eq!(&list.iter().collect::<Vec<_>>(), &[&1, &3]);
+    }
+
+    #[test]
+    fn iter_mut_update_and_check_log() {
+        let (mut list, logger) = list_with_logger();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+        list.push_with(|runtime| Point::with(runtime, 3, 3, 3));
+
+        logger.borrow_mut().clear();
+
+        for item in list.iter_mut() {
+            item.set_x(item.x() + 1);
+        }
+
+        assert_eq!(
+            logger.borrow().bytes(),
+            &[
+                8, 0, 2, 2, 0, 0, 10, 1, 0, /**/ 8, 0, 2, 2, 1, 0, 10, 1, 6, /**/ 8, 0,
+                2, 2, 2, 0, 10, 1, 8
+            ]
+        );
+    }
+
+    #[test]
+    fn serialize_01() {
+        let mut list = list();
+
+        list.push(1);
+        list.push(0);
+
+        list.remove(0);
+
+        list.push(2);
+        list.push(3);
+
+        assert_serialize(list, &[8, 0, 16, 4, 24, 6]);
+    }
+
+    #[test]
+    fn serialize_02() {
+        let mut list = list();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+        list.push_with(|runtime| Point::with(runtime, 3, 3, 3));
+
+        list.remove(1);
+
+        assert_serialize(
+            list,
+            &[2, 6, 0, 1, 8, 1, 16, 1, /**/ 18, 6, 0, 6, 8, 6, 16, 6],
+        );
+    }
+
+    #[test]
+    fn merge_update_nested() {
+        let (mut list, logger) = list_with_logger();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+
+        logger.borrow_mut().clear();
+
+        let list = merge(list, &[2, 2, 8, 5]);
+
+        assert_eq!(list.get(0), Some(&Point::with(Runtime::new(), -1, -3, -1)));
+        assert_eq!(logger.borrow().bytes(), &[]);
+    }
+
+    #[test]
+    fn merge_push_new() {
+        let (mut list, logger) = list_with_logger();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+
+        logger.borrow_mut().clear();
+
+        let list = merge(list, &[18, 2, 16, 7]);
+
+        assert_eq!(list.get(1), None);
+        assert_eq!(list.get(2), Some(&Point::with(Runtime::new(), 0, 0, -4)));
+        assert_eq!(logger.borrow().bytes(), &[]);
+    }
+
+    #[test]
+    fn replay_push_no_log() {
+        let (list, logger) = list_with_logger::<i32>();
+
+        let list = replay(list, &[4, 1, 10, 1, 1]);
+
+        assert_eq!(list.get(0), Some(&-1));
+        assert_eq!(logger.borrow().bytes(), &[]);
+    }
+
+    #[test]
+    fn replay_push_next_index() {
+        let mut list = list();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+
+        let list = merge(list, &[18, 2, 16, 7]);
+        let list = replay(list, &[9, 1, 10, 6, 0, 3, 8, 2, 16, 10]);
+
+        assert_eq!(list.get(3), Some(&Point::with(Runtime::new(), -2, 1, 5)));
+    }
+
+    #[test]
+    #[should_panic(expected = "out-of-bounds tag 0")]
+    fn replay_update_out_of_bounds() {
+        replay(list::<i32>(), &[7, 0, 2, 1, 0, 10, 1, 1]);
+    }
+
+    #[test]
+    #[should_panic(expected = "nonexistent item with tag 1")]
+    fn replay_update_nonexistent() {
+        let mut list = list();
+
+        list.push(1);
+        list.push(2);
+        list.remove(1);
+
+        replay(list, &[7, 0, 2, 1, 1, 10, 1, 1]);
+    }
+
+    #[test]
+    fn replay_update() {
+        let mut list = list();
+
+        list.push(0);
+
+        let list = replay(list, &[7, 0, 2, 1, 0, 10, 1, 1]);
+
+        assert_eq!(list.get(0), Some(&-1));
+    }
+
+    #[test]
+    fn replay_update_nested() {
+        let mut list = list();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+
+        let list = replay(list, &[8, 0, 2, 2, 0, 2, 10, 1, 100]);
+
+        assert_eq!(list.get(0), Some(&Point::with(Runtime::new(), -1, -1, 50)));
+    }
+
+    #[test]
+    fn replay_remove() {
+        let mut list = list();
+
+        list.push_with(|runtime| Point::with(runtime, -1, -1, -1));
+        list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
+
+        let list = replay(list, &[4, 2, 2, 1, 0]);
+
+        assert_eq!(list.get(0), None);
+        assert_eq!(list.get(1), Some(&Point::with(Runtime::new(), 2, 2, 2)));
     }
 }
