@@ -175,7 +175,9 @@ impl<T: State> Merge for List<T> {
                     *item = Some(T::with_runtime(self.runtime.nested(tag)));
                 }
 
-                item.as_mut().unwrap().merge_nested(reader)?;
+                if let Some(item) = item.as_mut() {
+                    item.merge_nested(reader)?;
+                }
             } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
