@@ -138,8 +138,16 @@ impl<K: MapKey, V: State> Merge for Map<K, V> {
             let (tag, wire_type) = wire_type::split_key(key);
 
             if wire_type == V::WIRE_TYPE {
-                let value = V::deserialize_nested(reader)?;
-                self.entries.insert(tag, value);
+                let value = self.entries.get_mut(&tag);
+
+                if value.is_none() {
+                    self.entries
+                        .insert(tag, V::with_runtime(self.runtime.nested(tag)));
+                }
+
+                if let Some(value) = self.entries.get_mut(&tag) {
+                    value.merge_nested(reader)?;
+                }
             } else {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
