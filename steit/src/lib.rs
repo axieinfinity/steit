@@ -5,7 +5,6 @@ pub mod log;
 mod rt;
 mod ser;
 mod state;
-mod test_utils;
 pub mod types;
 pub mod wire_type;
 
@@ -17,3 +16,6 @@ pub use state::*;
 pub use steit_derive::*;
 
 pub use iowrap::Eof;
+
+#[cfg(test)]
+mod test_utils;
