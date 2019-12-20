@@ -31,7 +31,7 @@ impl<'a, T> Iterator for Enumerate<'a, T> {
     }
 }
 
-pub struct EnumerateMut<'a, T> {
+pub struct EnumerateMut<'a, T: 'a> {
     iter: Box<dyn Iterator<Item = &'a mut Option<T>> + 'a>,
     count: u16,
 }
