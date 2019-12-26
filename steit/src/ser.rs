@@ -53,7 +53,7 @@ pub trait Serialize: WireType {
     }
 
     #[inline]
-    fn serialize_nested_with_cached_size_omittable(
+    fn serialize_nested_omittable_with_cached_size(
         &self,
         tag: impl Into<Option<u16>>,
         omittable: bool,
@@ -82,6 +82,6 @@ pub trait Serialize: WireType {
         tag: impl Into<Option<u16>>,
         writer: &mut impl io::Write,
     ) -> io::Result<()> {
-        self.serialize_nested_with_cached_size_omittable(tag, true, writer)
+        self.serialize_nested_omittable_with_cached_size(tag, true, writer)
     }
 }

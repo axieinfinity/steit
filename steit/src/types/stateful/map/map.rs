@@ -118,7 +118,7 @@ impl<K: MapKey, V: State> Serialize for Map<K, V> {
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
         for (&tag, value) in &self.entries {
-            value.serialize_nested_with_cached_size_omittable(tag, false, writer)?;
+            value.serialize_nested_omittable_with_cached_size(tag, false, writer)?;
         }
 
         Ok(())

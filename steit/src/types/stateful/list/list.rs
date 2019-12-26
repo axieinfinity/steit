@@ -147,7 +147,7 @@ impl<T: State> Serialize for List<T> {
 
         for (tag, item) in self.items.iter().enumerate() {
             if let Some(item) = item {
-                item.serialize_nested_with_cached_size_omittable(tag as u16, false, writer)?;
+                item.serialize_nested_omittable_with_cached_size(tag as u16, false, writer)?;
             }
         }
 
