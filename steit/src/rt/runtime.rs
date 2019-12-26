@@ -8,6 +8,42 @@ use crate::{
 
 use super::node::Node;
 
+struct RuntimeLogger {
+    logger: Box<dyn Logger>,
+    paused: u32,
+}
+
+impl RuntimeLogger {
+    #[inline]
+    pub fn new(logger: Box<dyn Logger>) -> Self {
+        Self { logger, paused: 0 }
+    }
+
+    #[inline]
+    pub fn log(&mut self, entry: LogEntry) -> io::Result<()> {
+        if self.paused <= 0 {
+            self.logger.log(entry)?;
+        }
+
+        Ok(())
+    }
+
+    #[inline]
+    pub fn pause(&mut self) -> u32 {
+        self.paused += 1;
+        self.paused
+    }
+
+    #[inline]
+    pub fn unpause(&mut self) -> u32 {
+        if self.paused > 0 {
+            self.paused -= 1;
+        }
+
+        self.paused
+    }
+}
+
 #[derive(Clone)]
 pub struct Runtime {
     logger: Rc<RefCell<dyn Logger>>,
