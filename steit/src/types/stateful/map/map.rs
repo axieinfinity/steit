@@ -258,7 +258,7 @@ mod tests {
 
     fn map_with_logger<K: MapKey, V: State>() -> (Map<K, V>, Rc<RefCell<BufferLogger>>) {
         let logger = Rc::new(RefCell::new(BufferLogger::new()));
-        let map = Map::new(Runtime::with_logger(logger.clone()));
+        let map = Map::new(Runtime::with_logger(Box::new(logger.clone())));
         (map, logger)
     }
 

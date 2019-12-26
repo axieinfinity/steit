@@ -157,10 +157,14 @@ impl<'a> Field<'a> {
             None => (quote!(), quote! { #field = value; }),
         };
 
-        let log_update = if self.setting.runtime() {
-            quote! { runtime.log_update(#tag, &value).unwrap(); }
+        let (pause_logger, unpause_logger, log_update) = if self.setting.runtime() {
+            (
+                quote! { runtime.pause_logger(); },
+                quote! { runtime.unpause_logger(); },
+                quote! { runtime.log_update(#tag, &value).unwrap(); },
+            )
         } else {
-            quote!()
+            (quote!(), quote!(), quote!())
         };
 
         quote! {
@@ -175,7 +179,9 @@ impl<'a> Field<'a> {
             pub fn #setter_name_with(&mut self, f: impl FnOnce(Runtime) -> #ty) -> &mut Self {
                 #reset_variant
                 let runtime = self.runtime();
+                #pause_logger
                 let value = f(runtime.nested(#tag));
+                #unpause_logger
                 #log_update
                 #setter
                 self

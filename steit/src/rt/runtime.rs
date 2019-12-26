@@ -46,23 +46,20 @@ impl RuntimeLogger {
 
 #[derive(Clone)]
 pub struct Runtime {
-    logger: Rc<RefCell<dyn Logger>>,
+    logger: Rc<RefCell<RuntimeLogger>>,
     path: Rc<Node<u16>>,
 }
 
 impl Runtime {
     #[inline]
     pub fn new() -> Self {
-        Self {
-            logger: Rc::new(RefCell::new(PrintLogger::with_stdout())),
-            path: Rc::new(Node::Root),
-        }
+        Self::with_logger(Box::new(PrintLogger::with_stdout()))
     }
 
     #[inline]
-    pub fn with_logger(logger: Rc<RefCell<dyn Logger>>) -> Self {
+    pub fn with_logger(logger: Box<dyn Logger>) -> Self {
         Self {
-            logger,
+            logger: Rc::new(RefCell::new(RuntimeLogger::new(logger))),
             path: Rc::new(Node::Root),
         }
     }
@@ -123,6 +120,16 @@ impl Runtime {
         self.logger
             .borrow_mut()
             .log(LogEntry::new_remove(Rc::new(Node::child(&self.path, tag))))
+    }
+
+    #[inline]
+    pub fn pause_logger(&self) -> u32 {
+        self.logger.borrow_mut().pause()
+    }
+
+    #[inline]
+    pub fn unpause_logger(&self) -> u32 {
+        self.logger.borrow_mut().unpause()
     }
 }
 

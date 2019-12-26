@@ -267,7 +267,7 @@ mod tests {
 
     fn list_with_logger<T: State>() -> (List<T>, Rc<RefCell<BufferLogger>>) {
         let logger = Rc::new(RefCell::new(BufferLogger::new()));
-        let list = List::new(Runtime::with_logger(logger.clone()));
+        let list = List::new(Runtime::with_logger(Box::new(logger.clone())));
         (list, logger)
     }
 
