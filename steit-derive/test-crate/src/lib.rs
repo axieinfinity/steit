@@ -34,5 +34,7 @@ mod tests {
             inner.set_foo(22).set_bar(true);
             inner
         });
+
+        test.inner.set_foo(160);
     }
 }

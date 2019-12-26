@@ -11,15 +11,23 @@ namespace Steit.Test1 {
 
         public static void Main(string[] args) {
             Outer.OnUpdateFoo((newValue, oldValue, container) => {
-                Console.WriteLine("Foo: {0} => {1}", oldValue, newValue);
+                Console.WriteLine("Outer / Foo: {0} => {1}", oldValue, newValue);
             });
 
             Outer.OnUpdateBar((newValue, oldValue, container) => {
-                Console.WriteLine("Bar: {0} => {1}", oldValue, newValue);
+                Console.WriteLine("Outer / Bar: {0} => {1}", oldValue, newValue);
             });
 
             Outer.OnUpdateInner((newValue, oldValue, container) => {
-                Console.WriteLine("Inner: {0} => {1}", oldValue, newValue);
+                Console.WriteLine("Outer / Inner: {0} => {1}", oldValue, newValue);
+            });
+
+            Inner.OnUpdateFoo((newValue, oldValue, container) => {
+                Console.WriteLine("Outer / Inner / Foo: {0} => {1}", oldValue, newValue);
+            });
+
+            Inner.OnUpdateBar((newValue, oldValue, container) => {
+                Console.WriteLine("Outer / Inner / Bar: {0} => {1}", oldValue, newValue);
             });
 
             var outer = new Outer();
@@ -28,6 +36,7 @@ namespace Steit.Test1 {
                 8, 0, 2, 1, 0, 10, 2, 254, 1,
                 7, 0, 2, 1, 1, 10, 1, 1,
                 10, 0, 2, 1, 2, 10, 4, 0, 44, 8, 1,
+                9, 0, 2, 2, 2, 0, 10, 2, 192, 2,
             }));
         }
     }
