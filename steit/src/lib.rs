@@ -1,6 +1,7 @@
 #![feature(associated_type_bounds)]
 
 mod de;
+pub mod gen;
 pub mod log;
 mod rt;
 mod ser;
