@@ -1,14 +1,11 @@
 using System;
 using System.Collections.Generic;
 
+using Steit;
 using Steit.Reader;
 
 namespace Steit.Test1 {
     public sealed class Test {
-        public const UInt16 LOG_UPDATE = 0;
-        public const UInt16 LOG_ADD = 1;
-        public const UInt16 LOG_REMOVE = 2;
-
         public static void Main(string[] args) {
             Outer.OnUpdateFoo((newValue, oldValue, container) => {
                 Console.WriteLine("Outer / Foo: {0} => {1}", oldValue, newValue);
@@ -19,7 +16,7 @@ namespace Steit.Test1 {
             });
 
             Outer.OnUpdateInner((newValue, oldValue, container) => {
-                Console.WriteLine("Outer / Inner: {0} => {1}", oldValue, newValue);
+                Console.WriteLine("Outer / Inner: {0} => {1}", InnerToString(oldValue), InnerToString(newValue));
             });
 
             Inner.OnUpdateFoo((newValue, oldValue, container) => {
@@ -38,6 +35,10 @@ namespace Steit.Test1 {
                 10, 0, 2, 1, 2, 10, 4, 0, 44, 8, 1,
                 9, 0, 2, 2, 2, 0, 10, 2, 192, 2,
             }));
+        }
+
+        private static String InnerToString(Inner inner) {
+            return string.Format("{{ Foo: {0}, Bar: {1} }}", inner.Foo, inner.Bar);
         }
     }
 }

@@ -1,16 +1,45 @@
 #[cfg(test)]
 mod tests {
-    use steit::{log::loggers::PrintLogger, steitize, Runtime};
+    use std::env;
+
+    use steit::{
+        gen::{generators::CSharpGenerator, Field, FieldType, Generator, HasMeta, Meta},
+        log::loggers::PrintLogger,
+        steitize, Runtime,
+    };
 
     #[steitize(State)]
     #[derive(Debug)]
-    struct Test {
+    struct Outer {
         #[steit(tag = 0)]
         foo: i32,
         #[steit(tag = 1)]
         bar: bool,
         #[steit(tag = 2)]
         inner: Inner,
+    }
+
+    impl HasMeta for Outer {
+        const META: &'static Meta = &Meta::State(
+            "Outer",
+            &[
+                Field {
+                    name: "foo",
+                    ty: &FieldType::Primitive("i32"),
+                    tag: 0,
+                },
+                Field {
+                    name: "bar",
+                    ty: &FieldType::Primitive("bool"),
+                    tag: 1,
+                },
+                Field {
+                    name: "inner",
+                    ty: &FieldType::Meta(Inner::META),
+                    tag: 2,
+                },
+            ],
+        );
     }
 
     #[steitize(State)]
@@ -22,19 +51,42 @@ mod tests {
         bar: bool,
     }
 
+    impl HasMeta for Inner {
+        const META: &'static Meta = &Meta::State(
+            "Inner",
+            &[
+                Field {
+                    name: "foo",
+                    ty: &FieldType::Primitive("i32"),
+                    tag: 0,
+                },
+                Field {
+                    name: "bar",
+                    ty: &FieldType::Primitive("bool"),
+                    tag: 1,
+                },
+            ],
+        );
+    }
+
     #[test]
     fn test() {
+        let out_dir = env::var("CSHARP_OUT_DIR").unwrap();
+        let generator = CSharpGenerator::new("Steit.Test1", out_dir);
+
+        generator.generate::<Outer>().unwrap();
+
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
 
-        let mut test = Test::new(runtime);
+        let mut outer = Outer::new(runtime);
 
-        test.set_foo(127).set_bar(true).set_inner_with(|runtime| {
+        outer.set_foo(127).set_bar(true).set_inner_with(|runtime| {
             let mut inner = Inner::new(runtime);
             inner.set_foo(22).set_bar(true);
             inner
         });
 
-        test.inner.set_foo(160);
+        outer.inner.set_foo(160);
     }
 }

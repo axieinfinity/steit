@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Steit;
 using Steit.Reader;
 
 namespace Steit.Test1 {
@@ -34,9 +35,9 @@ namespace Steit.Test1 {
         public static void RemoveBarListenerAt(int index) { barListeners.RemoveAt(index); }
         public static void RemoveInnerListenerAt(int index) { innerListeners.RemoveAt(index); }
 
-        public static void ClearFooListeners(int index) { fooListeners.Clear(); }
-        public static void ClearBarListeners(int index) { barListeners.Clear(); }
-        public static void ClearInnerListeners(int index) { innerListeners.Clear(); }
+        public static void ClearFooListeners() { fooListeners.Clear(); }
+        public static void ClearBarListeners() { barListeners.Clear(); }
+        public static void ClearInnerListeners() { innerListeners.Clear(); }
 
         public static void ClearAllListeners() {
             fooListeners.Clear();

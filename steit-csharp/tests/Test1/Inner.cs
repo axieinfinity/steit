@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Steit;
 using Steit.Reader;
 
 namespace Steit.Test1 {
@@ -28,8 +29,8 @@ namespace Steit.Test1 {
         public static void RemoveFooListenerAt(int index) { fooListeners.RemoveAt(index); }
         public static void RemoveBarListenerAt(int index) { barListeners.RemoveAt(index); }
 
-        public static void ClearFooListeners(int index) { fooListeners.Clear(); }
-        public static void ClearBarListeners(int index) { barListeners.Clear(); }
+        public static void ClearFooListeners() { fooListeners.Clear(); }
+        public static void ClearBarListeners() { barListeners.Clear(); }
 
         public static void ClearAllListeners() {
             fooListeners.Clear();
@@ -48,10 +49,6 @@ namespace Steit.Test1 {
             }
         }
 
-        public override String ToString() {
-            return string.Format("{{ Foo: {0}, Bar: {1} }}", this.Foo, this.Bar);
-        }
-
         protected override Int16 WireType(UInt16 tag) {
             switch (tag) {
                 case 0: return 0;
@@ -64,7 +61,7 @@ namespace Steit.Test1 {
             switch (tag) {
                 case 0: this.Foo = this.Notify(reader.ReadInt32(), this.Foo, shouldNotify, fooListeners); break;
                 case 1: this.Bar = this.Notify(reader.ReadBoolean(), this.Bar, shouldNotify, barListeners); break;
-                default: reader.Skip(wireType); break;
+                default: reader.SkipWireTyped(wireType); break;
             }
         }
 
