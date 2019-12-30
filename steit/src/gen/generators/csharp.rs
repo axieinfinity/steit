@@ -145,7 +145,7 @@ impl Generator for CSharpGenerator {
             .writeln("}")
             .newline()
             .writeln(format!(
-                "public static {} Deserialize(StateReader reader, Path path = null) {{",
+                "public static {} Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {{",
                 name,
             ))
             .indent()

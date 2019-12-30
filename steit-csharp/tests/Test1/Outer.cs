@@ -45,7 +45,7 @@ namespace Steit.Test1 {
             innerListeners.Clear();
         }
 
-        public static Outer Deserialize(StateReader reader, Path path = null) {
+        public static Outer Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {
             var outer = new Outer(path);
             outer.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
             return outer;

@@ -37,7 +37,7 @@ namespace Steit.Test1 {
             barListeners.Clear();
         }
 
-        public static Inner Deserialize(StateReader reader, Path path = null) {
+        public static Inner Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {
             var inner = new Inner(path);
             inner.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
             return inner;
