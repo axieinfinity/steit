@@ -102,7 +102,7 @@ namespace Steit {
         protected abstract Int16 WireType(UInt16 tag);
         protected abstract void ReplaceAt(UInt16 tag, Byte wireType, StateReader reader, bool shouldNotify = true);
 
-        protected void Replace(StateReader reader, bool shouldNotify) {
+        protected virtual void Replace(StateReader reader, bool shouldNotify) {
             var (tag, wireType) = reader.ReadKey();
             var expectedWireType = this.WireType(tag);
 
@@ -115,7 +115,7 @@ namespace Steit {
             this.ReplaceAt(tag, wireType, reader, shouldNotify);
         }
 
-        protected void ReplaceAll(StateReader reader, bool shouldNotify) {
+        protected virtual void ReplaceAll(StateReader reader, bool shouldNotify) {
             while (!reader.Eof()) {
                 this.Replace(reader, shouldNotify);
             }
