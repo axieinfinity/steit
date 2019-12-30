@@ -24,7 +24,15 @@ namespace Steit {
             var pathLength = (int) reader.ReadUInt32();
 
             if (pathLength <= 0) { // Target is the root state
-                throw new Exception("Not implemented yet");
+                reader.ReadKey();
+
+                var type = typeof(T);
+                var method = type.GetMethod("Deserialize");
+                var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
+
+                root = (T) method.Invoke(null, arguments);
+
+                return;
             }
 
             while (pathLength-- > 0) {
