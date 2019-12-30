@@ -13,7 +13,7 @@ namespace Steit {
             var variant = reader.ReadUInt16();
 
             if (variant != LOG_UPDATE && variant != LOG_ADD && variant != LOG_REMOVE) {
-                Console.Error.WriteLine(string.Format("Invalid log variant tag {0}", variant));
+                Console.Error.WriteLine("Invalid log variant tag {0}", variant);
                 reader.Exhaust();
                 return;
             }
@@ -107,7 +107,7 @@ namespace Steit {
             var expectedWireType = this.WireType(tag);
 
             if (expectedWireType >= 0 && wireType != expectedWireType) {
-                Console.Error.WriteLine(string.Format("Unexpected tag {0} or wire type {1}", tag, wireType));
+                Console.Error.WriteLine("Unexpected tag {0} or wire type {1}", tag, wireType);
                 reader.SkipWireTyped(wireType);
                 return;
             }
