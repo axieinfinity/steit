@@ -18,14 +18,19 @@ namespace Steit {
                 return;
             }
 
-            reader.ReadKey();
-
             var path = new List<UInt16>();
-            var pathLength = (int) reader.ReadUInt32();
 
-            if (pathLength <= 0) { // Target is the root state
+            if (reader.ReadKey().Tag == 0) {
+                var pathLength = (int) reader.ReadUInt32();
+
+                while (pathLength-- > 0) {
+                    path.Add(reader.ReadUInt16());
+                }
+
                 reader.ReadKey();
+            }
 
+            if (path.Count <= 0) { // Target is the root state
                 var type = typeof(T);
                 var method = type.GetMethod("Deserialize");
                 var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
@@ -33,10 +38,6 @@ namespace Steit {
                 root = (T) method.Invoke(null, arguments);
 
                 return;
-            }
-
-            while (pathLength-- > 0) {
-                path.Add(reader.ReadUInt16());
             }
 
             UInt16 tag = 0;
@@ -52,8 +53,6 @@ namespace Steit {
                 reader.Exhaust();
                 return;
             }
-
-            reader.ReadKey();
 
             switch (variant) {
                 case LOG_UPDATE: if (state.IsUpdateSupported()) state.ReplayUpdate(tag, reader); break;

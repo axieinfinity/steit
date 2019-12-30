@@ -59,7 +59,7 @@ namespace Steit.Test1 {
             var multicase = new Multicase();
 
             State.ReplayAll(ref multicase, new StateReader(new byte[] {
-                6, 0, 2, 0, 10, 1, 1,
+                4, 0, 10, 1, 1,
                 9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
             }));
         }
