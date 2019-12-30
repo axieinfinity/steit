@@ -1,4 +1,4 @@
-use crate::gen::{string_utils, Field, FieldType, Generator, Meta, Writer};
+use crate::gen::*;
 
 pub struct CSharpGenerator {
     namespace: String,
@@ -19,11 +19,19 @@ impl Generator for CSharpGenerator {
         &self.out_dir
     }
 
-    fn generate_state(&self, name: &'static str, fields: &'static [Field]) -> String {
-        let var_name = string_utils::uncap_first_char(name);
-        let fields: Vec<_> = fields.iter().map(CSharpField::with_field).collect();
+    fn indent_size(&self) -> usize {
+        4
+    }
 
-        let mut writer = Writer::new(4);
+    fn generate_struct(&self, r#struct: Struct, _is_variant: bool, writer: &mut Writer) {
+        let name = r#struct.name;
+        let var_name = string_utils::uncap_first_char(name);
+
+        let fields: Vec<_> = r#struct
+            .fields
+            .iter()
+            .map(CSharpField::with_field)
+            .collect();
 
         writer
             .writeln("using System;")
@@ -235,9 +243,9 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .outdent_writeln("}");
-
-        writer.end()
     }
+
+    fn generate_enum(&self, _enum: Enum, _writer: &mut Writer) {}
 }
 
 struct CSharpField {
@@ -272,8 +280,10 @@ fn get_type(ty: &'static FieldType) -> String {
             "bool" => "Boolean".to_owned(),
             _ => name.to_string(),
         },
+
         FieldType::Meta(meta) => match meta {
-            Meta::State(name, _) => name.to_string(),
+            Meta::Struct(Struct { name, .. }) => name.to_string(),
+            Meta::Enum(Enum { name, .. }) => name.to_string(),
             Meta::List(field) => format!("StateList<{}>", get_type(field.ty)),
             Meta::Map(field) => format!("StateDictionary<{}>", get_type(field.ty)),
         },

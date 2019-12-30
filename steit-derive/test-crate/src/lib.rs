@@ -3,7 +3,7 @@ mod tests {
     use std::env;
 
     use steit::{
-        gen::{generators::CSharpGenerator, Field, FieldType, Generator, HasMeta, Meta},
+        gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
         steitize, Runtime,
     };
@@ -20,9 +20,9 @@ mod tests {
     }
 
     impl HasMeta for Outer {
-        const META: &'static Meta = &Meta::State(
-            "Outer",
-            &[
+        const META: &'static Meta = &Meta::Struct(Struct {
+            name: "Outer",
+            fields: &[
                 Field {
                     name: "foo",
                     ty: &FieldType::Primitive("i32"),
@@ -39,7 +39,7 @@ mod tests {
                     tag: 2,
                 },
             ],
-        );
+        });
     }
 
     #[steitize(State)]
@@ -52,9 +52,9 @@ mod tests {
     }
 
     impl HasMeta for Inner {
-        const META: &'static Meta = &Meta::State(
-            "Inner",
-            &[
+        const META: &'static Meta = &Meta::Struct(Struct {
+            name: "Inner",
+            fields: &[
                 Field {
                     name: "foo",
                     ty: &FieldType::Primitive("i32"),
@@ -66,7 +66,70 @@ mod tests {
                     tag: 1,
                 },
             ],
-        );
+        });
+    }
+
+    #[steitize(State)]
+    #[derive(Debug)]
+    enum Multicase {
+        #[steit(tag = 0)]
+        FirstCase {
+            #[steit(tag = 0)]
+            foo: i32,
+            #[steit(tag = 1)]
+            bar: bool,
+        },
+        #[steit(tag = 1)]
+        SecondCase {
+            #[steit(tag = 0)]
+            foo: i32,
+            #[steit(tag = 1)]
+            bar: bool,
+        },
+    }
+
+    impl HasMeta for Multicase {
+        const META: &'static Meta = &Meta::Enum(Enum {
+            name: "Multicase",
+            variants: &[
+                Variant {
+                    ty: &Struct {
+                        name: "FirstCase",
+                        fields: &[
+                            Field {
+                                name: "foo",
+                                ty: &FieldType::Primitive("i32"),
+                                tag: 0,
+                            },
+                            Field {
+                                name: "bar",
+                                ty: &FieldType::Primitive("bool"),
+                                tag: 1,
+                            },
+                        ],
+                    },
+                    tag: 0,
+                },
+                Variant {
+                    ty: &Struct {
+                        name: "SecondCase",
+                        fields: &[
+                            Field {
+                                name: "foo",
+                                ty: &FieldType::Primitive("i32"),
+                                tag: 0,
+                            },
+                            Field {
+                                name: "bar",
+                                ty: &FieldType::Primitive("bool"),
+                                tag: 1,
+                            },
+                        ],
+                    },
+                    tag: 1,
+                },
+            ],
+        });
     }
 
     #[test]
@@ -75,6 +138,7 @@ mod tests {
         let generator = CSharpGenerator::new("Steit.Test1", out_dir);
 
         generator.generate::<Outer>().unwrap();
+        generator.generate::<Multicase>().unwrap();
 
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
