@@ -11,8 +11,8 @@ pub trait Generator {
 
     fn indent_size(&self) -> usize;
 
-    fn generate_struct(&self, r#struct: Struct, is_variant: bool, writer: &mut Writer);
-    fn generate_enum(&self, r#enum: Enum, writer: &mut Writer);
+    fn generate_struct(&self, r#struct: &Struct, is_variant: bool, writer: &mut Writer);
+    fn generate_enum(&self, r#enum: &Enum, writer: &mut Writer);
 
     fn generate<T: HasMeta>(&self) -> io::Result<()> {
         let mut states = HashMap::new();
@@ -23,8 +23,8 @@ pub trait Generator {
             let mut writer = Writer::new(self.indent_size());
 
             match state {
-                State::Struct(r#struct) => self.generate_struct(r#struct, false, &mut writer),
-                State::Enum(r#enum) => self.generate_enum(r#enum, &mut writer),
+                State::Struct(r#struct) => self.generate_struct(&r#struct, false, &mut writer),
+                State::Enum(r#enum) => self.generate_enum(&r#enum, &mut writer),
             };
 
             let source = writer.end();

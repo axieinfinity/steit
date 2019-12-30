@@ -20,7 +20,7 @@ mod tests {
     }
 
     impl HasMeta for Outer {
-        const META: &'static Meta = &Meta::Struct(Struct {
+        const META: &'static Meta = &Meta::Struct(&Struct {
             name: "Outer",
             fields: &[
                 Field {
@@ -52,7 +52,7 @@ mod tests {
     }
 
     impl HasMeta for Inner {
-        const META: &'static Meta = &Meta::Struct(Struct {
+        const META: &'static Meta = &Meta::Struct(&Struct {
             name: "Inner",
             fields: &[
                 Field {
@@ -89,7 +89,7 @@ mod tests {
     }
 
     impl HasMeta for Multicase {
-        const META: &'static Meta = &Meta::Enum(Enum {
+        const META: &'static Meta = &Meta::Enum(&Enum {
             name: "Multicase",
             variants: &[
                 Variant {
@@ -152,5 +152,12 @@ mod tests {
         });
 
         outer.inner.set_foo(160);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut multicase = Multicase::new(runtime);
+
+        multicase.set_second_case_foo(68);
     }
 }

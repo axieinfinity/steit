@@ -1,24 +1,24 @@
 #[derive(Debug)]
 pub enum Meta {
-    Struct(Struct),
-    Enum(Enum),
-    List(Field),
-    Map(Field),
+    Struct(&'static Struct),
+    Enum(&'static Enum),
+    List(FieldType),
+    Map(FieldType),
 }
 
 #[derive(Debug)]
 pub enum State {
-    Struct(Struct),
-    Enum(Enum),
+    Struct(&'static Struct),
+    Enum(&'static Enum),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Struct {
     pub name: &'static str,
     pub fields: &'static [Field],
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Enum {
     pub name: &'static str,
     pub variants: &'static [Variant],
@@ -28,6 +28,12 @@ pub struct Enum {
 pub struct Variant {
     pub ty: &'static Struct,
     pub tag: u16,
+}
+
+impl Variant {
+    pub fn is_default(&self) -> bool {
+        self.tag == 0
+    }
 }
 
 #[derive(Debug)]

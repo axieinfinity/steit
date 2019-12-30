@@ -1,3 +1,15 @@
+pub fn uncap_first_char(s: &str) -> String {
+    let mut chars = s.chars();
+    let mut out = String::new();
+
+    if let Some(c) = chars.next() {
+        out.extend(c.to_lowercase());
+    }
+
+    out.extend(chars);
+    out
+}
+
 pub fn to_camel_case(s: &str, mut upper: bool) -> String {
     let mut chars = s.chars();
     let mut out = String::new();
@@ -16,7 +28,7 @@ pub fn to_camel_case(s: &str, mut upper: bool) -> String {
     out
 }
 
-pub fn uncap_first_char(s: &str) -> String {
+pub fn to_snake_case(s: &str) -> String {
     let mut chars = s.chars();
     let mut out = String::new();
 
@@ -24,6 +36,13 @@ pub fn uncap_first_char(s: &str) -> String {
         out.extend(c.to_lowercase());
     }
 
-    out.extend(chars);
+    while let Some(c) = chars.next() {
+        if c >= 'A' && c <= 'Z' {
+            out.push('_');
+        }
+
+        out.extend(c.to_lowercase());
+    }
+
     out
 }

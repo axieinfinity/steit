@@ -14,6 +14,24 @@ impl CSharpGenerator {
     }
 }
 
+impl CSharpGenerator {
+    pub fn generate_file_opening(&self, writer: &mut Writer) {
+        writer
+            .writeln("using System;")
+            .writeln("using System.Collections.Generic;")
+            .newline()
+            .writeln("using Steit;")
+            .writeln("using Steit.Reader;")
+            .newline()
+            .writeln(format!("namespace {} {{", self.namespace))
+            .indent();
+    }
+
+    pub fn generate_file_closing(&self, writer: &mut Writer) {
+        writer.outdent_writeln("}");
+    }
+}
+
 impl Generator for CSharpGenerator {
     fn out_dir(&self) -> &str {
         &self.out_dir
@@ -23,7 +41,7 @@ impl Generator for CSharpGenerator {
         4
     }
 
-    fn generate_struct(&self, r#struct: Struct, _is_variant: bool, writer: &mut Writer) {
+    fn generate_struct(&self, r#struct: &Struct, is_variant: bool, writer: &mut Writer) {
         let name = r#struct.name;
         let var_name = string_utils::uncap_first_char(name);
 
@@ -33,15 +51,11 @@ impl Generator for CSharpGenerator {
             .map(CSharpField::with_field)
             .collect();
 
+        if !is_variant {
+            self.generate_file_opening(writer);
+        }
+
         writer
-            .writeln("using System;")
-            .writeln("using System.Collections.Generic;")
-            .newline()
-            .writeln("using Steit;")
-            .writeln("using Steit.Reader;")
-            .newline()
-            .writeln(format!("namespace {} {{", self.namespace))
-            .indent()
             .writeln(format!("public sealed class {} : State {{", name))
             .indent();
 
@@ -66,11 +80,15 @@ impl Generator for CSharpGenerator {
             ));
         }
 
+        writer.newline();
+
+        if is_variant {
+            writer.writeln("// This is not meant to be used directly.");
+        }
+
         writer
-            .newline()
             .writeln(format!("public {}(Path path = null) {{", name))
-            .indent()
-            .writeln("this.Path = path != null ? path : Path.Root;");
+            .indent_writeln("this.Path = path != null ? path : Path.Root;");
 
         // Initiate nested states
         for field in &fields {
@@ -83,8 +101,7 @@ impl Generator for CSharpGenerator {
         }
 
         writer
-            .outdent()
-            .writeln("}")
+            .outdent_writeln("}")
             .newline()
             .writeln(format!(
                 "public delegate void Listener<T>(T newValue, T oldValue, {} container);",
@@ -140,23 +157,34 @@ impl Generator for CSharpGenerator {
             writer.writeln(format!("{}Listeners.Clear();", field.lower_camel_case_name));
         }
 
+        writer.outdent_writeln("}").newline();
+
+        if is_variant {
+            writer.writeln("// This is not meant to be used directly.");
+        }
+
         writer
-            .outdent()
-            .writeln("}")
-            .newline()
             .writeln(format!(
                 "public static {} Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {{",
                 name,
             ))
-            .indent()
-            .writeln(format!("var {} = new {}(path);", var_name, name))
-            .writeln(format!(
+            .indent_writeln(format!("var {} = new {}(path);", var_name, name));
+
+        if is_variant {
+            writer.writeln(format!(
+                "{}.ReplaceAll(reader, shouldNotify);",
+                var_name
+            ));
+        } else {
+            writer.writeln(format!(
                 "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);",
                 var_name,
-            ))
+            ));
+        }
+
+        writer
             .writeln(format!("return {};", var_name))
-            .outdent()
-            .writeln("}")
+            .outdent_writeln("}")
             .newline()
             .writeln("public override State Nested(UInt16 tag) {")
             .indent_writeln("switch (tag) {")
@@ -174,26 +202,24 @@ impl Generator for CSharpGenerator {
 
         writer
             .writeln("default: return null;")
-            .outdent()
-            .writeln("}")
-            .outdent()
-            .writeln("}")
+            .outdent_writeln("}")
+            .outdent_writeln("}")
             .newline()
             .writeln("protected override Int16 WireType(UInt16 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
         // Return wire types
-        for field in &fields {
-            if let FieldType::Meta(_) = field.raw.ty {
+        for field in r#struct.fields {
+            if let FieldType::Meta(_) = field.ty {
                 writer.writeln(format!(
                     "case {}: return StateReader.WIRE_TYPE_SIZED;",
-                    field.raw.tag,
+                    field.tag,
                 ));
             } else {
                 writer.writeln(format!(
                     "case {}: return StateReader.WIRE_TYPE_VARINT;",
-                    field.raw.tag,
+                    field.tag,
                 ));
             }
         }
@@ -241,11 +267,161 @@ impl Generator for CSharpGenerator {
             .newline()
             .writeln("return newValue;")
             .outdent_writeln("}")
-            .outdent_writeln("}")
             .outdent_writeln("}");
+
+        if !is_variant {
+            self.generate_file_closing(writer);
+        }
     }
 
-    fn generate_enum(&self, _enum: Enum, _writer: &mut Writer) {}
+    fn generate_enum(&self, r#enum: &Enum, writer: &mut Writer) {
+        let name = r#enum.name;
+        let var_name = string_utils::uncap_first_char(name);
+
+        let variants: Vec<_> = r#enum
+            .variants
+            .iter()
+            .map(CSharpVariant::with_variant)
+            .collect();
+
+        let default_variant = variants
+            .iter()
+            .find(|variant| variant.raw.is_default())
+            .expect(&format!("expect a default variant for enum {}", &name));
+
+        self.generate_file_opening(writer);
+
+        writer
+            .writeln(format!("public sealed class {} : EnumState {{", name))
+            .indent();
+
+        // Declare variant tag numbers
+        for variant in &variants {
+            writer.writeln(format!(
+                "public static UInt16 {}_VARIANT = {};",
+                variant.screaming_snake_case_name, variant.raw.tag,
+            ));
+        }
+
+        writer
+            .newline()
+            .writeln("private static IList<Listener> listeners = new List<Listener>();")
+            .newline()
+            .writeln("public Path Path { get; private set; }")
+            .newline()
+            .writeln("public UInt16 Variant { get; private set; }")
+            .writeln("public State Value { get; private set; }")
+            .newline();
+
+        // Return variant values
+        for variant in r#enum.variants {
+            writer.writeln(format!(
+                "public {0} {0}Value {{ get {{ return this.Variant == {1} ? ({0}) this.Value : null; }} }}",
+                variant.ty.name, variant.tag,
+            ));
+        }
+
+        writer
+            .newline()
+            .writeln(format!("public {}(Path path = null) {{", name))
+            .indent_writeln("this.Path = path != null ? path : Path.Root;")
+            .writeln(format!(
+                "this.Value = new {}(this.Path.Nested({}));",
+                default_variant.raw.ty.name, default_variant.raw.tag,
+            ))
+            .outdent_writeln("}")
+            .newline()
+            .writeln(format!(
+                "public delegate void Listener(State newValue, UInt16 newVariant, State oldValue, UInt16 oldVariant, {} container);",
+                name,
+            ))
+            .newline()
+            .writeln("public static int OnUpdate(Listener listener) { return Utils.Add(listeners, listener); }")
+            .writeln("public static void RemoveListener(Listener listener) { listeners.Remove(listener); }")
+            .writeln("public static void RemoveListenerAt(int index) { listeners.RemoveAt(index); }")
+            .writeln("public static void ClearListeners() { listeners.Clear(); }")
+            .newline()
+            .writeln(format!(
+                "public static {} Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {{",
+                name,
+            ))
+            .indent_writeln(format!("var {} = new {}(path);", var_name, name))
+            .writeln(format!(
+                "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify);",
+                var_name,
+            ))
+            .writeln(format!("return {};", var_name))
+            .outdent_writeln("}")
+            .newline()
+            .writeln("public override State Nested(UInt16 tag) {")
+            .indent_writeln("return tag == this.Variant ? this.Value : null;")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("protected override Int16 WireType(UInt16 tag) {")
+            .indent_writeln("switch (tag) {")
+            .indent();
+
+        // Return wire types
+        for variant in r#enum.variants {
+            writer.writeln(format!("case {}: return StateReader.WIRE_TYPE_SIZED;", variant.tag));
+        }
+
+        writer
+            .writeln("default: return -1;")
+            .outdent_writeln("}")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("protected override void ReplaceAt(UInt16 tag, Byte wireType, StateReader reader, bool shouldNotify) {")
+            .indent_writeln("switch (tag) {")
+            .indent();
+
+        // Replace fields and notify listeners
+        for variant in r#enum.variants {
+            writer.writeln(format!(
+                "case {0}: this.NotifyAndUpdate({0}, {1}.Deserialize(reader, this.Path.Nested({0})), shouldNotify); break;",
+                variant.tag, variant.ty.name,
+            ));
+        }
+
+        writer
+            .writeln("default: reader.Exhaust(); break;")
+            .outdent_writeln("}")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("private void NotifyAndUpdate(UInt16 newVariant, State newValue, bool shouldNotify) {")
+            .indent_writeln("if (shouldNotify) {")
+            .indent_writeln("foreach (var listener in listeners) {")
+            .indent_writeln("listener(newValue, newVariant, this.Value, this.Variant, this);")
+            .outdent_writeln("}")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("this.Variant = newVariant;")
+            .writeln("this.Value = newValue;")
+            .outdent_writeln("}");
+
+        for variant in r#enum.variants {
+            writer.newline();
+            self.generate_struct(variant.ty, true, writer);
+        }
+
+        writer.outdent_writeln("}");
+
+        self.generate_file_closing(writer);
+    }
+}
+
+struct CSharpVariant {
+    raw: &'static Variant,
+    screaming_snake_case_name: String,
+}
+
+impl CSharpVariant {
+    pub fn with_variant(variant: &'static Variant) -> Self {
+        Self {
+            raw: variant,
+            screaming_snake_case_name: string_utils::to_snake_case(variant.ty.name).to_uppercase(),
+        }
+    }
 }
 
 struct CSharpField {
@@ -284,8 +460,8 @@ fn get_type(ty: &'static FieldType) -> String {
         FieldType::Meta(meta) => match meta {
             Meta::Struct(Struct { name, .. }) => name.to_string(),
             Meta::Enum(Enum { name, .. }) => name.to_string(),
-            Meta::List(field) => format!("StateList<{}>", get_type(field.ty)),
-            Meta::Map(field) => format!("StateDictionary<{}>", get_type(field.ty)),
+            Meta::List(field_type) => format!("StateList<{}>", get_type(field_type)),
+            Meta::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
         },
     }
 }
