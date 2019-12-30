@@ -178,9 +178,15 @@ impl Generator for CSharpGenerator {
         // Return wire types
         for field in &fields {
             if let FieldType::Meta(_) = field.raw.ty {
-                writer.writeln(format!("case {}: return 2;", field.raw.tag));
+                writer.writeln(format!(
+                    "case {}: return StateReader.WIRE_TYPE_SIZED;",
+                    field.raw.tag,
+                ));
             } else {
-                writer.writeln(format!("case {}: return 0;", field.raw.tag));
+                writer.writeln(format!(
+                    "case {}: return StateReader.WIRE_TYPE_VARINT;",
+                    field.raw.tag,
+                ));
             }
         }
 

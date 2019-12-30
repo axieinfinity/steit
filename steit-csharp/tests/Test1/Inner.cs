@@ -51,8 +51,8 @@ namespace Steit.Test1 {
 
         protected override Int16 WireType(UInt16 tag) {
             switch (tag) {
-                case 0: return 0;
-                case 1: return 0;
+                case 0: return StateReader.WIRE_TYPE_VARINT;
+                case 1: return StateReader.WIRE_TYPE_VARINT;
                 default: return -1;
             }
         }
