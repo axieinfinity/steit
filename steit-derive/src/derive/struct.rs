@@ -487,6 +487,34 @@ impl<'a> Struct<'a> {
             },
         )
     }
+
+    pub fn meta(&self) -> TokenStream {
+        let name = match &self.variant {
+            Some(variant) => variant.name(),
+            None => self.r#impl.name(),
+        };
+
+        let name = name.to_token_stream().to_string();
+        let fields = map_fields!(self, meta);
+
+        quote! {
+            &Struct {
+                name: #name,
+                fields: &[#(#fields,)*],
+            }
+        }
+    }
+
+    fn impl_meta(&self) -> TokenStream {
+        let meta = self.meta();
+
+        self.r#impl.impl_for(
+            "HasMeta",
+            quote! {
+                const META: &'static Meta = &Meta::Struct(#meta);
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Struct<'a> {
@@ -520,6 +548,10 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.state {
             tokens.extend(self.impl_state());
+        }
+
+        if self.setting.meta() {
+            tokens.extend(self.impl_meta());
         }
     }
 }

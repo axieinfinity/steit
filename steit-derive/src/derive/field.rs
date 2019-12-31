@@ -217,6 +217,31 @@ impl<'a> Field<'a> {
         let field = self.field(is_variant);
         quote!(#tag => #field.handle(path, kind, reader))
     }
+
+    pub fn meta(&self) -> TokenStream {
+        let name = self.alias().to_string();
+
+        let ty = &self.ty;
+        let type_name = &*quote!(#ty).to_string();
+
+        let ty = match type_name {
+            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
+                quote!(&FieldType::Primitive(#type_name))
+            }
+
+            _ => quote!(&FieldType::Meta(<#ty as HasMeta>::META)),
+        };
+
+        let tag = self.tag();
+
+        quote! {
+            Field {
+                name: #name,
+                ty: #ty,
+                tag: #tag,
+            }
+        }
+    }
 }
 
 pub struct ExtraField {

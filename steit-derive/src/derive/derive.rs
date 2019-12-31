@@ -14,12 +14,13 @@ pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct DeriveSetting {
     pub serialize: bool,
-    pub deserialize: bool,
     pub merge: bool,
+    pub deserialize: bool,
     pub state: bool,
 
     pub own_crate: bool,
     pub no_cached_size: bool,
+    pub no_meta: bool,
 }
 
 impl DeriveSetting {
@@ -31,6 +32,7 @@ impl DeriveSetting {
 
         let mut own_crate = Attr::new(context, "own_crate");
         let mut no_cached_size = Attr::new(context, "no_cached_size");
+        let mut no_meta = Attr::new(context, "no_meta");
 
         args.parse(context, true, &mut |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
@@ -43,6 +45,9 @@ impl DeriveSetting {
 
             syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_meta.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
 
             _ => false,
         });
@@ -60,6 +65,7 @@ impl DeriveSetting {
 
             own_crate: own_crate.get().unwrap_or_default(),
             no_cached_size: no_cached_size.get().unwrap_or_default(),
+            no_meta: no_meta.get().unwrap_or_default(),
         }
     }
 
@@ -99,6 +105,10 @@ impl DeriveSetting {
 
     pub fn runtime(&self) -> bool {
         self.state
+    }
+
+    pub fn meta(&self) -> bool {
+        self.deserialize && !self.no_meta
     }
 }
 
@@ -165,6 +175,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
 
             use #krate::{
                 exhaust_nested,
+                gen::*,
                 wire_type::{self, WireType},
                 CachedSize,
                 Deserialize,

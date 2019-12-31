@@ -476,6 +476,36 @@ impl<'a> Enum<'a> {
             },
         )
     }
+
+    fn impl_meta(&self) -> TokenStream {
+        let name = self.r#impl.name().to_token_stream().to_string();
+
+        let variants = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let meta = r#struct.meta();
+            let tag = variant.tag();
+
+            quote! {
+                Variant {
+                    ty: #meta,
+                    tag: #tag,
+                }
+            }
+        });
+
+        self.r#impl.impl_for(
+            "HasMeta",
+            quote! {
+                const META: &'static Meta = &Meta::Enum(&Enum {
+                    name: #name,
+                    variants: &[#(#variants,)*],
+                });
+            },
+        )
+    }
 }
 
 impl<'a> ToTokens for Enum<'a> {
@@ -508,6 +538,10 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.state {
             tokens.extend(self.impl_state());
+        }
+
+        if self.setting.meta() {
+            tokens.extend(self.impl_meta());
         }
     }
 }

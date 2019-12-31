@@ -19,29 +19,6 @@ mod tests {
         inner: Inner,
     }
 
-    impl HasMeta for Outer {
-        const META: &'static Meta = &Meta::Struct(&Struct {
-            name: "Outer",
-            fields: &[
-                Field {
-                    name: "foo",
-                    ty: &FieldType::Primitive("i32"),
-                    tag: 0,
-                },
-                Field {
-                    name: "bar",
-                    ty: &FieldType::Primitive("bool"),
-                    tag: 1,
-                },
-                Field {
-                    name: "inner",
-                    ty: &FieldType::Meta(Inner::META),
-                    tag: 2,
-                },
-            ],
-        });
-    }
-
     #[steitize(State)]
     #[derive(Debug)]
     struct Inner {
@@ -49,24 +26,6 @@ mod tests {
         foo: i32,
         #[steit(tag = 1)]
         bar: bool,
-    }
-
-    impl HasMeta for Inner {
-        const META: &'static Meta = &Meta::Struct(&Struct {
-            name: "Inner",
-            fields: &[
-                Field {
-                    name: "foo",
-                    ty: &FieldType::Primitive("i32"),
-                    tag: 0,
-                },
-                Field {
-                    name: "bar",
-                    ty: &FieldType::Primitive("bool"),
-                    tag: 1,
-                },
-            ],
-        });
     }
 
     #[steitize(State)]
@@ -86,50 +45,6 @@ mod tests {
             #[steit(tag = 1)]
             bar: bool,
         },
-    }
-
-    impl HasMeta for Multicase {
-        const META: &'static Meta = &Meta::Enum(&Enum {
-            name: "Multicase",
-            variants: &[
-                Variant {
-                    ty: &Struct {
-                        name: "FirstCase",
-                        fields: &[
-                            Field {
-                                name: "foo",
-                                ty: &FieldType::Primitive("i32"),
-                                tag: 0,
-                            },
-                            Field {
-                                name: "bar",
-                                ty: &FieldType::Primitive("bool"),
-                                tag: 1,
-                            },
-                        ],
-                    },
-                    tag: 0,
-                },
-                Variant {
-                    ty: &Struct {
-                        name: "SecondCase",
-                        fields: &[
-                            Field {
-                                name: "foo",
-                                ty: &FieldType::Primitive("i32"),
-                                tag: 0,
-                            },
-                            Field {
-                                name: "bar",
-                                ty: &FieldType::Primitive("bool"),
-                                tag: 1,
-                            },
-                        ],
-                    },
-                    tag: 1,
-                },
-            ],
-        });
     }
 
     #[test]

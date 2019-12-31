@@ -171,10 +171,7 @@ impl Generator for CSharpGenerator {
             .indent_writeln(format!("var {} = new {}(path);", var_name, name));
 
         if is_variant {
-            writer.writeln(format!(
-                "{}.ReplaceAll(reader, shouldNotify);",
-                var_name
-            ));
+            writer.writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name));
         } else {
             writer.writeln(format!(
                 "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);",
@@ -363,7 +360,10 @@ impl Generator for CSharpGenerator {
 
         // Return wire types
         for variant in r#enum.variants {
-            writer.writeln(format!("case {}: return StateReader.WIRE_TYPE_SIZED;", variant.tag));
+            writer.writeln(format!(
+                "case {}: return StateReader.WIRE_TYPE_SIZED;",
+                variant.tag
+            ));
         }
 
         writer
