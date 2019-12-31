@@ -37,7 +37,7 @@ pub fn to_snake_case(s: &str) -> String {
     }
 
     while let Some(c) = chars.next() {
-        if c >= 'A' && c <= 'Z' {
+        if c.is_uppercase() {
             out.push('_');
         }
 
