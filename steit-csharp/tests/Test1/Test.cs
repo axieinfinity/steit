@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 
-using Steit;
-using Steit.Reader;
+using Steit.Encoding;
 
 namespace Steit.Test1 {
     public sealed class Test {
@@ -29,7 +27,7 @@ namespace Steit.Test1 {
 
             var outer = new Outer();
 
-            State.ReplayAll(ref outer, new StateReader(new byte[] {
+            State.State.ReplayAll(ref outer, new Reader(new byte[] {
                 8, 0, 2, 1, 0, 10, 2, 254, 1,
                 7, 0, 2, 1, 1, 10, 1, 1,
                 10, 0, 2, 1, 2, 10, 4, 0, 44, 8, 1,
@@ -58,7 +56,7 @@ namespace Steit.Test1 {
 
             var multicase = new Multicase();
 
-            State.ReplayAll(ref multicase, new StateReader(new byte[] {
+            State.State.ReplayAll(ref multicase, new Reader(new byte[] {
                 4, 0, 10, 1, 1,
                 9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
             }));

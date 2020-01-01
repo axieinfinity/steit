@@ -1,23 +1,20 @@
 using System;
 
-namespace Steit.Reader {
-    public sealed class StateReader : IReader {
-        public const Byte WIRE_TYPE_VARINT = 0;
-        public const Byte WIRE_TYPE_SIZED = 2;
-
+namespace Steit.Encoding {
+    public sealed class Reader : IReader {
         private IReader reader;
         private int remaining;
 
-        public StateReader(byte[] bytes) : this(new ByteReader(bytes), bytes.Length) {
+        public Reader(byte[] bytes) : this(new Bytes(bytes), bytes.Length) {
         }
 
-        private StateReader(IReader reader, int size) {
+        private Reader(IReader reader, int size) {
             this.reader = reader;
             this.remaining = size;
         }
 
-        public StateReader Nested(int size) {
-            return new StateReader(this, size);
+        public Reader Nested(int size) {
+            return new Reader(this, size);
         }
 
         public bool Eof() {
@@ -57,10 +54,10 @@ namespace Steit.Reader {
             }
         }
 
-        public (UInt16 Tag, Byte WireType) ReadKey() {
+        public (UInt16 Tag, WireType WireType) ReadKey() {
             var key = this.ReadUInt32();
             var tag = (UInt16) (key >> 3);
-            var wireType = (Byte) (key & 7);
+            var wireType = (WireType) (key & 7);
             return (tag, wireType);
         }
 
@@ -73,10 +70,10 @@ namespace Steit.Reader {
             }
         }
 
-        public void SkipWireTyped(Byte wireType) {
+        public void SkipWireTyped(WireType wireType) {
             switch (wireType) {
-                case WIRE_TYPE_VARINT: this.ReadBoolean(); break;
-                case WIRE_TYPE_SIZED: this.Skip((int) this.ReadUInt32()); break;
+                case WireType.Varint: this.ReadBoolean(); break;
+                case WireType.Sized: this.Skip((int) this.ReadUInt32()); break;
                 default: throw new Exception(string.Format("Invalid wire type {0}", wireType));
             }
         }

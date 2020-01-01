@@ -20,8 +20,8 @@ impl CSharpGenerator {
             .writeln("using System;")
             .writeln("using System.Collections.Generic;")
             .newline()
-            .writeln("using Steit;")
-            .writeln("using Steit.Reader;")
+            .writeln("using Steit.Encoding;")
+            .writeln("using Steit.State;")
             .newline()
             .writeln(format!("namespace {} {{", self.namespace))
             .indent();
@@ -56,7 +56,7 @@ impl Generator for CSharpGenerator {
         }
 
         writer
-            .writeln(format!("public sealed class {} : State {{", name))
+            .writeln(format!("public sealed class {} : IState {{", name))
             .indent();
 
         // Declare listener lists
@@ -112,7 +112,7 @@ impl Generator for CSharpGenerator {
         // Support adding listeners
         for field in &fields {
             writer.writeln(format!(
-                "public static int OnUpdate{}(Listener<{}> listener) {{ return Utils.Add({}Listeners, listener); }}",
+                "public static int OnUpdate{}(Listener<{}> listener) {{ return Utilities.Add({}Listeners, listener); }}",
                 field.upper_camel_case_name, field.ty, field.lower_camel_case_name,
             ));
         }
@@ -165,7 +165,7 @@ impl Generator for CSharpGenerator {
 
         writer
             .writeln(format!(
-                "public static {} Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {{",
+                "public static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
                 name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, name));
@@ -183,7 +183,31 @@ impl Generator for CSharpGenerator {
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
-            .writeln("public override State Nested(UInt16 tag) {")
+            .writeln("public Int16 WireType(UInt16 tag) {")
+            .indent_writeln("switch (tag) {")
+            .indent();
+
+        // Return wire types
+        for field in r#struct.fields {
+            if let FieldType::Meta(_) = field.ty {
+                writer.writeln(format!(
+                    "case {}: return (Int16) Encoding.WireType.Sized;",
+                    field.tag,
+                ));
+            } else {
+                writer.writeln(format!(
+                    "case {}: return (Int16) Encoding.WireType.Varint;",
+                    field.tag,
+                ));
+            }
+        }
+
+        writer
+            .writeln("default: return -1;")
+            .outdent_writeln("}")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("public IState Nested(UInt16 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
@@ -202,31 +226,13 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("protected override Int16 WireType(UInt16 tag) {")
-            .indent_writeln("switch (tag) {")
-            .indent();
-
-        // Return wire types
-        for field in r#struct.fields {
-            if let FieldType::Meta(_) = field.ty {
-                writer.writeln(format!(
-                    "case {}: return StateReader.WIRE_TYPE_SIZED;",
-                    field.tag,
-                ));
-            } else {
-                writer.writeln(format!(
-                    "case {}: return StateReader.WIRE_TYPE_VARINT;",
-                    field.tag,
-                ));
-            }
-        }
-
-        writer
-            .writeln("default: return -1;")
-            .outdent_writeln("}")
-            .outdent_writeln("}")
+            .writeln("public bool IsAddSupported() { return false; }")
+            .writeln("public bool IsRemoveSupported() { return false; }")
             .newline()
-            .writeln("protected override void ReplaceAt(UInt16 tag, Byte wireType, StateReader reader, bool shouldNotify) {")
+            .writeln("public void ReplayAdd(Reader reader) { throw new Exception(\"Not supported\"); }")
+            .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
+            .newline()
+            .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
@@ -289,7 +295,7 @@ impl Generator for CSharpGenerator {
         self.generate_file_opening(writer);
 
         writer
-            .writeln(format!("public sealed class {} : EnumState {{", name))
+            .writeln(format!("public sealed class {} : IEnumState {{", name))
             .indent();
 
         // Declare variant tag numbers
@@ -307,7 +313,7 @@ impl Generator for CSharpGenerator {
             .writeln("public Path Path { get; private set; }")
             .newline()
             .writeln("public UInt16 Variant { get; private set; }")
-            .writeln("public State Value { get; private set; }")
+            .writeln("public IState Value { get; private set; }")
             .newline();
 
         // Return variant values
@@ -329,17 +335,17 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .newline()
             .writeln(format!(
-                "public delegate void Listener(State newValue, UInt16 newVariant, State oldValue, UInt16 oldVariant, {} container);",
+                "public delegate void Listener(IState newValue, UInt16 newVariant, IState oldValue, UInt16 oldVariant, {} container);",
                 name,
             ))
             .newline()
-            .writeln("public static int OnUpdate(Listener listener) { return Utils.Add(listeners, listener); }")
+            .writeln("public static int OnUpdate(Listener listener) { return Utilities.Add(listeners, listener); }")
             .writeln("public static void RemoveListener(Listener listener) { listeners.Remove(listener); }")
             .writeln("public static void RemoveListenerAt(int index) { listeners.RemoveAt(index); }")
             .writeln("public static void ClearListeners() { listeners.Clear(); }")
             .newline()
             .writeln(format!(
-                "public static {} Deserialize(StateReader reader, Path path = null, bool shouldNotify = false) {{",
+                "public static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
                 name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, name))
@@ -350,18 +356,14 @@ impl Generator for CSharpGenerator {
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
-            .writeln("public override State Nested(UInt16 tag) {")
-            .indent_writeln("return tag == this.Variant ? this.Value : null;")
-            .outdent_writeln("}")
-            .newline()
-            .writeln("protected override Int16 WireType(UInt16 tag) {")
+            .writeln("public Int16 WireType(UInt16 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
         // Return wire types
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "case {}: return StateReader.WIRE_TYPE_SIZED;",
+                "case {}: return (Int16) Encoding.WireType.Sized;",
                 variant.tag
             ));
         }
@@ -371,7 +373,17 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("protected override void ReplaceAt(UInt16 tag, Byte wireType, StateReader reader, bool shouldNotify) {")
+            .writeln("public IState Nested(UInt16 tag) {")
+            .indent_writeln("return tag == this.Variant ? this.Value : null;")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("public bool IsAddSupported() { return false; }")
+            .writeln("public bool IsRemoveSupported() { return false; }")
+            .newline()
+            .writeln("public void ReplayAdd(Reader reader) { throw new Exception(\"Not supported\"); }")
+            .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
+            .newline()
+            .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
@@ -388,7 +400,7 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("private void NotifyAndUpdate(UInt16 newVariant, State newValue, bool shouldNotify) {")
+            .writeln("private void NotifyAndUpdate(UInt16 newVariant, IState newValue, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")
             .indent_writeln("foreach (var listener in listeners) {")
             .indent_writeln("listener(newValue, newVariant, this.Value, this.Variant, this);")

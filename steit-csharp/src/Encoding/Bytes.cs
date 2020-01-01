@@ -1,11 +1,11 @@
 using System;
 
-namespace Steit.Reader {
-    public sealed class ByteReader : IReader {
+namespace Steit.Encoding {
+    public sealed class Bytes : IReader {
         private readonly byte[] bytes;
         private int index;
 
-        public ByteReader(byte[] bytes) {
+        public Bytes(byte[] bytes) {
             this.bytes = bytes;
             this.index = 0;
         }

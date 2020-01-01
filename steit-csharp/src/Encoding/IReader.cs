@@ -1,6 +1,4 @@
-using System;
-
-namespace Steit.Reader {
+namespace Steit.Encoding {
     public interface IReader {
         bool Eof();
         byte Read();

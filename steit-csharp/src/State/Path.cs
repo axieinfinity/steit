@@ -1,6 +1,6 @@
 using System;
 
-namespace Steit {
+namespace Steit.State {
     public sealed class Path {
         public static Path Root = new Path(null, 0);
 
