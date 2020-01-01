@@ -16,14 +16,16 @@ namespace Steit.State {
 
             var path = new List<UInt16>();
 
-            if (reader.ReadKey().Tag == 0) {
+            if (!reader.Eof() && reader.ReadKey().Tag == 0) {
                 var pathLength = (int) reader.ReadUInt32();
 
                 while (pathLength-- > 0) {
                     path.Add(reader.ReadUInt16());
                 }
 
-                reader.ReadKey();
+                if (!reader.Eof()) {
+                    reader.ReadKey();
+                }
             }
 
             if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
