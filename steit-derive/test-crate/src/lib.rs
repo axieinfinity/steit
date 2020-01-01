@@ -5,7 +5,9 @@ mod tests {
     use steit::{
         gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
-        steitize, Runtime,
+        steitize,
+        types::List,
+        Runtime,
     };
 
     #[steitize(State)]
@@ -67,6 +69,7 @@ mod tests {
         });
 
         outer.inner.set_foo(160);
+        outer.set_inner_with(Inner::new);
 
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
@@ -74,5 +77,35 @@ mod tests {
         let mut multicase = Multicase::new(runtime);
 
         multicase.set_second_case_foo(68);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut list = List::new(runtime);
+
+        list.push_with(|runtime| {
+            let mut inner = Inner::new(runtime);
+            inner.set_foo(6);
+            inner
+        });
+
+        list.push_with(|runtime| {
+            let mut inner = Inner::new(runtime);
+            inner.set_foo(77).set_bar(true);
+            inner
+        });
+
+        list.push_with(Inner::new);
+        list.get_mut(1).unwrap().set_foo(68);
+        list.remove(0);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut list = List::new(runtime);
+        list.push(10i8);
+        list.push(11);
+        list.push(0);
+        list.remove(1);
     }
 }
