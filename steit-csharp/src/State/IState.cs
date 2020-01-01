@@ -4,6 +4,8 @@ using Steit.Encoding;
 
 namespace Steit.State {
     public interface IState {
+        Path Path { get; }
+
         Int16 WireType(UInt16 tag);
         IState Nested(UInt16 tag);
 
