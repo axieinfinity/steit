@@ -26,13 +26,11 @@ namespace Steit.State {
                 reader.ReadKey();
             }
 
-            if (path.Count <= 0) { // Target is the root state
+            if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
                 var type = typeof(T);
                 var method = type.GetMethod("Deserialize");
                 var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
-
                 root = (T) method.Invoke(null, arguments);
-
                 return;
             }
 
