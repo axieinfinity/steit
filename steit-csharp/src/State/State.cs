@@ -50,7 +50,7 @@ namespace Steit.State {
                 path.RemoveAt(path.Count - 1);
             }
 
-            IState state = root.NestedDeep(path);
+            IState state = root.Nested(path);
 
             if (state == null) {
                 reader.Exhaust();
@@ -72,7 +72,29 @@ namespace Steit.State {
             }
         }
 
-        public static IState NestedDeep(this IState state, IList<UInt16> path) {
+        public static T ReadNested<T>(this IState state, Reader reader, UInt16 tag) {
+            var type = typeof(T);
+
+            switch (type.FullName) {
+                case "System.Byte": return (T) (object) reader.ReadUInt8();
+                case "System.UInt16": return (T) (object) reader.ReadUInt16();
+                case "System.UInt32": return (T) (object) reader.ReadUInt32();
+                case "System.UInt64": return (T) (object) reader.ReadUInt64();
+                case "System.SByte": return (T) (object) reader.ReadInt8();
+                case "System.Int16": return (T) (object) reader.ReadInt16();
+                case "System.Int32": return (T) (object) reader.ReadInt32();
+                case "System.Int64": return (T) (object) reader.ReadInt64();
+                case "System.Boolean": return (T) (object) reader.ReadBoolean();
+
+                default:
+                    var method = type.GetMethod("Deserialize");
+                    var path = state.Path.Nested(tag);
+                    var arguments = new object[] { reader, path, /* shouldNotify: */ true };
+                    return (T) method.Invoke(null, arguments);
+            }
+        }
+
+        public static IState Nested(this IState state, IList<UInt16> path) {
             foreach (var tag in path) {
                 if (state != null) {
                     state = state.Nested(tag);
