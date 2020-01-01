@@ -39,7 +39,11 @@ namespace Steit.Test1 {
 
         public static Inner Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var inner = new Inner(path);
-            inner.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
+
+            if (!reader.Eof()) {
+                inner.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
+            }
+
             return inner;
         }
 

@@ -173,10 +173,15 @@ impl Generator for CSharpGenerator {
         if is_variant {
             writer.writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name));
         } else {
-            writer.writeln(format!(
-                "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);",
-                var_name,
-            ));
+            writer
+                .newline()
+                .writeln("if (!reader.Eof()) {")
+                .indent_writeln(format!(
+                    "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);",
+                    var_name,
+                ))
+                .outdent_writeln("}")
+                .newline();
         }
 
         writer

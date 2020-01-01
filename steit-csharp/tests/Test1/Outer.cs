@@ -47,7 +47,11 @@ namespace Steit.Test1 {
 
         public static Outer Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var outer = new Outer(path);
-            outer.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
+
+            if (!reader.Eof()) {
+                outer.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
+            }
+
             return outer;
         }
 
