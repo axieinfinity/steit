@@ -30,9 +30,16 @@ namespace Steit.State {
 
             if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
                 var type = typeof(T);
-                var method = type.GetMethod("Deserialize");
-                var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
-                root = (T) method.Invoke(null, arguments);
+
+                if (!reader.Eof()) {
+                    var method = type.GetMethod("Deserialize");
+                    var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
+                    root = (T) method.Invoke(null, arguments);
+                } else {
+                    var arguments = new object[] { /* path: */ null };
+                    root = (T) Activator.CreateInstance(type, arguments);
+                }
+
                 return;
             }
 
