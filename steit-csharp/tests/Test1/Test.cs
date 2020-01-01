@@ -2,6 +2,7 @@ using System;
 
 using Steit.Collections;
 using Steit.Encoding;
+using Steit.State;
 
 namespace Steit.Test1 {
     public sealed class Test {
@@ -28,7 +29,7 @@ namespace Steit.Test1 {
 
             var outer = new Outer();
 
-            State.State.ReplayAll(ref outer, new Reader(new byte[] {
+            Replayer.Replay(ref outer, new Reader(new byte[] {
                 8, 0, 2, 1, 0, 10, 2, 254, 1,
                 7, 0, 2, 1, 1, 10, 1, 1,
                 10, 0, 2, 1, 2, 10, 4, 0, 44, 8, 1,
@@ -61,7 +62,7 @@ namespace Steit.Test1 {
 
             var multicase = new Multicase();
 
-            State.State.ReplayAll(ref multicase, new Reader(new byte[] {
+            Replayer.Replay(ref multicase, new Reader(new byte[] {
                 4, 0, 10, 1, 1,
                 9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
             }));
@@ -80,7 +81,7 @@ namespace Steit.Test1 {
                 Console.WriteLine("List<Inner>, remove #{0}: {1}", tag, InnerToString(item));
             });
 
-            State.State.ReplayAll(ref list1, new Reader(new byte[] {
+            Replayer.Replay(ref list1, new Reader(new byte[] {
                 5, 1, 10, 2, 0, 12,
                 8, 1, 10, 5, 0, 154, 1, 8, 1,
                 1, 1,
@@ -103,7 +104,7 @@ namespace Steit.Test1 {
                 Console.WriteLine("List<Inner>, remove #{0}: {1}", tag, item);
             });
 
-            State.State.ReplayAll(ref list2, new Reader(new byte[] {
+            Replayer.Replay(ref list2, new Reader(new byte[] {
                 4, 1, 10, 1, 20,
                 4, 1, 10, 1, 22,
                 4, 1, 10, 1, 0,
