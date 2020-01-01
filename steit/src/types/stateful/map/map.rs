@@ -51,7 +51,9 @@ impl<K: MapKey, V: State> Map<K, V> {
     #[inline]
     pub fn insert_with(&mut self, key: K, f: impl FnOnce(Runtime) -> V) {
         let tag = key.as_tag();
+        self.runtime.pause_logger();
         let value = f(self.runtime.nested(tag));
+        self.runtime.unpause_logger();
         self.insert(key, value);
     }
 

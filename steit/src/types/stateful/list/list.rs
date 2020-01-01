@@ -58,7 +58,9 @@ impl<T: State> List<T> {
             "`List` indices must be within `u16`"
         );
 
+        self.runtime.pause_logger();
         let item = f(self.runtime.nested(tag as u16));
+        self.runtime.unpause_logger();
         self.push(item);
     }
 
