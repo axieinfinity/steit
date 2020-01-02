@@ -20,6 +20,7 @@ impl CSharpGenerator {
             .writeln("using System;")
             .writeln("using System.Collections.Generic;")
             .newline()
+            .writeln("using Steit.Collections;")
             .writeln("using Steit.Encoding;")
             .writeln("using Steit.State;")
             .newline()
