@@ -246,9 +246,10 @@ impl Generator for CSharpGenerator {
         for field in &fields {
             if let FieldType::Meta(_) = field.raw.ty {
                 writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify({1}.Deserialize(reader, this.Path.Nested({0})), this.{1}, shouldNotify, {2}Listeners); break;",
+                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader, this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
                     field.raw.tag,
                     field.upper_camel_case_name,
+                    get_type(field.raw.ty),
                     field.lower_camel_case_name,
                 ));
             } else {
