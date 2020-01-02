@@ -49,6 +49,12 @@ mod tests {
         },
     }
 
+    #[steitize(State)]
+    struct Hello {
+        #[steit(tag = 0)]
+        numbers: List<i32>,
+    }
+
     #[test]
     fn test() {
         let out_dir = env::var("CSHARP_OUT_DIR").unwrap();
@@ -56,6 +62,7 @@ mod tests {
 
         generator.generate::<Outer>().unwrap();
         generator.generate::<Multicase>().unwrap();
+        generator.generate::<Hello>().unwrap();
 
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
