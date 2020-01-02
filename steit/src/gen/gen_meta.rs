@@ -2,8 +2,8 @@
 pub enum Meta {
     Struct(&'static Struct),
     Enum(&'static Enum),
-    List(FieldType),
-    Map(FieldType),
+    List(&'static FieldType),
+    Map(&'static FieldType),
 }
 
 #[derive(Debug)]
