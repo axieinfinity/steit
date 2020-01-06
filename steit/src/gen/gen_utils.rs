@@ -18,6 +18,7 @@ pub fn collect_states(root: &'static Meta, states: &mut HashMap<&'static str, St
 
         Meta::List(field_type) => collect_states_from_field(field_type, states),
         Meta::Map(field_type) => collect_states_from_field(field_type, states),
+        Meta::Rc(field_type) => collect_states_from_field(field_type, states),
     }
 }
 

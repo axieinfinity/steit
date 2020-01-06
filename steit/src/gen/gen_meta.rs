@@ -4,6 +4,7 @@ pub enum Meta {
     Enum(&'static Enum),
     List(&'static FieldType),
     Map(&'static FieldType),
+    Rc(&'static FieldType),
 }
 
 #[derive(Debug)]

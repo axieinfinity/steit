@@ -481,6 +481,7 @@ fn get_type(ty: &'static FieldType) -> String {
             Meta::Enum(Enum { name, .. }) => name.to_string(),
             Meta::List(field_type) => format!("StateList<{}>", get_type(field_type)),
             Meta::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
+            Meta::Rc(field_type) => format!("StatePointer<{}>", get_type(field_type)),
         },
     }
 }
