@@ -6,11 +6,11 @@ use crate::{
     Eof, Merge, Serialize,
 };
 
-impl<T: Varint> WireType for Vec<T> {
+impl<T: WireType> WireType for Vec<T> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<T: Varint> Serialize for Vec<T> {
+impl<T: Serialize> Serialize for Vec<T> {
     #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
