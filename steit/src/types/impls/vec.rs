@@ -1,16 +1,15 @@
 use std::io;
 
 use crate::{
-    types::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Eof, Merge, Serialize,
+    Deserialize, Eof, Merge, Serialize,
 };
 
-impl<T: Varint> WireType for Vec<T> {
+impl<T: WireType> WireType for Vec<T> {
     const WIRE_TYPE: u8 = WIRE_TYPE_SIZED;
 }
 
-impl<T: Varint> Serialize for Vec<T> {
+impl<T: Serialize> Serialize for Vec<T> {
     #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
@@ -32,7 +31,7 @@ impl<T: Varint> Serialize for Vec<T> {
     }
 }
 
-impl<T: Varint> Merge for Vec<T> {
+impl<T: Deserialize> Merge for Vec<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
