@@ -1,9 +1,8 @@
 use std::io;
 
 use crate::{
-    types::Varint,
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    Eof, Merge, Serialize,
+    Deserialize, Eof, Merge, Serialize,
 };
 
 impl<T: WireType> WireType for Vec<T> {
@@ -32,7 +31,7 @@ impl<T: Serialize> Serialize for Vec<T> {
     }
 }
 
-impl<T: Varint> Merge for Vec<T> {
+impl<T: Deserialize> Merge for Vec<T> {
     #[inline]
     fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
