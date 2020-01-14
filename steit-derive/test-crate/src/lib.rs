@@ -56,15 +56,37 @@ mod tests {
     }
 
     #[steitize(State)]
-    pub struct Action {
+    pub enum Action {
         #[steit(tag = 0)]
-        inner: ActionInner,
+        Raw {
+            #[steit(tag = 0)]
+            log_entries: List<u8>,
+        },
+        #[steit(tag = 1)]
+        Attack {
+            #[steit(tag = 0)]
+            attacker: u8,
+            #[steit(tag = 1)]
+            defender: u8,
+            #[steit(tag = 2)]
+            hits: List<Hit>,
+        },
     }
 
     #[steitize(State)]
-    pub struct ActionInner {
+    pub struct Hit {
         #[steit(tag = 0)]
-        action: Box<Action>,
+        before_attacking: Box<Action>,
+        #[steit(tag = 1)]
+        before_damaging: Box<Action>,
+        #[steit(tag = 2)]
+        damaging: Box<Action>,
+        #[steit(tag = 3)]
+        after_damaging: Box<Action>,
+        #[steit(tag = 4)]
+        after_attacking: Box<Action>,
+        #[steit(tag = 5)]
+        dummy: i32,
     }
 
     #[test]
@@ -127,5 +149,29 @@ mod tests {
         list.push(11);
         list.push(0);
         list.remove(1);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        println!("ACTION!");
+
+        let mut action = Action::new(runtime);
+
+        action.set_attack_attacker(1);
+        action.set_attack_defender(2);
+
+        action.set_attack_hits_with(|runtime| {
+            let mut hits = List::new(runtime);
+
+            for dummy in 6..=9 {
+                hits.push_with(|runtime| {
+                    let mut hit = Hit::new(runtime);
+                    hit.set_dummy(dummy);
+                    hit
+                })
+            }
+
+            hits
+        });
     }
 }

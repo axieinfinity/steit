@@ -110,10 +110,61 @@ namespace Steit.Test1 {
                 4, 1, 10, 1, 0,
                 4, 2, 2, 1, 1,
             }));
+
+            Action.OnUpdate((newValue, newVariant, oldValue, oldVariant, container) => {
+                Console.WriteLine("Action: variant {0} ({1}) => variant {2} ({3}", oldVariant, oldValue, newVariant, newValue);
+            });
+
+            Action.Attack.OnUpdateAttacker((newValue, oldValue, container) => {
+                Console.WriteLine("Action / Attack / Attacker: {0} => {1}", oldValue, newValue);
+            });
+
+            Action.Attack.OnUpdateDefender((newValue, oldValue, container) => {
+                Console.WriteLine("Action / Attack / Defender: {0} => {1}", oldValue, newValue);
+            });
+
+            Action.Attack.OnUpdateHits((newValue, oldValue, container) => {
+                Console.WriteLine("Action / Attack / Hits:");
+
+                if (oldValue.Count > 0) {
+                    Console.WriteLine("Old Hits:");
+                    foreach (var hit in oldValue) Console.WriteLine(HitToString(hit));
+                } else {
+                    Console.WriteLine("Old Hits:\n<empty>");
+                }
+
+                if (newValue.Count > 0) {
+                    Console.WriteLine("New Hits:");
+                    foreach (var hit in newValue) Console.WriteLine(HitToString(hit));
+                } else {
+                    Console.WriteLine("New Hits:\n<empty>");
+                }
+            });
+
+            var action = new Action();
+
+            Replayer.Replay(ref action, new Reader(new byte[] {
+                // Set variant from to `Action::Attack`
+                4, 0, 10, 1, 1,
+                // Set attacker to 1
+                8, 0, 2, 2, 1, 0, 10, 1, 1,
+                // Set defender to 2
+                8, 0, 2, 2, 1, 1, 10, 1, 2,
+                // Add 4 hits with dummy values from 6 to 9, inclusive
+                83, 0, 2, 2, 1, 2, 10, 76,
+                    2, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 12,
+                    10, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 14,
+                    18, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 16,
+                    26, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 18,
+            }));
         }
 
         private static String InnerToString(Inner inner) {
             return string.Format("{{ Foo: {0}, Bar: {1} }}", inner.Foo, inner.Bar);
+        }
+
+        private static String HitToString(Hit hit) {
+            return string.Format("{{ Dummy: {0} }}", hit.Dummy);
         }
     }
 }
