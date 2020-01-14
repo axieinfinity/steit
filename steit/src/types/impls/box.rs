@@ -1,7 +1,7 @@
 use std::{boxed::Box, io};
 
 use crate::{
-    gen::{HasMeta, Meta},
+    gen::{FieldType, IsFieldType},
     wire_type::WireType,
     Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
@@ -61,8 +61,8 @@ impl<T: State> State for Box<T> {
     }
 }
 
-impl<T: HasMeta> HasMeta for Box<T> {
-    const META: &'static Meta = T::META;
+impl<T: IsFieldType> IsFieldType for Box<T> {
+    const FIELD_TYPE: &'static FieldType = T::FIELD_TYPE_REF;
 }
 
 #[cfg(test)]

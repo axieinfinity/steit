@@ -93,7 +93,8 @@ impl Generator for CSharpGenerator {
 
         // Initiate nested states
         for field in &fields {
-            if let FieldType::Meta(_) = field.raw.ty {
+            if let FieldType::Primitive(_) = field.raw.ty {
+            } else {
                 writer.writeln(format!(
                     "this.{} = new {}(this.Path.Nested({}));",
                     field.upper_camel_case_name, field.ty, field.raw.tag,
@@ -195,14 +196,14 @@ impl Generator for CSharpGenerator {
 
         // Return wire types
         for field in r#struct.fields {
-            if let FieldType::Meta(_) = field.ty {
+            if let FieldType::Primitive(_) = field.ty {
                 writer.writeln(format!(
-                    "case {}: return (Int16) Encoding.WireType.Sized;",
+                    "case {}: return (Int16) Encoding.WireType.Varint;",
                     field.tag,
                 ));
             } else {
                 writer.writeln(format!(
-                    "case {}: return (Int16) Encoding.WireType.Varint;",
+                    "case {}: return (Int16) Encoding.WireType.Sized;",
                     field.tag,
                 ));
             }
@@ -219,7 +220,8 @@ impl Generator for CSharpGenerator {
 
         // Return nested states
         for field in &fields {
-            if let FieldType::Meta(_) = field.raw.ty {
+            if let FieldType::Primitive(_) = field.raw.ty {
+            } else {
                 writer.writeln(format!(
                     "case {}: return this.{};",
                     field.raw.tag, field.upper_camel_case_name,
@@ -244,21 +246,21 @@ impl Generator for CSharpGenerator {
 
         // Replace fields and notify listeners
         for field in &fields {
-            if let FieldType::Meta(_) = field.raw.ty {
-                writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader, this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
-                    field.raw.tag,
-                    field.upper_camel_case_name,
-                    get_type(field.raw.ty),
-                    field.lower_camel_case_name,
-                ));
-            } else {
+            if let FieldType::Primitive(_) = field.raw.ty {
                 writer.writeln(format!(
                     "case {0}: this.{1} = this.Notify(reader.Read{3}(), this.{1}, shouldNotify, {2}Listeners); break;",
                     field.raw.tag,
                     field.upper_camel_case_name,
                     field.lower_camel_case_name,
                     field.ty,
+                ));
+            } else {
+                writer.writeln(format!(
+                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader, this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
+                    field.raw.tag,
+                    field.upper_camel_case_name,
+                    get_type(field.raw.ty),
+                    field.lower_camel_case_name,
                 ));
             }
         }
@@ -479,8 +481,11 @@ fn get_type(ty: &'static FieldType) -> String {
         FieldType::Meta(meta) => match meta {
             Meta::Struct(Struct { name, .. }) => name.to_string(),
             Meta::Enum(Enum { name, .. }) => name.to_string(),
-            Meta::List(field_type) => format!("StateList<{}>", get_type(field_type)),
-            Meta::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
         },
+
+        FieldType::MetaRef(name) => name.to_string(),
+
+        FieldType::List(field_type) => format!("StateList<{}>", get_type(field_type)),
+        FieldType::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
     }
 }

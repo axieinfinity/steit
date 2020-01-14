@@ -503,6 +503,18 @@ impl<'a> Enum<'a> {
                     name: #name,
                     variants: &[#(#variants,)*],
                 });
+
+                const META_NAME: &'static str = #name;
+            },
+        )
+    }
+
+    fn impl_field_type(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "IsFieldType",
+            quote! {
+                const FIELD_TYPE: &'static FieldType = &FieldType::Meta(Self::META);
+                const FIELD_TYPE_REF: &'static FieldType = &FieldType::MetaRef(Self::META_NAME);
             },
         )
     }
@@ -542,6 +554,7 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.meta() {
             tokens.extend(self.impl_meta());
+            tokens.extend(self.impl_field_type());
         }
     }
 }

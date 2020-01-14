@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::{
-    gen::{HasFieldType, HasMeta, Meta},
+    gen::{FieldType, IsFieldType},
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
@@ -256,8 +256,8 @@ impl<T: State> State for List<T> {
     }
 }
 
-impl<T: State + HasFieldType> HasMeta for List<T> {
-    const META: &'static Meta = &Meta::List(T::FIELD_TYPE);
+impl<T: State + IsFieldType> IsFieldType for List<T> {
+    const FIELD_TYPE: &'static FieldType = &FieldType::List(T::FIELD_TYPE);
 }
 
 #[cfg(test)]

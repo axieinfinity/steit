@@ -507,11 +507,23 @@ impl<'a> Struct<'a> {
 
     fn impl_meta(&self) -> TokenStream {
         let meta = self.meta();
+        let name = self.r#impl.name().to_token_stream().to_string();
 
         self.r#impl.impl_for(
             "HasMeta",
             quote! {
                 const META: &'static Meta = &Meta::Struct(#meta);
+                const META_NAME: &'static str = #name;
+            },
+        )
+    }
+
+    fn impl_field_type(&self) -> TokenStream {
+        self.r#impl.impl_for(
+            "IsFieldType",
+            quote! {
+                const FIELD_TYPE: &'static FieldType = &FieldType::Meta(Self::META);
+                const FIELD_TYPE_REF: &'static FieldType = &FieldType::MetaRef(Self::META_NAME);
             },
         )
     }
@@ -552,6 +564,7 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.meta() {
             tokens.extend(self.impl_meta());
+            tokens.extend(self.impl_field_type());
         }
     }
 }
