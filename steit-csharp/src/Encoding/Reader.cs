@@ -30,12 +30,12 @@ namespace Steit.Encoding {
             }
         }
 
-        public Byte ReadUInt8() { return (Byte) this.ReadUnsignedVarint(); }
+        public Byte ReadByte() { return (Byte) this.ReadUnsignedVarint(); }
         public UInt16 ReadUInt16() { return (UInt16) this.ReadUnsignedVarint(); }
         public UInt32 ReadUInt32() { return (UInt32) this.ReadUnsignedVarint(); }
         public UInt64 ReadUInt64() { return this.ReadUnsignedVarint(); }
 
-        public SByte ReadInt8() { return (SByte) this.ReadSignedVarint(); }
+        public SByte ReadSByte() { return (SByte) this.ReadSignedVarint(); }
         public Int16 ReadInt16() { return (Int16) this.ReadSignedVarint(); }
         public Int32 ReadInt32() { return (Int32) this.ReadSignedVarint(); }
         public Int64 ReadInt64() { return this.ReadSignedVarint(); }
