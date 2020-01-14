@@ -229,7 +229,7 @@ impl<'a> Field<'a> {
                 quote!(&FieldType::Primitive(#type_name))
             }
 
-            _ => quote!(&FieldType::Meta(<#ty as HasMeta>::META)),
+            _ => quote!(<#ty as IsFieldType>::FIELD_TYPE),
         };
 
         let tag = self.tag();

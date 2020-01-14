@@ -1,32 +1,38 @@
 use std::collections::HashMap;
 
-use super::gen_meta::{FieldType, Meta, State};
+use super::gen_meta::{FieldType, Meta};
 
-pub fn collect_states(root: &'static Meta, states: &mut HashMap<&'static str, State>) {
+pub fn collect_meta(root: &'static Meta, meta_list: &mut HashMap<&'static str, Meta>) {
     match root {
         Meta::Struct(r#struct) => {
-            states.insert(r#struct.name, State::Struct(r#struct));
+            meta_list.insert(r#struct.name, Meta::Struct(r#struct));
 
             for field in r#struct.fields {
-                collect_states_from_field(field.ty, states);
+                collect_meta_from_field(field.ty, meta_list);
             }
         }
 
         Meta::Enum(r#enum) => {
-            states.insert(r#enum.name, State::Enum(r#enum.clone()));
-        }
+            meta_list.insert(r#enum.name, Meta::Enum(r#enum.clone()));
 
-        Meta::List(field_type) => collect_states_from_field(field_type, states),
-        Meta::Map(field_type) => collect_states_from_field(field_type, states),
+            for variant in r#enum.variants {
+                for field in variant.ty.fields {
+                    collect_meta_from_field(field.ty, meta_list);
+                }
+            }
+        }
     }
 }
 
-pub fn collect_states_from_field(
+fn collect_meta_from_field(
     field_type: &'static FieldType,
-    states: &mut HashMap<&'static str, State>,
+    meta_list: &mut HashMap<&'static str, Meta>,
 ) {
     match field_type {
         FieldType::Primitive(_) => {}
-        FieldType::Meta(meta) => collect_states(meta, states),
+        FieldType::Meta(meta) => collect_meta(meta, meta_list),
+        FieldType::MetaRef(_) => {}
+        FieldType::List(field_type) => collect_meta_from_field(field_type, meta_list),
+        FieldType::Map(field_type) => collect_meta_from_field(field_type, meta_list),
     }
 }

@@ -1,4 +1,4 @@
 mod boolean;
-mod boxed;
+mod r#box;
 mod option;
 mod vec;
