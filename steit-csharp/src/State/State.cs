@@ -9,11 +9,11 @@ namespace Steit.State {
             var type = typeof(T);
 
             switch (type.FullName) {
-                case "System.Byte": return (T) (object) reader.ReadUInt8();
+                case "System.Byte": return (T) (object) reader.ReadByte();
                 case "System.UInt16": return (T) (object) reader.ReadUInt16();
                 case "System.UInt32": return (T) (object) reader.ReadUInt32();
                 case "System.UInt64": return (T) (object) reader.ReadUInt64();
-                case "System.SByte": return (T) (object) reader.ReadInt8();
+                case "System.SByte": return (T) (object) reader.ReadSByte();
                 case "System.Int16": return (T) (object) reader.ReadInt16();
                 case "System.Int32": return (T) (object) reader.ReadInt32();
                 case "System.Int64": return (T) (object) reader.ReadInt64();

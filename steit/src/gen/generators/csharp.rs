@@ -464,11 +464,11 @@ impl CSharpField {
 fn get_type(ty: &'static FieldType) -> String {
     match ty {
         FieldType::Primitive(name) => match *name {
-            "u8" => "UInt8".to_owned(),
+            "u8" => "Byte".to_owned(),
             "u16" => "UInt16".to_owned(),
             "u32" => "UInt32".to_owned(),
             "u64" => "UInt64".to_owned(),
-            "i8" => "Int8".to_owned(),
+            "i8" => "SByte".to_owned(),
             "i16" => "Int16".to_owned(),
             "i32" => "Int32".to_owned(),
             "i64" => "Int64".to_owned(),
