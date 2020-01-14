@@ -1,9 +1,9 @@
 use std::io::{self, Read};
 
 use crate::{
-    types::Varint,
+    impl_state_for_plain,
     wire_type::{WireType, WIRE_TYPE_VARINT},
-    Eof, Merge, Serialize,
+    Eof, Merge, Serialize, State,
 };
 
 impl WireType for bool {
@@ -50,7 +50,9 @@ impl Merge for bool {
     }
 }
 
-impl Varint for bool {}
+impl State for bool {
+    impl_state_for_plain!("bool");
+}
 
 #[cfg(test)]
 mod tests {

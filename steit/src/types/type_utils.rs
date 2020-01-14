@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! impl_state_for_plain {
-    ($name:literal) => {
+    ($name:expr) => {
         fn with_runtime(_runtime: $crate::Runtime) -> Self {
             Self::default()
         }

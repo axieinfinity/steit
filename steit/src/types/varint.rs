@@ -6,8 +6,6 @@ use crate::{
     Deserialize, Eof, Merge, Serialize, State,
 };
 
-pub trait Varint: Serialize + Deserialize {}
-
 macro_rules! impl_unsigned_varint {
     (u64) => (impl_unsigned_varint!(@impl u64, size_64, i64););
     ($t:ty) => (impl_unsigned_varint!(@impl $t, size_32, i32););
@@ -70,7 +68,9 @@ macro_rules! impl_unsigned_varint {
             }
         }
 
-        impl Varint for $t {}
+        impl State for $t {
+            impl_state_for_plain!(stringify!($t));
+        }
     };
 }
 
@@ -116,7 +116,9 @@ macro_rules! impl_signed_varint {
             }
         }
 
-        impl Varint for $t {}
+        impl State for $t {
+            impl_state_for_plain!(stringify!($t));
+        }
     };
 
     // Reference: https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
@@ -133,10 +135,6 @@ impl_signed_varint!(i8, u8);
 impl_signed_varint!(i16, u16);
 impl_signed_varint!(i32, u32);
 impl_signed_varint!(i64, u64);
-
-impl<T: Varint> State for T {
-    impl_state_for_plain!("varint");
-}
 
 /// Reference: https://github.com/protocolbuffers/protobuf/blob/342a2d6/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L727-L741
 #[inline]
