@@ -55,6 +55,18 @@ mod tests {
         numbers: List<i32>,
     }
 
+    #[steitize(State)]
+    pub struct Action {
+        #[steit(tag = 0)]
+        inner: ActionInner,
+    }
+
+    #[steitize(State)]
+    pub struct ActionInner {
+        #[steit(tag = 0)]
+        action: Box<Action>,
+    }
+
     #[test]
     fn test() {
         let out_dir = env::var("CSHARP_OUT_DIR").unwrap();
@@ -63,6 +75,7 @@ mod tests {
         generator.generate::<Outer>().unwrap();
         generator.generate::<Multicase>().unwrap();
         generator.generate::<Hello>().unwrap();
+        generator.generate::<Action>().unwrap();
 
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
@@ -114,17 +127,5 @@ mod tests {
         list.push(11);
         list.push(0);
         list.remove(1);
-    }
-
-    #[steitize(State)]
-    pub struct Action {
-        #[steit(tag = 0)]
-        inner: ActionInner,
-    }
-
-    #[steitize(State)]
-    pub struct ActionInner {
-        #[steit(tag = 0)]
-        action: Box<Action>,
     }
 }
