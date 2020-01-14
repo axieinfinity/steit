@@ -44,11 +44,10 @@ namespace Steit.Collections {
         public delegate void RemoveListener(T item, UInt16 tag, StateList<T> container);
 
         public static StateList<T> Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
-            reader = reader.Nested((int) reader.ReadUInt32());
             var list = new StateList<T>(path);
 
             while (!reader.Eof()) {
-                list.Add(reader, shouldNotify);
+                list.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
             }
 
             return list;
@@ -109,7 +108,9 @@ namespace Steit.Collections {
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify = true) {
             if (tag >= this.Items.Count) {
-                return;
+                for (int i = this.Items.Count; i <= tag; i++) {
+                    this.Items.Add(default(T));
+                }
             }
 
             var oldItem = this.Items[tag];
