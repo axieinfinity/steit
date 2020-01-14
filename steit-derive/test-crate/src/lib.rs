@@ -115,4 +115,16 @@ mod tests {
         list.push(0);
         list.remove(1);
     }
+
+    #[steitize(State)]
+    pub struct Action {
+        #[steit(tag = 0)]
+        inner: ActionInner,
+    }
+
+    #[steitize(State)]
+    pub struct ActionInner {
+        #[steit(tag = 0)]
+        action: Box<Action>,
+    }
 }
