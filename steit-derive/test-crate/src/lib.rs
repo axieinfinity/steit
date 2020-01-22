@@ -92,7 +92,7 @@ mod tests {
     #[test]
     fn test() {
         let out_dir = env::var("CSHARP_OUT_DIR").unwrap();
-        let generator = CSharpGenerator::new("Steit.Test1", out_dir);
+        let generator = CSharpGenerator::new("Test1", out_dir);
 
         generator.generate::<Outer>().unwrap();
         generator.generate::<Multicase>().unwrap();

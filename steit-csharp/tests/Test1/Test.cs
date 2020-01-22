@@ -4,7 +4,7 @@ using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
 
-namespace Steit.Test1 {
+namespace Test1 {
     public sealed class Test {
         public static void Main(string[] args) {
             Outer.OnUpdateFoo((newValue, oldValue, container) => {

@@ -6,7 +6,7 @@ using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
 
-namespace Steit.Test1 {
+namespace Test1 {
     public sealed class Outer : IState {
         private static IList<Listener<Int32>> fooListeners = new List<Listener<Int32>>();
         private static IList<Listener<Boolean>> barListeners = new List<Listener<Boolean>>();

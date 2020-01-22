@@ -6,7 +6,7 @@ using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
 
-namespace Steit.Test1 {
+namespace Test1 {
     public sealed class Hit : IState {
         private static IList<Listener<Action>> beforeAttackingListeners = new List<Listener<Action>>();
         private static IList<Listener<Action>> beforeDamagingListeners = new List<Listener<Action>>();

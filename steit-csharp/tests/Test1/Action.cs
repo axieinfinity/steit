@@ -6,7 +6,7 @@ using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
 
-namespace Steit.Test1 {
+namespace Test1 {
     public sealed class Action : IEnumState {
         public static UInt16 RAW_VARIANT = 0;
         public static UInt16 ATTACK_VARIANT = 1;
@@ -58,7 +58,7 @@ namespace Steit.Test1 {
         public void ReplayRemove(UInt16 tag) { throw new Exception("Not supported"); }
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
-            reader = !reader.Eof() ? reader.Nested() : new Reader(new byte[] {});
+            reader = !reader.Eof() ? reader.Nested() : new Reader(new byte[] { });
 
             switch (tag) {
                 case 0: this.NotifyAndUpdate(0, Raw.Deserialize(reader, this.Path.Nested(0)), shouldNotify); break;

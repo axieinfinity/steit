@@ -6,7 +6,7 @@ using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
 
-namespace Steit.Test1 {
+namespace Test1 {
     public sealed class Multicase : IEnumState {
         public static UInt16 FIRST_CASE_VARIANT = 0;
         public static UInt16 SECOND_CASE_VARIANT = 1;
