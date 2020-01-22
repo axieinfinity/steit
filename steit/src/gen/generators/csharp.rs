@@ -20,6 +20,7 @@ impl CSharpGenerator {
             .writeln("using System;")
             .writeln("using System.Collections.Generic;")
             .newline()
+            .writeln("using Steit;")
             .writeln("using Steit.Collections;")
             .writeln("using Steit.Encoding;")
             .writeln("using Steit.State;")
@@ -198,12 +199,12 @@ impl Generator for CSharpGenerator {
         for field in r#struct.fields {
             if let FieldType::Primitive(_) = field.ty {
                 writer.writeln(format!(
-                    "case {}: return (Int16) Encoding.WireType.Varint;",
+                    "case {}: return (Int16) Steit.Encoding.WireType.Varint;",
                     field.tag,
                 ));
             } else {
                 writer.writeln(format!(
-                    "case {}: return (Int16) Encoding.WireType.Sized;",
+                    "case {}: return (Int16) Steit.Encoding.WireType.Sized;",
                     field.tag,
                 ));
             }
@@ -372,7 +373,7 @@ impl Generator for CSharpGenerator {
         // Return wire types
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "case {}: return (Int16) Encoding.WireType.Sized;",
+                "case {}: return (Int16) Steit.Encoding.WireType.Sized;",
                 variant.tag
             ));
         }

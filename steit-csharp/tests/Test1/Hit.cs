@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 
+using Steit;
 using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
@@ -83,12 +84,12 @@ namespace Steit.Test1 {
 
         public Int16 WireType(UInt16 tag) {
             switch (tag) {
-                case 0: return (Int16) Encoding.WireType.Sized;
-                case 1: return (Int16) Encoding.WireType.Sized;
-                case 2: return (Int16) Encoding.WireType.Sized;
-                case 3: return (Int16) Encoding.WireType.Sized;
-                case 4: return (Int16) Encoding.WireType.Sized;
-                case 5: return (Int16) Encoding.WireType.Varint;
+                case 0: return (Int16) Steit.Encoding.WireType.Sized;
+                case 1: return (Int16) Steit.Encoding.WireType.Sized;
+                case 2: return (Int16) Steit.Encoding.WireType.Sized;
+                case 3: return (Int16) Steit.Encoding.WireType.Sized;
+                case 4: return (Int16) Steit.Encoding.WireType.Sized;
+                case 5: return (Int16) Steit.Encoding.WireType.Varint;
                 default: return -1;
             }
         }
