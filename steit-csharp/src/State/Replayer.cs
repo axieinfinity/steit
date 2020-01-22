@@ -7,7 +7,7 @@ namespace Steit.State {
     public static class Replayer {
         public static void Replay<T>(ref T root, Reader reader) where T : IState {
             while (!reader.Eof()) {
-                ReplayOnce(ref root, reader.Nested((int) reader.ReadUInt32()));
+                ReplayOnce(ref root, reader.Nested());
             }
         }
 

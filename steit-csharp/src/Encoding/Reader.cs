@@ -13,8 +13,8 @@ namespace Steit.Encoding {
             this.remaining = size;
         }
 
-        public Reader Nested(int size) {
-            return new Reader(this, size);
+        public Reader Nested() {
+            return new Reader(this, (int) this.ReadUInt32());
         }
 
         public bool Eof() {

@@ -20,10 +20,9 @@ namespace Steit.State {
                 case "System.Boolean": return (T) (object) reader.ReadBoolean();
 
                 default:
-                    reader = reader.Nested((int) reader.ReadUInt32());
                     var method = type.GetMethod("Deserialize");
                     var path = state.Path.Nested(tag);
-                    var arguments = new object[] { reader, path, /* shouldNotify: */ false };
+                    var arguments = new object[] { reader.Nested(), path, /* shouldNotify: */ false };
                     return (T) method.Invoke(null, arguments);
             }
         }

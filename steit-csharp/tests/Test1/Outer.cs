@@ -79,7 +79,7 @@ namespace Steit.Test1 {
             switch (tag) {
                 case 0: this.Foo = this.Notify(reader.ReadInt32(), this.Foo, shouldNotify, fooListeners); break;
                 case 1: this.Bar = this.Notify(reader.ReadBoolean(), this.Bar, shouldNotify, barListeners); break;
-                case 2: this.Inner = this.Notify(Inner.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(2)), this.Inner, shouldNotify, innerListeners); break;
+                case 2: this.Inner = this.Notify(Inner.Deserialize(reader.Nested(), this.Path.Nested(2)), this.Inner, shouldNotify, innerListeners); break;
                 default: reader.SkipWireTyped(wireType); break;
             }
         }

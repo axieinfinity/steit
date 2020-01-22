@@ -242,7 +242,7 @@ impl Generator for CSharpGenerator {
                 ));
             } else {
                 writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
+                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader.Nested(), this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
                     field.raw.tag,
                     field.upper_camel_case_name,
                     get_type(field.raw.ty),
@@ -376,11 +376,7 @@ impl Generator for CSharpGenerator {
             .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
             .newline()
             .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
-            .indent_writeln("if (!reader.Eof()) {")
-            .indent_writeln("reader = reader.Nested((int) reader.ReadUInt32());")
-            .outdent_writeln("} else {")
-            .indent_writeln("reader = new Reader(new byte[] {});")
-            .outdent_writeln("}")
+            .indent_writeln("reader = !reader.Eof() ? reader.Nested() : new Reader(new byte[] {});")
             .newline()
             .writeln("switch (tag) {")
             .indent();

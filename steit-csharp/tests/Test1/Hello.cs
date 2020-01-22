@@ -61,7 +61,7 @@ namespace Steit.Test1 {
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.Numbers = this.Notify(StateList<Int32>.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(0)), this.Numbers, shouldNotify, numbersListeners); break;
+                case 0: this.Numbers = this.Notify(StateList<Int32>.Deserialize(reader.Nested(), this.Path.Nested(0)), this.Numbers, shouldNotify, numbersListeners); break;
                 default: reader.SkipWireTyped(wireType); break;
             }
         }
