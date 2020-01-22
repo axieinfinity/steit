@@ -35,7 +35,7 @@ namespace Steit.Test1 {
 
         public static Multicase Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var multicase = new Multicase(path);
-            multicase.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify);
+            multicase.ReplaceAll(reader, shouldNotify);
             return multicase;
         }
 
@@ -58,6 +58,12 @@ namespace Steit.Test1 {
         public void ReplayRemove(UInt16 tag) { throw new Exception("Not supported"); }
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
+            if (!reader.Eof()) {
+                reader = reader.Nested((int) reader.ReadUInt32());
+            } else {
+                reader = new Reader(new byte[] {});
+            }
+
             switch (tag) {
                 case 0: this.NotifyAndUpdate(0, FirstCase.Deserialize(reader, this.Path.Nested(0)), shouldNotify); break;
                 case 1: this.NotifyAndUpdate(1, SecondCase.Deserialize(reader, this.Path.Nested(1)), shouldNotify); break;

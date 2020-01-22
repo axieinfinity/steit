@@ -45,11 +45,7 @@ namespace Steit.Collections {
 
         public static StateList<T> Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var list = new StateList<T>(path);
-
-            while (!reader.Eof()) {
-                list.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
-            }
-
+            list.ReplaceAll(reader, shouldNotify);
             return list;
         }
 

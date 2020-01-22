@@ -171,23 +171,8 @@ impl Generator for CSharpGenerator {
                 "public static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
                 name,
             ))
-            .indent_writeln(format!("var {} = new {}(path);", var_name, name));
-
-        if is_variant {
-            writer.writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name));
-        } else {
-            writer
-                .newline()
-                .writeln("if (!reader.Eof()) {")
-                .indent_writeln(format!(
-                    "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);",
-                    var_name,
-                ))
-                .outdent_writeln("}")
-                .newline();
-        }
-
-        writer
+            .indent_writeln(format!("var {} = new {}(path);", var_name, name))
+            .writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
@@ -257,7 +242,7 @@ impl Generator for CSharpGenerator {
                 ));
             } else {
                 writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader, this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
+                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
                     field.raw.tag,
                     field.upper_camel_case_name,
                     get_type(field.raw.ty),
@@ -359,10 +344,7 @@ impl Generator for CSharpGenerator {
                 name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, name))
-            .writeln(format!(
-                "{}.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify);",
-                var_name,
-            ))
+            .writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
@@ -394,7 +376,13 @@ impl Generator for CSharpGenerator {
             .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
             .newline()
             .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
-            .indent_writeln("switch (tag) {")
+            .indent_writeln("if (!reader.Eof()) {")
+            .indent_writeln("reader = reader.Nested((int) reader.ReadUInt32());")
+            .outdent_writeln("} else {")
+            .indent_writeln("reader = new Reader(new byte[] {});")
+            .outdent_writeln("}")
+            .newline()
+            .writeln("switch (tag) {")
             .indent();
 
         // Replace fields and notify listeners

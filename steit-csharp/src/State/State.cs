@@ -20,9 +20,10 @@ namespace Steit.State {
                 case "System.Boolean": return (T) (object) reader.ReadBoolean();
 
                 default:
+                    reader = reader.Nested((int) reader.ReadUInt32());
                     var method = type.GetMethod("Deserialize");
                     var path = state.Path.Nested(tag);
-                    var arguments = new object[] { reader, path, /* shouldNotify: */ true };
+                    var arguments = new object[] { reader, path, /* shouldNotify: */ false };
                     return (T) method.Invoke(null, arguments);
             }
         }
@@ -37,7 +38,7 @@ namespace Steit.State {
             return state;
         }
 
-        public static void Replace(this IState state, Reader reader, bool shouldNotify) {
+        public static void Replace(this IState state, Reader reader, bool shouldNotify = true) {
             var (tag, wireType) = reader.ReadKey();
             var expectedWireType = state.WireType(tag);
 
@@ -50,17 +51,17 @@ namespace Steit.State {
             state.ReplaceAt(tag, wireType, reader, shouldNotify);
         }
 
-        public static void Replace(this IEnumState state, Reader reader, bool shouldNotify) {
+        public static void Replace(this IEnumState state, Reader reader, bool shouldNotify = true) {
             state.ReplaceAt(reader.ReadUInt16(), WireType.Sized, reader, shouldNotify);
         }
 
-        public static void ReplaceAll(this IState state, Reader reader, bool shouldNotify) {
+        public static void ReplaceAll(this IState state, Reader reader, bool shouldNotify = true) {
             while (!reader.Eof()) {
                 state.Replace(reader, shouldNotify);
             }
         }
 
-        public static void ReplaceAll(this IEnumState state, Reader reader, bool shouldNotify) {
+        public static void ReplaceAll(this IEnumState state, Reader reader, bool shouldNotify = true) {
             state.Replace(reader, shouldNotify);
         }
     }

@@ -35,11 +35,7 @@ namespace Steit.Test1 {
 
         public static Hello Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var hello = new Hello(path);
-
-            if (!reader.Eof()) {
-                hello.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
-            }
-
+            hello.ReplaceAll(reader, shouldNotify);
             return hello;
         }
 
@@ -65,7 +61,7 @@ namespace Steit.Test1 {
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.Numbers = this.Notify(StateList<Int32>.Deserialize(reader, this.Path.Nested(0)), this.Numbers, shouldNotify, numbersListeners); break;
+                case 0: this.Numbers = this.Notify(StateList<Int32>.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(0)), this.Numbers, shouldNotify, numbersListeners); break;
                 default: reader.SkipWireTyped(wireType); break;
             }
         }

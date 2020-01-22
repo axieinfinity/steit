@@ -74,11 +74,7 @@ namespace Steit.Test1 {
 
         public static Hit Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var hit = new Hit(path);
-
-            if (!reader.Eof()) {
-                hit.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify: false);
-            }
-
+            hit.ReplaceAll(reader, shouldNotify);
             return hit;
         }
 
@@ -113,11 +109,11 @@ namespace Steit.Test1 {
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.BeforeAttacking = this.Notify(Action.Deserialize(reader, this.Path.Nested(0)), this.BeforeAttacking, shouldNotify, beforeAttackingListeners); break;
-                case 1: this.BeforeDamaging = this.Notify(Action.Deserialize(reader, this.Path.Nested(1)), this.BeforeDamaging, shouldNotify, beforeDamagingListeners); break;
-                case 2: this.Damaging = this.Notify(Action.Deserialize(reader, this.Path.Nested(2)), this.Damaging, shouldNotify, damagingListeners); break;
-                case 3: this.AfterDamaging = this.Notify(Action.Deserialize(reader, this.Path.Nested(3)), this.AfterDamaging, shouldNotify, afterDamagingListeners); break;
-                case 4: this.AfterAttacking = this.Notify(Action.Deserialize(reader, this.Path.Nested(4)), this.AfterAttacking, shouldNotify, afterAttackingListeners); break;
+                case 0: this.BeforeAttacking = this.Notify(Action.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(0)), this.BeforeAttacking, shouldNotify, beforeAttackingListeners); break;
+                case 1: this.BeforeDamaging = this.Notify(Action.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(1)), this.BeforeDamaging, shouldNotify, beforeDamagingListeners); break;
+                case 2: this.Damaging = this.Notify(Action.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(2)), this.Damaging, shouldNotify, damagingListeners); break;
+                case 3: this.AfterDamaging = this.Notify(Action.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(3)), this.AfterDamaging, shouldNotify, afterDamagingListeners); break;
+                case 4: this.AfterAttacking = this.Notify(Action.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(4)), this.AfterAttacking, shouldNotify, afterAttackingListeners); break;
                 case 5: this.Dummy = this.Notify(reader.ReadInt32(), this.Dummy, shouldNotify, dummyListeners); break;
                 default: reader.SkipWireTyped(wireType); break;
             }

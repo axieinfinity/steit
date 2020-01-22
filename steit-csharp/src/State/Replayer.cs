@@ -35,17 +35,10 @@ namespace Steit.State {
             }
 
             if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
-                var type = typeof(T);
-
-                if (!reader.Eof()) {
-                    var method = type.GetMethod("Deserialize");
-                    var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ true };
-                    root = (T) method.Invoke(null, arguments);
-                } else {
-                    var arguments = new object[] { /* path: */ null };
-                    root = (T) Activator.CreateInstance(type, arguments);
-                }
-
+                var method = typeof(T).GetMethod("Deserialize");
+                var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ false };
+                // TODO: Notify this root change
+                root = (T) method.Invoke(null, arguments);
                 return;
             }
 
@@ -61,6 +54,10 @@ namespace Steit.State {
             if (state == null) {
                 reader.Exhaust();
                 return;
+            }
+
+            if (reader.Eof()) {
+                reader = new Reader(new byte[] { 0 });
             }
 
             switch (logType) {

@@ -35,7 +35,7 @@ namespace Steit.Test1 {
 
         public static Action Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
             var action = new Action(path);
-            action.ReplaceAll(reader.Nested((int) reader.ReadUInt32()), shouldNotify);
+            action.ReplaceAll(reader, shouldNotify);
             return action;
         }
 
@@ -58,6 +58,12 @@ namespace Steit.Test1 {
         public void ReplayRemove(UInt16 tag) { throw new Exception("Not supported"); }
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
+            if (!reader.Eof()) {
+                reader = reader.Nested((int) reader.ReadUInt32());
+            } else {
+                reader = new Reader(new byte[] {});
+            }
+
             switch (tag) {
                 case 0: this.NotifyAndUpdate(0, Raw.Deserialize(reader, this.Path.Nested(0)), shouldNotify); break;
                 case 1: this.NotifyAndUpdate(1, Attack.Deserialize(reader, this.Path.Nested(1)), shouldNotify); break;
@@ -132,7 +138,7 @@ namespace Steit.Test1 {
 
             public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
                 switch (tag) {
-                    case 0: this.LogEntries = this.Notify(StateList<Byte>.Deserialize(reader, this.Path.Nested(0)), this.LogEntries, shouldNotify, logEntriesListeners); break;
+                    case 0: this.LogEntries = this.Notify(StateList<Byte>.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(0)), this.LogEntries, shouldNotify, logEntriesListeners); break;
                     default: reader.SkipWireTyped(wireType); break;
                 }
             }
@@ -222,7 +228,7 @@ namespace Steit.Test1 {
                 switch (tag) {
                     case 0: this.Attacker = this.Notify(reader.ReadByte(), this.Attacker, shouldNotify, attackerListeners); break;
                     case 1: this.Defender = this.Notify(reader.ReadByte(), this.Defender, shouldNotify, defenderListeners); break;
-                    case 2: this.Hits = this.Notify(StateList<Hit>.Deserialize(reader, this.Path.Nested(2)), this.Hits, shouldNotify, hitsListeners); break;
+                    case 2: this.Hits = this.Notify(StateList<Hit>.Deserialize(reader.Nested((int) reader.ReadUInt32()), this.Path.Nested(2)), this.Hits, shouldNotify, hitsListeners); break;
                     default: reader.SkipWireTyped(wireType); break;
                 }
             }
