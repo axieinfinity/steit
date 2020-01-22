@@ -1,4 +1,4 @@
-use std::{boxed::Box, io};
+use std::io;
 
 use crate::{
     gen::{FieldType, IsFieldType},
@@ -67,8 +67,6 @@ impl<T: IsFieldType> IsFieldType for Box<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::boxed::Box;
-
     use crate::{
         test_case,
         test_utils::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
