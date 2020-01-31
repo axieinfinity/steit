@@ -3,6 +3,7 @@ use std::{io, marker::PhantomData};
 use indexmap::map::IndexMap;
 
 use crate::{
+    gen::{FieldType, IsFieldType},
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
     CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
 };
@@ -212,6 +213,10 @@ impl<K: MapKey, V: State> State for Map<K, V> {
             }
         }
     }
+}
+
+impl<K: MapKey, T: State + IsFieldType> IsFieldType for Map<K, T> {
+    const FIELD_TYPE: &'static FieldType = &FieldType::Map(T::FIELD_TYPE);
 }
 
 #[cfg(test)]
