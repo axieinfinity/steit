@@ -1,4 +1,7 @@
-use std::{cell::RefCell, fmt, io, rc::Rc};
+use std::{
+    fmt, io,
+    sync::{Arc, Mutex},
+};
 
 use crate::{
     log::{loggers::PrintLogger, LogEntry, Logger},
@@ -46,8 +49,8 @@ impl RuntimeLogger {
 
 #[derive(Clone)]
 pub struct Runtime {
-    logger: Rc<RefCell<RuntimeLogger>>,
-    path: Rc<Node<u16>>,
+    logger: Arc<Mutex<RuntimeLogger>>,
+    path: Arc<Node<u16>>,
 }
 
 impl Runtime {
@@ -59,8 +62,8 @@ impl Runtime {
     #[inline]
     pub fn with_logger(logger: Box<dyn Logger>) -> Self {
         Self {
-            logger: Rc::new(RefCell::new(RuntimeLogger::new(logger))),
-            path: Rc::new(Node::Root),
+            logger: Arc::new(Mutex::new(RuntimeLogger::new(logger))),
+            path: Arc::new(Node::Root),
         }
     }
 
@@ -68,7 +71,7 @@ impl Runtime {
     pub fn nested(&self, tag: u16) -> Self {
         Self {
             logger: self.logger.clone(),
-            path: Rc::new(Node::child(&self.path, tag)),
+            path: Arc::new(Node::child(&self.path, tag)),
         }
     }
 
@@ -95,8 +98,8 @@ impl Runtime {
 
     #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
-        self.logger.borrow_mut().log(LogEntry::new_update(
-            Rc::new(Node::child(&self.path, tag)),
+        self.logger.lock().unwrap().log(LogEntry::new_update(
+            Arc::new(Node::child(&self.path, tag)),
             value,
         ))
     }
@@ -104,32 +107,35 @@ impl Runtime {
     #[inline]
     pub fn log_update_in_place(&self, value: &impl Serialize) -> io::Result<()> {
         self.logger
-            .borrow_mut()
+            .lock()
+            .unwrap()
             .log(LogEntry::new_update(self.path.clone(), value))
     }
 
     #[inline]
     pub fn log_add(&self, item: &impl Serialize) -> io::Result<()> {
         self.logger
-            .borrow_mut()
+            .lock()
+            .unwrap()
             .log(LogEntry::new_add(self.path.clone(), item))
     }
 
     #[inline]
     pub fn log_remove(&self, tag: u16) -> io::Result<()> {
         self.logger
-            .borrow_mut()
-            .log(LogEntry::new_remove(Rc::new(Node::child(&self.path, tag))))
+            .lock()
+            .unwrap()
+            .log(LogEntry::new_remove(Arc::new(Node::child(&self.path, tag))))
     }
 
     #[inline]
     pub fn pause_logger(&self) -> u32 {
-        self.logger.borrow_mut().pause()
+        self.logger.lock().unwrap().pause()
     }
 
     #[inline]
     pub fn unpause_logger(&self) -> u32 {
-        self.logger.borrow_mut().unpause()
+        self.logger.lock().unwrap().unpause()
     }
 }
 

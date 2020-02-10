@@ -6,12 +6,12 @@ use crate::{
 };
 
 pub struct PrintLogger {
-    writer: Box<dyn io::Write>,
+    writer: Box<dyn io::Write + Send + Sync>,
 }
 
 impl PrintLogger {
     #[inline]
-    pub fn new(writer: Box<dyn io::Write>) -> Self {
+    pub fn new(writer: Box<dyn io::Write + Send + Sync>) -> Self {
         Self { writer }
     }
 
