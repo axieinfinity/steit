@@ -262,7 +262,7 @@ impl<T: State + IsFieldType> IsFieldType for List<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::{cell::RefCell, rc::Rc};
+    use std::sync::{Arc, Mutex};
 
     use crate::{
         log::loggers::BufferLogger,
@@ -272,8 +272,8 @@ mod tests {
 
     use super::List;
 
-    fn list_with_logger<T: State>() -> (List<T>, Rc<RefCell<BufferLogger>>) {
-        let logger = Rc::new(RefCell::new(BufferLogger::new()));
+    fn list_with_logger<T: State>() -> (List<T>, Arc<Mutex<BufferLogger>>) {
+        let logger = Arc::new(Mutex::new(BufferLogger::new()));
         let list = List::new(Runtime::with_logger(Box::new(logger.clone())));
         (list, logger)
     }
@@ -297,7 +297,7 @@ mod tests {
         list.push(2);
 
         assert_eq!(
-            logger.borrow().bytes(),
+            logger.lock().unwrap().bytes(),
             &[4, 1, 10, 1, 2, /**/ 4, 1, 10, 1, 4]
         );
     }
@@ -310,7 +310,7 @@ mod tests {
         list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
 
         assert_eq!(
-            logger.borrow().bytes(),
+            logger.lock().unwrap().bytes(),
             &[9, 1, 10, 6, 0, 1, 8, 1, 16, 1, /**/ 9, 1, 10, 6, 0, 4, 8, 4, 16, 4]
         );
     }
@@ -335,11 +335,11 @@ mod tests {
         list.push(2);
         list.push(3);
 
-        logger.borrow_mut().clear();
+        logger.lock().unwrap().clear();
 
         list.remove(2);
 
-        assert_eq!(logger.borrow().bytes(), &[4, 2, 2, 1, 2]);
+        assert_eq!(logger.lock().unwrap().bytes(), &[4, 2, 2, 1, 2]);
     }
 
     #[test]
@@ -363,14 +363,14 @@ mod tests {
         list.push_with(|runtime| Point::with(runtime, 2, 2, 2));
         list.push_with(|runtime| Point::with(runtime, 3, 3, 3));
 
-        logger.borrow_mut().clear();
+        logger.lock().unwrap().clear();
 
         for item in list.iter_mut() {
             item.set_x(item.x() + 1);
         }
 
         assert_eq!(
-            logger.borrow().bytes(),
+            logger.lock().unwrap().bytes(),
             &[
                 8, 0, 2, 2, 0, 0, 10, 1, 0, /**/ 8, 0, 2, 2, 1, 0, 10, 1, 6, /**/ 8, 0,
                 2, 2, 2, 0, 10, 1, 8
@@ -416,12 +416,12 @@ mod tests {
         list.push(10);
         list.push(20);
 
-        logger.borrow_mut().clear();
+        logger.lock().unwrap().clear();
 
         let list = merge(list, &[40, 60]);
 
         assert_eq!(list.get(5), Some(&30));
-        assert_eq!(logger.borrow().bytes(), &[]);
+        assert_eq!(logger.lock().unwrap().bytes(), &[]);
     }
 
     #[test]
@@ -453,7 +453,7 @@ mod tests {
         let (list, logger) = list_with_logger();
         let list = replay(list, &[4, 1, 10, 1, 1]);
         assert_eq!(list.get(0), Some(&-1));
-        assert_eq!(logger.borrow().bytes(), &[]);
+        assert_eq!(logger.lock().unwrap().bytes(), &[]);
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use std::{fmt, io, rc::Rc};
+use std::{fmt, io, sync::Arc};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
@@ -8,7 +8,7 @@ use crate::{
 pub enum Node<T> {
     Root,
     Child {
-        parent: Rc<Self>,
+        parent: Arc<Self>,
         value: T,
         cached_size: CachedSize,
     },
@@ -16,7 +16,7 @@ pub enum Node<T> {
 
 impl<T> Node<T> {
     #[inline]
-    pub fn child(parent: &Rc<Self>, value: T) -> Self {
+    pub fn child(parent: &Arc<Self>, value: T) -> Self {
         Node::Child {
             parent: parent.clone(),
             value,
@@ -25,7 +25,7 @@ impl<T> Node<T> {
     }
 
     #[inline]
-    pub fn parent(&self) -> Option<Rc<Self>> {
+    pub fn parent(&self) -> Option<Arc<Self>> {
         match self {
             Node::Root => None,
             Node::Child { parent, .. } => Some(parent.clone()),
@@ -115,7 +115,7 @@ impl<T: Serialize> Serialize for Node<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::rc::Rc;
+    use std::sync::Arc;
 
     use crate::{
         test_case,
@@ -126,9 +126,9 @@ mod tests {
     use super::Node;
 
     fn node<T>(branch: impl IntoIterator<Item = T>) -> Node<T> {
-        branch
-            .into_iter()
-            .fold(Node::Root, |node, value| Node::child(&Rc::new(node), value))
+        branch.into_iter().fold(Node::Root, |node, value| {
+            Node::child(&Arc::new(node), value)
+        })
     }
 
     #[test]
