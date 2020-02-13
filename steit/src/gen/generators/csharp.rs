@@ -376,7 +376,7 @@ impl Generator for CSharpGenerator {
             .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
             .newline()
             .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
-            .indent_writeln("reader = !reader.Eof() ? reader.Nested() : new Reader(new byte[] {});")
+            .indent_writeln("reader = !reader.Eof() ? reader : new Reader(new byte[] {});")
             .newline()
             .writeln("switch (tag) {")
             .indent();
