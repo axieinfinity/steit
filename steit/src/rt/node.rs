@@ -68,8 +68,8 @@ impl<T: fmt::Debug> fmt::Debug for Node<T> {
         }
 
         nodes.push(DebugNode(&Node::Root));
-
         nodes.reverse();
+
         f.debug_list().entries(nodes).finish()
     }
 }

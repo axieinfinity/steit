@@ -58,7 +58,7 @@ namespace Test1 {
         public void ReplayRemove(UInt16 tag) { throw new Exception("Not supported"); }
 
         public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
-            reader = !reader.Eof() ? reader.Nested() : new Reader(new byte[] { });
+            reader = !reader.Eof() ? reader : new Reader(new byte[] {});
 
             switch (tag) {
                 case 0: this.NotifyAndUpdate(0, Raw.Deserialize(reader, this.Path.Nested(0)), shouldNotify); break;

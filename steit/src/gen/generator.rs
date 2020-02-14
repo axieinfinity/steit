@@ -1,4 +1,9 @@
-use std::{collections::HashMap, fs::File, io, io::Write, path::Path};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{self, Write},
+    path::Path,
+};
 
 use super::{
     gen_meta::{Enum, HasMeta, Meta, Struct},

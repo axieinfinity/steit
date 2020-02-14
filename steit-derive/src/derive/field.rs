@@ -225,9 +225,7 @@ impl<'a> Field<'a> {
         let type_name = &*quote!(#ty).to_string();
 
         let ty = match type_name {
-            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
-                quote!(&FieldType::Primitive(#type_name))
-            }
+            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => quote!(&FieldType::Primitive(#type_name)),
 
             _ => quote!(<#ty as IsFieldType>::FIELD_TYPE),
         };
