@@ -120,7 +120,7 @@ impl<'a> Field<'a> {
             None => format_ident!("set_{}", field_name),
         };
 
-        let setter_name_with = format_ident!("{}_with", setter_name);
+        let setter_with_name = format_ident!("{}_with", setter_name);
 
         let ty = &self.ty;
         let tag = self.attrs.tag;
@@ -132,17 +132,20 @@ impl<'a> Field<'a> {
                 let qual = variant.qual();
                 let ctor_name = variant.ctor_name();
 
-                let log_update = if self.setting.runtime() {
-                    quote! { value.runtime().parent().log_update_in_place(&value).unwrap(); }
+                let (new_variant, log_update) = if self.setting.runtime() {
+                    (
+                        quote!(Self::#ctor_name(self.runtime().parent())),
+                        quote! { value.runtime().parent().log_update_in_place(&value).unwrap(); },
+                    )
                 } else {
-                    quote!()
+                    (quote!(Self::#ctor_name()), quote!())
                 };
 
                 (
                     quote! {
                         if let #struct_name #qual { .. } = self {
                         } else {
-                            let value = Self::#ctor_name(self.runtime().parent());
+                            let value = #new_variant;
                             #log_update
                             *self = value;
                         }
@@ -157,35 +160,51 @@ impl<'a> Field<'a> {
             None => (quote!(), quote! { #field = value; }),
         };
 
-        let (pause_logger, unpause_logger, log_update) = if self.setting.runtime() {
-            (
-                quote! { runtime.pause_logger(); },
-                quote! { runtime.unpause_logger(); },
+        let (setter, setter_with) = if self.setting.runtime() {
+            let (assign_runtime, log_update) = (
+                quote! { let runtime = self.runtime(); },
                 quote! { runtime.log_update(#tag, &value).unwrap(); },
+            );
+
+            (
+                quote! {
+                    pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
+                        #reset_variant
+                        #assign_runtime
+                        #log_update
+                        #setter
+                        self
+                    }
+                },
+                quote! {
+                    pub fn #setter_with_name(&mut self, f: impl FnOnce(Runtime) -> #ty) -> &mut Self {
+                        #reset_variant
+                        #assign_runtime
+                        runtime.pause_logger();
+                        let value = f(runtime.nested(#tag));
+                        runtime.unpause_logger();
+                        #log_update
+                        #setter
+                        self
+                    }
+                },
             )
         } else {
-            (quote!(), quote!(), quote!())
+            (
+                quote! {
+                    pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
+                        #reset_variant
+                        #setter
+                        self
+                    }
+                },
+                quote!(),
+            )
         };
 
         quote! {
-            pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
-                #reset_variant
-                let runtime = self.runtime();
-                #log_update
-                #setter
-                self
-            }
-
-            pub fn #setter_name_with(&mut self, f: impl FnOnce(Runtime) -> #ty) -> &mut Self {
-                #reset_variant
-                let runtime = self.runtime();
-                #pause_logger
-                let value = f(runtime.nested(#tag));
-                #unpause_logger
-                #log_update
-                #setter
-                self
-            }
+            #setter
+            #setter_with
         }
     }
 
@@ -225,7 +244,9 @@ impl<'a> Field<'a> {
         let type_name = &*quote!(#ty).to_string();
 
         let ty = match type_name {
-            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => quote!(&FieldType::Primitive(#type_name)),
+            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
+                quote!(&FieldType::Primitive(#type_name))
+            }
 
             _ => quote!(<#ty as IsFieldType>::FIELD_TYPE),
         };

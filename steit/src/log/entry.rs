@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{node::Node, types::Bytes, CachedSize, Serialize};
 
 // `path` is put in each variant and `Entry` is flattened to save serialization size.
-#[crate::steitize(Serialize, own_crate)]
+#[crate::steitize(Serialize, own_crate, no_ctors, no_setters)]
 #[derive(Debug)]
 pub enum LogEntry {
     #[steit(tag = 0)]

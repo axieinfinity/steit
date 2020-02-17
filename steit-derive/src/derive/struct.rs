@@ -54,6 +54,7 @@ macro_rules! map_fields {
 
 pub struct Struct<'a> {
     setting: &'a DeriveSetting,
+    context: &'a Context,
     r#impl: &'a Impl<'a>,
     fields: Vec<Field<'a>>,
     cached_size: Option<ExtraField>,
@@ -130,6 +131,7 @@ impl<'a> Struct<'a> {
 
             Ok(Self {
                 setting,
+                context,
                 r#impl,
                 fields: parsed,
                 cached_size,
@@ -536,11 +538,11 @@ impl<'a> ToTokens for Struct<'a> {
             panic!("unexpected variant");
         }
 
-        if self.setting.ctors(false) {
+        if self.setting.ctors(self.context, false) {
             tokens.extend(self.impl_ctor());
         }
 
-        if self.setting.setters() {
+        if self.setting.setters(self.context) {
             tokens.extend(self.impl_setters());
         }
 

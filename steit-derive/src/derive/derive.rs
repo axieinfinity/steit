@@ -19,6 +19,13 @@ pub struct DeriveSetting {
     pub state: bool,
 
     pub own_crate: bool,
+
+    pub no_ctors: bool,
+    pub no_ctors_tokens: Option<TokenStream>,
+
+    pub no_setters: bool,
+    pub no_setters_tokens: Option<TokenStream>,
+
     pub no_cached_size: bool,
     pub no_meta: bool,
 }
@@ -31,6 +38,8 @@ impl DeriveSetting {
         let mut state = Attr::new(context, "State");
 
         let mut own_crate = Attr::new(context, "own_crate");
+        let mut no_ctors = Attr::new(context, "no_ctors");
+        let mut no_setters = Attr::new(context, "no_setters");
         let mut no_cached_size = Attr::new(context, "no_cached_size");
         let mut no_meta = Attr::new(context, "no_meta");
 
@@ -42,6 +51,12 @@ impl DeriveSetting {
 
             syn::Meta::Path(path) if own_crate.parse_path(path) => true,
             syn::Meta::NameValue(meta) if own_crate.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_ctors.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_ctors.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_setters.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_setters.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
@@ -57,6 +72,16 @@ impl DeriveSetting {
         let deserialize = deserialize.get().unwrap_or_default();
         let state = state.get().unwrap_or_default();
 
+        let (no_ctors, no_ctors_tokens) = match no_ctors.get_with_tokens() {
+            Some((no_ctors, no_ctors_tokens)) => (no_ctors, Some(no_ctors_tokens)),
+            None => (Default::default(), Default::default()),
+        };
+
+        let (no_setters, no_setters_tokens) = match no_setters.get_with_tokens() {
+            Some((no_setters, no_setters_tokens)) => (no_setters, Some(no_setters_tokens)),
+            None => (Default::default(), Default::default()),
+        };
+
         Self {
             serialize: serialize || state,
             merge: merge || deserialize || state,
@@ -64,6 +89,13 @@ impl DeriveSetting {
             state,
 
             own_crate: own_crate.get().unwrap_or_default(),
+
+            no_ctors,
+            no_ctors_tokens,
+
+            no_setters,
+            no_setters_tokens,
+
             no_cached_size: no_cached_size.get().unwrap_or_default(),
             no_meta: no_meta.get().unwrap_or_default(),
         }
@@ -83,16 +115,46 @@ impl DeriveSetting {
         }
     }
 
-    pub fn ctors(&self, is_enum: bool) -> bool {
-        if is_enum {
+    pub fn ctors(&self, context: &Context, is_enum: bool) -> bool {
+        let force_ctors = if is_enum {
             self.merge
         } else {
             self.deserialize
+        };
+
+        if force_ctors && self.no_ctors {
+            context.error(
+                self.no_ctors_tokens.as_ref().unwrap(),
+                "constructors are required",
+            );
+
+            return true;
         }
+
+        if is_enum && self.setters(context) && self.no_ctors {
+            context.error(
+                self.no_ctors_tokens.as_ref().unwrap(),
+                "enum constructors are required to generate setters",
+            );
+
+            return true;
+        }
+
+        !self.no_ctors
     }
 
-    pub fn setters(&self) -> bool {
-        self.state
+    pub fn setters(&self, context: &Context) -> bool {
+        let force_setters = self.state;
+
+        if force_setters && self.no_setters {
+            context.error(
+                self.no_setters_tokens.as_ref().unwrap(),
+                "setters are required",
+            );
+            return true;
+        }
+
+        !self.no_setters
     }
 
     pub fn default(&self) -> bool {

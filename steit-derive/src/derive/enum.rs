@@ -522,11 +522,11 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.ctors(true) {
+        if self.setting.ctors(self.context, true) {
             tokens.extend(self.impl_ctors());
         }
 
-        if self.setting.setters() {
+        if self.setting.setters(self.context) {
             tokens.extend(self.impl_setters());
         }
 
