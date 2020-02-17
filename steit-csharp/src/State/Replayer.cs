@@ -36,7 +36,7 @@ namespace Steit.State {
 
             if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
                 var method = typeof(T).GetMethod("Deserialize");
-                var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ false };
+                var arguments = new object[] { reader.Nested(), /* path: */ null, /* shouldNotify: */ false };
                 // TODO: Notify this root change
                 root = (T) method.Invoke(null, arguments);
                 return;
