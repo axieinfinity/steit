@@ -15,8 +15,8 @@ impl<T: Serialize> Serialize for Vec<T> {
     fn compute_size(&self) -> u32 {
         let mut size = 0;
 
-        for item in self {
-            size += item.compute_size_nested(None);
+        for (index, item) in self.iter().enumerate() {
+            size += item.compute_size_nested_omittable(index as u16, false);
         }
 
         size
@@ -24,8 +24,8 @@ impl<T: Serialize> Serialize for Vec<T> {
 
     #[inline]
     fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        for item in self {
-            item.serialize_nested_with_cached_size(None, writer)?;
+        for (index, item) in self.iter().enumerate() {
+            item.serialize_nested_omittable_with_cached_size(index as u16, false, writer)?;
         }
 
         Ok(())
@@ -45,7 +45,7 @@ impl<T: Deserialize> Merge for Vec<T> {
 }
 
 impl<T: IsFieldType> IsFieldType for Vec<T> {
-    const FIELD_TYPE: &'static FieldType = T::FIELD_TYPE;
+    const FIELD_TYPE: &'static FieldType = &FieldType::List(T::FIELD_TYPE);
 }
 
 #[cfg(test)]
@@ -56,18 +56,18 @@ mod tests {
     };
 
     test_case!(size_01: assert_size::<Vec<u8>>; vec![] => 0);
-    test_case!(size_02: assert_size; vec![0] => 1);
-    test_case!(size_03: assert_size; vec![0, 0, 0] => 3);
-    test_case!(size_04: assert_size; vec![1337] => 2);
+    test_case!(size_02: assert_size; vec![0] => 2);
+    test_case!(size_03: assert_size; vec![0, 0, 0] => 6);
+    test_case!(size_04: assert_size; vec![1337] => 3);
 
     test_case!(serialize_01: assert_serialize::<Vec<u8>>; vec![] => &[]);
-    test_case!(serialize_02: assert_serialize; vec![0, 0, 0] => &[0, 0, 0]);
-    test_case!(serialize_03: assert_serialize; vec![1337] => &[242, 20]);
+    test_case!(serialize_02: assert_serialize; vec![0, 0, 0] => &[0, 0, 8, 0, 16, 0]);
+    test_case!(serialize_03: assert_serialize; vec![1337] => &[0, 242, 20]);
 
     test_case!(serialize_nested_01: assert_serialize_nested::<Vec<u8>>; vec![], None => &[0]);
-    test_case!(serialize_nested_02: assert_serialize_nested; vec![0], None => &[1, 0]);
+    test_case!(serialize_nested_02: assert_serialize_nested; vec![0], None => &[2, 0, 0]);
     test_case!(serialize_nested_03: assert_serialize_nested::<Vec<u8>>; vec![], Some(10) => &[]);
-    test_case!(serialize_nested_04: assert_serialize_nested; vec![0], Some(10) => &[82, 1, 0]);
+    test_case!(serialize_nested_04: assert_serialize_nested; vec![0], Some(10) => &[82, 2, 0, 0]);
 
     test_case!(merge_01: assert_merge::<Vec<u8>>; vec![], &[] => vec![]);
     test_case!(merge_02: assert_merge; vec![], &[1] => vec![-1]);
