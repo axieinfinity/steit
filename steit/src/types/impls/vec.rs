@@ -1,6 +1,7 @@
 use std::io;
 
 use crate::{
+    gen::{FieldType, IsFieldType},
     wire_type::{WireType, WIRE_TYPE_SIZED},
     Deserialize, Eof, Merge, Serialize,
 };
@@ -41,6 +42,10 @@ impl<T: Deserialize> Merge for Vec<T> {
 
         Ok(())
     }
+}
+
+impl<T: IsFieldType> IsFieldType for Vec<T> {
+    const FIELD_TYPE: &'static FieldType = T::FIELD_TYPE;
 }
 
 #[cfg(test)]
