@@ -472,5 +472,6 @@ fn get_type(ty: &'static FieldType) -> String {
 
         FieldType::List(field_type) => format!("StateList<{}>", get_type(field_type)),
         FieldType::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
+        FieldType::Vec(field_type) => format!("FixedList<{}>", get_type(field_type)),
     }
 }

@@ -32,7 +32,8 @@ fn collect_meta_from_field(
         FieldType::Primitive(_) => {}
         FieldType::Meta(meta) => collect_meta(meta, meta_list),
         FieldType::MetaRef(_) => {}
-        FieldType::List(field_type) => collect_meta_from_field(field_type, meta_list),
-        FieldType::Map(field_type) => collect_meta_from_field(field_type, meta_list),
+        FieldType::List(field_type) | FieldType::Map(field_type) | FieldType::Vec(field_type) => {
+            collect_meta_from_field(field_type, meta_list)
+        }
     }
 }

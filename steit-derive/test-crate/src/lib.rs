@@ -7,7 +7,7 @@ mod tests {
         log::loggers::PrintLogger,
         steitize,
         types::List,
-        Runtime,
+        Runtime, Serialize,
     };
 
     #[steitize(State)]
@@ -53,8 +53,8 @@ mod tests {
     struct Hello {
         #[steit(tag = 0)]
         numbers: List<i32>,
-        // #[steit(tag = 1, skip_state)]
-        // others: Vec<i32>,
+        #[steit(tag = 1, skip_state)]
+        others: Vec<i32>,
     }
 
     #[steitize(State)]
@@ -101,6 +101,29 @@ mod tests {
         generator.generate::<Hello>().unwrap();
         generator.generate::<Action>().unwrap();
 
+        println!("\nHELLO!");
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut hello = Hello::new(runtime);
+
+        hello
+            .set_numbers_with(|runtime| {
+                let mut list = List::new(runtime);
+                list.push(1);
+                list.push(2);
+                list.push(1337);
+                list
+            })
+            .set_others(vec![-1, -2, 1337]);
+
+        let mut bytes = Vec::new();
+        hello.serialize(&mut bytes).unwrap();
+        println!("serialized: {:?}", bytes);
+
+        println!("\nOUTER");
+
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
 
@@ -115,12 +138,16 @@ mod tests {
         outer.inner.set_foo(160);
         outer.set_inner_with(Inner::new);
 
+        println!("\nENUM");
+
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
 
         let mut multicase = Multicase::new(runtime);
 
         multicase.set_second_case_foo(68);
+
+        println!("\nLIST #1");
 
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
@@ -143,6 +170,8 @@ mod tests {
         list.get_mut(1).unwrap().set_foo(68);
         list.remove(0);
 
+        println!("\nLIST #2");
+
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
 
@@ -152,10 +181,10 @@ mod tests {
         list.push(0);
         list.remove(1);
 
+        println!("\nACTION!");
+
         let logger = PrintLogger::with_stdout();
         let runtime = Runtime::with_logger(Box::new(logger));
-
-        println!("ACTION!");
 
         let mut action = Action::new(runtime);
 

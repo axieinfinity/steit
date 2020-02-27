@@ -42,6 +42,7 @@ pub enum FieldType {
     MetaRef(&'static str),
     List(&'static FieldType),
     Map(&'static FieldType),
+    Vec(&'static FieldType),
 }
 
 pub trait HasMeta {

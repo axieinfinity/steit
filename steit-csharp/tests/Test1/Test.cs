@@ -7,6 +7,16 @@ using Steit.State;
 namespace Test1 {
     public sealed class Test {
         public static void Main(string[] args) {
+            var hello = Hello.Deserialize(new Reader(new byte[] {
+                // Numbers: 1, 2, 1337
+                2, 7, 0, 2, 8, 4, 16, 242, 20,
+                // Others: -1, -2, 1337
+                10, 4, 1, 3, 242, 20,
+            }));
+
+            Console.WriteLine("Numbers: {0}", String.Join(", ", hello.Numbers));
+            Console.WriteLine("Others: {0}", String.Join(", ", hello.Others));
+
             Outer.OnUpdateFoo((newValue, oldValue, container) => {
                 Console.WriteLine("Outer / Foo: {0} => {1}", oldValue, newValue);
             });
