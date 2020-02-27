@@ -14,19 +14,29 @@ use super::{
 struct FieldAttrs {
     tag: u16,
     tag_tokens: TokenStream,
+    skip_state: bool,
 }
 
 impl FieldAttrs {
     pub fn parse(context: &Context, field: &mut syn::Field) -> derive::Result<Self> {
         let mut tag = Attr::new(context, "tag");
+        let mut skip_state = Attr::new(context, "skip_state");
 
         (&mut field.attrs).parse(context, true, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
+
+            syn::Meta::Path(path) if skip_state.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if skip_state.parse_bool(meta) => true,
+
             _ => false,
         });
 
         if let Some((tag, tag_tokens)) = tag.get_with_tokens() {
-            Ok(Self { tag, tag_tokens })
+            Ok(Self {
+                tag,
+                tag_tokens,
+                skip_state: skip_state.get().unwrap_or_default(),
+            })
         } else {
             context.error(field, "expected a valid tag #[steit(tag = ...)]");
             Err(())
@@ -66,6 +76,10 @@ impl<'a> Field<'a> {
         (self.attrs.tag, &self.attrs.tag_tokens)
     }
 
+    fn state(&self) -> bool {
+        self.setting.runtime() && !self.attrs.skip_state
+    }
+
     pub fn access(&self) -> TokenStream {
         access(&self.name, self.index)
     }
@@ -73,7 +87,7 @@ impl<'a> Field<'a> {
     pub fn init(&self) -> TokenStream {
         let tag = self.tag();
 
-        let value = match self.setting.runtime() {
+        let value = match self.state() {
             true => quote!(State::with_runtime(runtime.nested(#tag))),
             false => quote!(Default::default()),
         };
@@ -132,7 +146,7 @@ impl<'a> Field<'a> {
                 let qual = variant.qual();
                 let ctor_name = variant.ctor_name();
 
-                let (new_variant, log_update) = if self.setting.runtime() {
+                let (new_variant, log_update) = if self.state() {
                     (
                         quote!(Self::#ctor_name(self.runtime().parent())),
                         quote! { value.runtime().parent().log_update_in_place(&value).unwrap(); },
@@ -160,7 +174,7 @@ impl<'a> Field<'a> {
             None => (quote!(), quote! { #field = value; }),
         };
 
-        let (setter, setter_with) = if self.setting.runtime() {
+        let (setter, setter_with) = if self.state() {
             let (assign_runtime, log_update) = (
                 quote! { let runtime = self.runtime(); },
                 quote! { runtime.log_update(#tag, &value).unwrap(); },
@@ -234,7 +248,12 @@ impl<'a> Field<'a> {
     pub fn replayer(&self, is_variant: bool) -> TokenStream {
         let tag = self.attrs.tag;
         let field = self.field(is_variant);
-        quote!(#tag => #field.handle(path, kind, reader))
+
+        if self.state() {
+            quote!(#tag => #field.handle(path, kind, reader))
+        } else {
+            quote!(#tag => Ok(()))
+        }
     }
 
     pub fn meta(&self) -> TokenStream {

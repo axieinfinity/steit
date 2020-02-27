@@ -53,6 +53,8 @@ mod tests {
     struct Hello {
         #[steit(tag = 0)]
         numbers: List<i32>,
+        // #[steit(tag = 1, skip_state)]
+        // others: Vec<i32>,
     }
 
     #[steitize(State)]
