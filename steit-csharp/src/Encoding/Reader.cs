@@ -5,6 +5,9 @@ namespace Steit.Encoding {
         private IReader reader;
         private int remaining;
 
+        public Reader() : this(new Bytes(new byte[] {}), 0) {
+        }
+
         public Reader(byte[] bytes) : this(new Bytes(bytes), bytes.Length) {
         }
 

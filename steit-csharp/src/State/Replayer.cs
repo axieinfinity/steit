@@ -35,10 +35,14 @@ namespace Steit.State {
             }
 
             if (path.Count <= 0 && logType == LogType.Update) { // Update the root state
+                reader = !reader.Eof() ? reader.Nested() : new Reader();
+
                 var method = typeof(T).GetMethod("Deserialize");
-                var arguments = new object[] { reader.Nested(), /* path: */ null, /* shouldNotify: */ false };
-                // TODO: Notify this root change
+                var arguments = new object[] { reader, /* path: */ null, /* shouldNotify: */ false };
+
+                // TODO: Notify this root change somehow
                 root = (T) method.Invoke(null, arguments);
+
                 return;
             }
 
