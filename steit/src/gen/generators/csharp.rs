@@ -120,7 +120,9 @@ impl Generator for CSharpGenerator {
             ));
         }
 
-        writer.newline();
+        if !fields.is_empty() {
+            writer.newline();
+        }
 
         // Support removing listeners
         for field in &fields {
@@ -130,7 +132,9 @@ impl Generator for CSharpGenerator {
             ));
         }
 
-        writer.newline();
+        if !fields.is_empty() {
+            writer.newline();
+        }
 
         // Support removing listeners at specific indices
         for field in &fields {
@@ -140,7 +144,9 @@ impl Generator for CSharpGenerator {
             ));
         }
 
-        writer.newline();
+        if !fields.is_empty() {
+            writer.newline();
+        }
 
         // Support clearing listener lists
         for field in &fields {
@@ -150,8 +156,11 @@ impl Generator for CSharpGenerator {
             ));
         }
 
+        if !fields.is_empty() {
+            writer.newline();
+        }
+
         writer
-            .newline()
             .writeln("public static void ClearAllListeners() {")
             .indent();
 
