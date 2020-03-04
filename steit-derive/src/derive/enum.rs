@@ -152,6 +152,14 @@ impl<'a> Enum<'a> {
         }
     }
 
+    fn state_bounds(&self) -> &[&str] {
+        if self.setting.runtime() {
+            &["State"]
+        } else {
+            &[]
+        }
+    }
+
     fn impl_ctors(&self) -> TokenStream {
         let default_ctor_name = self.variants.iter().find_map(|r#struct| {
             let variant = r#struct
@@ -167,8 +175,9 @@ impl<'a> Enum<'a> {
 
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
-        self.r#impl
-            .r#impl(if let Some(default_ctor_name) = default_ctor_name {
+        self.r#impl.r#impl_with(
+            self.state_bounds(),
+            if let Some(default_ctor_name) = default_ctor_name {
                 let (declare_arg, call_arg) = match self.setting.runtime() {
                     true => (quote!(runtime: Runtime), quote!(runtime)),
                     false => (quote!(), quote!()),
@@ -191,7 +200,8 @@ impl<'a> Enum<'a> {
                 }
 
                 quote!(#(#ctors)*)
-            })
+            },
+        )
     }
 
     fn impl_cached_size(&self) -> TokenStream {
@@ -223,7 +233,9 @@ impl<'a> Enum<'a> {
 
     fn impl_setters(&self) -> TokenStream {
         let setters = self.variants.iter().map(|r#struct| r#struct.setters());
-        self.r#impl.r#impl(quote!(#(#setters)*))
+
+        self.r#impl
+            .r#impl_with(self.state_bounds(), quote!(#(#setters)*))
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -232,8 +244,9 @@ impl<'a> Enum<'a> {
             false => quote!(),
         };
 
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "Default",
+            self.state_bounds(),
             quote! {
                 #[inline]
                 fn default() -> Self {
@@ -244,8 +257,9 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_wire_type(&self) -> TokenStream {
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "WireType",
+            &[],
             quote! {
                 const WIRE_TYPE: u8 = 2;
             },
@@ -361,8 +375,9 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "Merge",
+            self.state_bounds(),
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     let tag = u16::deserialize(reader)?;
@@ -496,8 +511,9 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "HasMeta",
+            &["IsFieldType"],
             quote! {
                 const META: &'static Meta = &Meta::Enum(&Enum {
                     name: #name,

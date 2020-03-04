@@ -245,6 +245,14 @@ impl<'a> Struct<'a> {
         self.variant.as_ref()
     }
 
+    fn state_bounds(&self) -> &[&str] {
+        if self.runtime.is_some() {
+            &["State"]
+        } else {
+            &[]
+        }
+    }
+
     pub fn ctor_name(&self) -> syn::Ident {
         match &self.variant {
             Some(variant) => variant.ctor_name(),
@@ -295,7 +303,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_ctor(&self) -> TokenStream {
-        self.r#impl.r#impl(self.ctor())
+        self.r#impl.r#impl_with(self.state_bounds(), self.ctor())
     }
 
     pub fn setters(&self) -> TokenStream {
@@ -306,7 +314,9 @@ impl<'a> Struct<'a> {
 
     fn impl_setters(&self) -> TokenStream {
         let setters = self.setters();
-        self.r#impl.r#impl(quote!(#setters))
+
+        self.r#impl
+            .r#impl_with(self.state_bounds(), quote!(#setters))
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -324,8 +334,9 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_wire_type(&self) -> TokenStream {
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "WireType",
+            &[],
             quote! {
                 const WIRE_TYPE: u8 = 2;
             },
@@ -511,8 +522,9 @@ impl<'a> Struct<'a> {
         let meta = self.meta();
         let name = self.r#impl.name().to_token_stream().to_string();
 
-        self.r#impl.impl_for(
+        self.r#impl.impl_for_with(
             "HasMeta",
+            &["IsFieldType"],
             quote! {
                 const META: &'static Meta = &Meta::Struct(#meta);
                 const META_NAME: &'static str = #name;
