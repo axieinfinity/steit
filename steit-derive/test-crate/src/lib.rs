@@ -1,7 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use std::env;
-
     use steit::{
         gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
@@ -93,7 +91,7 @@ mod tests {
 
     #[test]
     fn test() {
-        let out_dir = env::var("CSHARP_OUT_DIR").unwrap();
+        let out_dir = env!("CSHARP_OUT_DIR");
         let generator = CSharpGenerator::new("Test1", out_dir);
 
         generator.generate::<Outer>().unwrap();
