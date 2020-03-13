@@ -97,6 +97,16 @@ impl Runtime {
     }
 
     #[inline]
+    pub fn pause(&self) -> u32 {
+        self.logger.lock().unwrap().pause()
+    }
+
+    #[inline]
+    pub fn unpause(&self) -> u32 {
+        self.logger.lock().unwrap().unpause()
+    }
+
+    #[inline]
     pub fn log_update(&self, tag: u16, value: &impl Serialize) -> io::Result<()> {
         self.logger.lock().unwrap().log(LogEntry::new_update(
             Arc::new(Node::child(&self.path, tag)),
