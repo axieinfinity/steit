@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use crate::{
     attr::{Attr, AttrParse},
     ctx::Context,
-    string_utils,
+    string_util,
 };
 
 use super::derive;
@@ -68,7 +68,7 @@ impl Variant {
     }
 
     pub fn snake_case_name(&self) -> String {
-        string_utils::to_snake_case(&self.name.to_string())
+        string_util::to_snake_case(&self.name.to_string())
     }
 
     pub fn qual(&self) -> TokenStream {

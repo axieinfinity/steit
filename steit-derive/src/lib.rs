@@ -8,7 +8,7 @@ mod attr;
 mod ctx;
 mod derive;
 mod r#impl;
-mod string_utils;
+mod string_util;
 
 #[proc_macro_attribute]
 pub fn steitize(args: TokenStream, input: TokenStream) -> TokenStream {

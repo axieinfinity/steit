@@ -261,7 +261,7 @@ mod tests {
 
     use crate::{
         log::loggers::BufferLogger,
-        test_utils::{assert_serialize, merge, replay, Point},
+        test_util::{assert_serialize, merge, replay, Point},
         Runtime, State,
     };
 

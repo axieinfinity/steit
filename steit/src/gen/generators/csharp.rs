@@ -45,7 +45,7 @@ impl Generator for CSharpGenerator {
 
     fn generate_struct(&self, r#struct: &Struct, is_variant: bool, writer: &mut Writer) {
         let name = r#struct.name;
-        let var_name = string_utils::uncap_first_char(name);
+        let var_name = string_util::uncap_first_char(name);
 
         let fields: Vec<_> = r#struct
             .fields
@@ -283,7 +283,7 @@ impl Generator for CSharpGenerator {
 
     fn generate_enum(&self, r#enum: &Enum, writer: &mut Writer) {
         let name = r#enum.name;
-        let var_name = string_utils::uncap_first_char(name);
+        let var_name = string_util::uncap_first_char(name);
 
         let variants: Vec<_> = r#enum
             .variants
@@ -434,7 +434,7 @@ impl CSharpVariant {
     pub fn with_variant(variant: &'static Variant) -> Self {
         Self {
             raw: variant,
-            screaming_snake_case_name: string_utils::to_snake_case(variant.ty.name).to_uppercase(),
+            screaming_snake_case_name: string_util::to_snake_case(variant.ty.name).to_uppercase(),
         }
     }
 }
@@ -450,8 +450,8 @@ impl CSharpField {
     pub fn with_field(field: &'static Field) -> Self {
         Self {
             raw: field,
-            upper_camel_case_name: string_utils::to_camel_case(field.name, true),
-            lower_camel_case_name: string_utils::to_camel_case(field.name, false),
+            upper_camel_case_name: string_util::to_camel_case(field.name, true),
+            lower_camel_case_name: string_util::to_camel_case(field.name, false),
             ty: get_type(field.ty),
         }
     }

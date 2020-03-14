@@ -17,4 +17,4 @@ pub use steit_derive::*;
 pub use iowrap::Eof;
 
 #[cfg(test)]
-mod test_utils;
+mod test_util;

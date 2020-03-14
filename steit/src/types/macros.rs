@@ -26,16 +26,21 @@ macro_rules! impl_state_for_plain {
 
                 Err(::std::io::Error::new(
                     ::std::io::ErrorKind::InvalidData,
-                    format!("{} expected end-of-path but still got [{}] remaining", $name, s),
+                    format!(
+                        "{} expected end-of-path but still got [{}] remaining",
+                        $name, s
+                    ),
                 ))
             } else {
                 match kind {
                     $crate::ReplayKind::Update => self.handle_update(reader),
 
-                    $crate::ReplayKind::Add | $crate::ReplayKind::Remove => Err(::std::io::Error::new(
-                        ::std::io::ErrorKind::InvalidData,
-                        format!("`add` and `remove` are not supported on {}", $name),
-                    )),
+                    $crate::ReplayKind::Add | $crate::ReplayKind::Remove => {
+                        Err(::std::io::Error::new(
+                            ::std::io::ErrorKind::InvalidData,
+                            format!("`add` and `remove` are not supported on {}", $name),
+                        ))
+                    }
                 }
             }
         }

@@ -52,7 +52,7 @@ impl<T: IsFieldType> IsFieldType for Vec<T> {
 mod tests {
     use crate::{
         test_case,
-        test_utils::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
     };
 
     test_case!(size_01: assert_size::<Vec<u8>>; vec![] => 0);

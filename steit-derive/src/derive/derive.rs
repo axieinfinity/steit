@@ -5,7 +5,7 @@ use crate::{
     attr::{Attr, AttrParse},
     ctx::Context,
     r#impl::Impl,
-    string_utils,
+    string_util,
 };
 
 use super::{r#enum::Enum, r#struct::Struct, union::Union};
@@ -223,7 +223,7 @@ fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {
 fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream) -> TokenStream {
     let dummy_const = format_ident!(
         "_IMPL_STEIT_FOR_{}",
-        string_utils::to_snake_case(&name.to_string()).to_uppercase()
+        string_util::to_snake_case(&name.to_string()).to_uppercase()
     );
 
     let extern_crate = setting.extern_crate();

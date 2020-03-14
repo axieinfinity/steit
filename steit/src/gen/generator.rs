@@ -7,7 +7,7 @@ use std::{
 
 use super::{
     gen_meta::{Enum, HasMeta, Meta, Struct},
-    gen_utils,
+    gen_util,
     writer::Writer,
 };
 
@@ -22,7 +22,7 @@ pub trait Generator {
     fn generate<T: HasMeta>(&self) -> io::Result<()> {
         let mut states = HashMap::new();
 
-        gen_utils::collect_meta(T::META, &mut states);
+        gen_util::collect_meta(T::META, &mut states);
 
         for (name, state) in states {
             let mut writer = Writer::new(self.indent_size());

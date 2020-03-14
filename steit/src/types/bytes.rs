@@ -71,7 +71,7 @@ impl State for Bytes {
 mod tests {
     use crate::{
         test_case,
-        test_utils::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
     };
 
     use super::Bytes;

@@ -1,8 +1,8 @@
 mod gen_meta;
-mod gen_utils;
+mod gen_util;
 mod generator;
 pub mod generators;
-pub mod string_utils;
+pub mod string_util;
 mod writer;
 
 pub use gen_meta::*;

@@ -1,7 +1,7 @@
 mod bytes;
 mod impls;
+mod macros;
 mod stateful;
-mod type_utils;
 mod varint;
 
 pub use bytes::*;
