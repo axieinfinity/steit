@@ -51,6 +51,11 @@ impl<T: State> State for Box<T> {
     }
 
     #[inline]
+    fn set_runtime(&mut self, runtime: Runtime) {
+        self.as_mut().set_runtime(runtime)
+    }
+
+    #[inline]
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,

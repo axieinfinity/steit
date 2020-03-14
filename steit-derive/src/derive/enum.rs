@@ -217,8 +217,7 @@ impl<'a> Enum<'a> {
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
             let qual = variant.qual();
-            // Technically we can use `destructure` and `init` interchangeably here.
-            let destructure = cached_size.init(quote!(cached_size));
+            let destructure = cached_size.destructure(quote!(cached_size));
 
             quote!(#name #qual { #destructure, .. } => cached_size)
         });
@@ -403,19 +402,43 @@ impl<'a> Enum<'a> {
         let name = self.r#impl.name();
 
         let runtimes = self.variants.iter().map(|r#struct| {
-            let runtime = r#struct
-                .runtime()
-                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
-
             let variant = r#struct
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
+            let runtime = r#struct
+                .runtime()
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
             let qual = variant.qual();
-            // Technically we can use `destructure` and `init` interchangeably here.
-            let destructure = runtime.init(quote!(runtime));
+            let destructure = runtime.destructure(quote!(runtime));
 
             quote!(#name #qual { #destructure, .. } => runtime)
+        });
+
+        let runtime_setters = self.variants.iter().map(|r#struct| {
+            let variant = r#struct
+                .variant()
+                .unwrap_or_else(|| unreachable!("expected a variant"));
+
+            let runtime = r#struct
+                .runtime()
+                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+
+            let tag = variant.tag();
+            let qual = variant.qual();
+
+            let destructure = r#struct.destructure();
+            let runtime_destructure = runtime.destructure(quote!(current_runtime));
+
+            let runtime_setter = r#struct.runtime_setter();
+
+            quote! {
+                #name #qual { #destructure #runtime_destructure, .. } => {
+                    let runtime = runtime.nested(#tag);
+                    #runtime_setter
+                }
+            }
         });
 
         let replayers = self.variants.iter().map(|r#struct| {
@@ -454,6 +477,11 @@ impl<'a> Enum<'a> {
                 #[inline]
                 fn runtime(&self) -> &Runtime {
                     match self { #(#runtimes,)* }
+                }
+
+                #[inline]
+                fn set_runtime(&mut self, runtime: Runtime) {
+                    match self { #(#runtime_setters)* }
                 }
 
                 #[inline]

@@ -428,6 +428,25 @@ impl<'a> Struct<'a> {
         )
     }
 
+    pub fn runtime_setter(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let runtime_setters = map_fields!(self, runtime_setter(is_variant));
+
+        if is_variant {
+            quote! {
+                *current_runtime = runtime.clone();
+                #(#runtime_setters)*
+            }
+        } else {
+            let runtime = self.runtime().unwrap().access();
+
+            quote! {
+                self.#runtime = runtime.clone();
+                #(#runtime_setters)*
+            }
+        }
+    }
+
     pub fn replayer(&self) -> TokenStream {
         let is_variant = self.variant.is_some();
         let replayers = map_fields!(self, replayer(is_variant));
@@ -474,6 +493,7 @@ impl<'a> Struct<'a> {
             .access();
 
         let replayer = self.replayer();
+        let runtime_setter = self.runtime_setter();
 
         self.r#impl.impl_for(
             "State",
@@ -486,6 +506,11 @@ impl<'a> Struct<'a> {
                 #[inline]
                 fn runtime(&self) -> &Runtime {
                     &self.#runtime
+                }
+
+                #[inline]
+                fn set_runtime(&mut self, runtime: Runtime) {
+                    #runtime_setter
                 }
 
                 #[inline]

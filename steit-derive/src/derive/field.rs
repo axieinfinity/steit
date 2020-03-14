@@ -245,6 +245,17 @@ impl<'a> Field<'a> {
         }
     }
 
+    pub fn runtime_setter(&self, is_variant: bool) -> TokenStream {
+        let tag = self.attrs.tag;
+        let field = self.field(is_variant);
+
+        if self.state() {
+            quote! { #field.set_runtime(runtime.nested(#tag)); }
+        } else {
+            quote!()
+        }
+    }
+
     pub fn replayer(&self, is_variant: bool) -> TokenStream {
         let tag = self.attrs.tag;
         let field = self.field(is_variant);
@@ -321,6 +332,10 @@ impl ExtraField {
         } else {
             value
         }
+    }
+
+    pub fn destructure(&self, name: TokenStream) -> TokenStream {
+        self.init(name)
     }
 }
 

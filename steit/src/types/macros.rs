@@ -11,6 +11,9 @@ macro_rules! impl_state_for_plain {
         }
 
         #[inline]
+        fn set_runtime(&mut self, _runtime: $crate::Runtime) {}
+
+        #[inline]
         fn handle<'a>(
             &mut self,
             path: &mut impl Iterator<Item = &'a u16>,

@@ -203,6 +203,15 @@ impl<T: State> State for List<T> {
     }
 
     #[inline]
+    fn set_runtime(&mut self, runtime: Runtime) {
+        self.runtime = runtime.clone();
+
+        for (tag, item) in self.enumerate_mut() {
+            item.set_runtime(runtime.nested(tag));
+        }
+    }
+
+    #[inline]
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,

@@ -175,6 +175,15 @@ impl<K: MapKey, V: State> State for Map<K, V> {
     }
 
     #[inline]
+    fn set_runtime(&mut self, runtime: Runtime) {
+        self.runtime = runtime.clone();
+
+        for (tag, value) in self.entries.iter_mut() {
+            value.set_runtime(runtime.nested(*tag));
+        }
+    }
+
+    #[inline]
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,

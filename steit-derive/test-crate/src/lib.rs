@@ -5,7 +5,7 @@ mod tests {
         log::loggers::PrintLogger,
         steitize,
         types::List,
-        Runtime, Serialize,
+        Runtime, Serialize, State,
     };
 
     #[steitize(State)]
@@ -136,6 +136,15 @@ mod tests {
         outer.inner.set_foo(160);
         outer.set_inner_with(Inner::new);
 
+        println!("{:?}", outer);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger)).nested(10);
+
+        outer.set_runtime(runtime);
+
+        println!("{:?}", outer);
+
         println!("\nENUM");
 
         let logger = PrintLogger::with_stdout();
@@ -144,6 +153,15 @@ mod tests {
         let mut multicase = Multicase::new(runtime);
 
         multicase.set_second_case_foo(68);
+
+        println!("{:?}", multicase);
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger)).nested(10);
+
+        multicase.set_runtime(runtime);
+
+        println!("{:?}", multicase);
 
         println!("\nLIST #1");
 

@@ -47,6 +47,7 @@ impl ReplayEntry {
 pub trait State: Serialize + Deserialize {
     fn with_runtime(runtime: Runtime) -> Self;
     fn runtime(&self) -> &Runtime;
+    fn set_runtime(&mut self, runtime: Runtime);
 
     fn handle<'a>(
         &mut self,
