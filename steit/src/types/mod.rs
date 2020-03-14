@@ -1,9 +1,9 @@
 mod bytes;
 mod impls;
 mod macros;
-mod stateful;
+mod state;
 mod varint;
 
 pub use bytes::*;
-pub use stateful::*;
+pub use state::*;
 pub use varint::*;
