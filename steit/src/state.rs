@@ -1,6 +1,13 @@
 use std::io;
 
-use super::{de::Deserialize, rt::Runtime, ser::Serialize, types::Bytes, Eof};
+use super::{
+    de::Deserialize,
+    log::LogEntry,
+    rt::{CachedSize, Runtime},
+    ser::Serialize,
+    types::Bytes,
+    Eof,
+};
 
 #[derive(Clone, Copy, PartialEq)]
 pub enum ReplayKind {
@@ -90,5 +97,27 @@ pub trait State: Serialize + Deserialize {
         }
 
         Ok(())
+    }
+}
+
+impl From<LogEntry> for ReplayEntry {
+    #[inline]
+    fn from(entry: LogEntry) -> Self {
+        match entry {
+            LogEntry::Update { path, value, .. } => ReplayEntry::Update {
+                path: path.values(),
+                value,
+                cached_size: CachedSize::new(),
+            },
+            LogEntry::Add { path, item, .. } => ReplayEntry::Add {
+                path: path.values(),
+                item,
+                cached_size: CachedSize::new(),
+            },
+            LogEntry::Remove { path, .. } => ReplayEntry::Remove {
+                path: path.values(),
+                cached_size: CachedSize::new(),
+            },
+        }
     }
 }

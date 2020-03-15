@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{
     log::{LogEntry, Logger},
-    Serialize,
+    ReplayEntry, Serialize,
 };
 
 pub struct BufferLogger {
@@ -43,6 +43,14 @@ impl BufferLogger {
     #[inline]
     pub fn pluck_log(&mut self) -> Vec<LogEntry> {
         std::mem::replace(&mut self.log, Vec::new())
+    }
+
+    #[inline]
+    pub fn pluck_replay(&mut self) -> Vec<ReplayEntry> {
+        self.pluck_log()
+            .into_iter()
+            .map(|entry| entry.into())
+            .collect()
     }
 }
 

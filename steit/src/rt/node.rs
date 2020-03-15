@@ -33,6 +33,25 @@ impl<T> Node<T> {
     }
 }
 
+impl<T: Copy> Node<T> {
+    fn write_values(&self, values: &mut Vec<T>) {
+        match self {
+            Node::Root => (),
+            Node::Child { parent, value, .. } => {
+                parent.write_values(values);
+                values.push(*value);
+            }
+        }
+    }
+
+    #[inline]
+    pub fn values(&self) -> Vec<T> {
+        let mut values = Vec::new();
+        self.write_values(&mut values);
+        values
+    }
+}
+
 impl<T> Default for Node<T> {
     #[inline]
     fn default() -> Self {
