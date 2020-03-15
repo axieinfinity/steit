@@ -15,18 +15,22 @@ struct FieldAttrs {
     tag: u16,
     tag_tokens: TokenStream,
     skip_state: bool,
+    meta_name: Option<String>,
 }
 
 impl FieldAttrs {
     pub fn parse(context: &Context, field: &mut syn::Field) -> derive::Result<Self> {
         let mut tag = Attr::new(context, "tag");
         let mut skip_state = Attr::new(context, "skip_state");
+        let mut meta_name = Attr::new(context, "meta_name");
 
         (&mut field.attrs).parse(context, true, &mut |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
             syn::Meta::Path(path) if skip_state.parse_path(path) => true,
             syn::Meta::NameValue(meta) if skip_state.parse_bool(meta) => true,
+
+            syn::Meta::NameValue(meta) if meta_name.parse_str(meta) => true,
 
             _ => false,
         });
@@ -36,6 +40,7 @@ impl FieldAttrs {
                 tag,
                 tag_tokens,
                 skip_state: skip_state.get().unwrap_or_default(),
+                meta_name: meta_name.get(),
             })
         } else {
             context.error(field, "expected a valid tag #[steit(tag = ...)]");
@@ -268,7 +273,10 @@ impl<'a> Field<'a> {
     }
 
     pub fn meta(&self) -> TokenStream {
-        let name = self.alias().to_string();
+        let name = match self.attrs.meta_name {
+            Some(ref name) => name.to_owned(),
+            None => self.alias().to_string(),
+        };
 
         let ty = &self.ty;
         let type_name = &*quote!(#ty).to_string();
