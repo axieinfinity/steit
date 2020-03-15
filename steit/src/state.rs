@@ -9,26 +9,26 @@ pub enum ReplayKind {
     Remove,
 }
 
-#[crate::steitize(Deserialize, own_crate, no_setters, no_meta)]
+#[crate::steitize(Serialize, Deserialize, own_crate, no_setters)]
 #[derive(Debug)]
 pub enum ReplayEntry {
     #[steit(tag = 0)]
     Update {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, meta_name = "flatten_path")]
         path: Vec<u16>,
         #[steit(tag = 1)]
         value: Bytes,
     },
     #[steit(tag = 1)]
     Add {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, meta_name = "flatten_path")]
         path: Vec<u16>,
         #[steit(tag = 1)]
         item: Bytes,
     },
     #[steit(tag = 2)]
     Remove {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, meta_name = "flatten_path")]
         path: Vec<u16>,
     },
 }
