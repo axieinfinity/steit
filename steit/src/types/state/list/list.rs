@@ -67,8 +67,13 @@ impl<T: State> List<T> {
 
     #[inline]
     pub fn remove(&mut self, tag: u16) -> Option<T> {
-        self.runtime.log_remove(tag).unwrap();
-        self.items.remove(tag as usize)
+        match self.items.get_mut(tag as usize) {
+            Some(item) => {
+                self.runtime.log_remove(tag).unwrap();
+                item.take()
+            }
+            None => None,
+        }
     }
 
     #[inline]
