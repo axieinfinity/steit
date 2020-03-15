@@ -61,7 +61,7 @@ namespace Steit.State {
             }
 
             if (reader.Eof()) {
-                reader = new Reader(new byte[] { 0 });
+                reader = new Reader(new byte[1]);
             }
 
             switch (logType) {
