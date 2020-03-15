@@ -59,7 +59,7 @@ impl<T: State> State for Box<T> {
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,
-        kind: &ReplayKind,
+        kind: ReplayKind,
         reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()> {
         self.as_mut().handle(path, kind, reader)

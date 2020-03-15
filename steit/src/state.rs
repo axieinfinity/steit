@@ -2,7 +2,7 @@ use std::io;
 
 use super::{de::Deserialize, rt::Runtime, ser::Serialize, types::Bytes, Eof};
 
-#[derive(PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq)]
 pub enum ReplayKind {
     Update,
     Add,
@@ -33,17 +33,6 @@ pub enum ReplayEntry {
     },
 }
 
-impl ReplayEntry {
-    #[inline]
-    pub fn decompose(self) -> (Vec<u16>, ReplayKind, Vec<u8>) {
-        match self {
-            ReplayEntry::Update { path, value, .. } => (path, ReplayKind::Update, value.into_vec()),
-            ReplayEntry::Add { path, item, .. } => (path, ReplayKind::Add, item.into_vec()),
-            ReplayEntry::Remove { path, .. } => (path, ReplayKind::Remove, Vec::new()),
-        }
-    }
-}
-
 pub trait State: Serialize + Deserialize {
     fn with_runtime(runtime: Runtime) -> Self;
     fn runtime(&self) -> &Runtime;
@@ -52,7 +41,7 @@ pub trait State: Serialize + Deserialize {
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,
-        kind: &ReplayKind,
+        kind: ReplayKind,
         reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()>;
 
@@ -85,11 +74,19 @@ pub trait State: Serialize + Deserialize {
             let entry = ReplayEntry::deserialize_nested(reader)?;
             println!("{:?}", entry);
 
-            let (path, kind, buf) = entry.decompose();
+            let (path, kind, buf) = match entry {
+                ReplayEntry::Update { path, value, .. } => {
+                    (path, ReplayKind::Update, value.into_vec())
+                }
+
+                ReplayEntry::Add { path, item, .. } => (path, ReplayKind::Add, item.into_vec()),
+                ReplayEntry::Remove { path, .. } => (path, ReplayKind::Remove, Vec::new()),
+            };
+
             let path = &mut path.iter();
             let reader = &mut Eof::new(&*buf);
 
-            self.handle(path, &kind, reader)?;
+            self.handle(path, kind, reader)?;
         }
 
         Ok(())

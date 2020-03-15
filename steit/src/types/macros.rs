@@ -17,7 +17,7 @@ macro_rules! impl_state_for_plain {
         fn handle<'a>(
             &mut self,
             path: &mut impl Iterator<Item = &'a u16>,
-            kind: &$crate::ReplayKind,
+            kind: $crate::ReplayKind,
             reader: &mut $crate::Eof<impl ::std::io::Read>,
         ) -> ::std::io::Result<()> {
             if let Some(tag) = path.next() {

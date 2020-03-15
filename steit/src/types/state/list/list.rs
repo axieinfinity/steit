@@ -215,7 +215,7 @@ impl<T: State> State for List<T> {
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,
-        kind: &ReplayKind,
+        kind: ReplayKind,
         reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()> {
         if let Some(&tag) = path.next() {
@@ -223,7 +223,7 @@ impl<T: State> State for List<T> {
                 if let Some(item) = &mut self.items[tag as usize] {
                     let path = &mut path.peekable();
 
-                    if kind == &ReplayKind::Remove && path.peek().is_none() {
+                    if kind == ReplayKind::Remove && path.peek().is_none() {
                         self.items[tag as usize] = None;
                         Ok(())
                     } else {

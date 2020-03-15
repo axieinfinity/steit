@@ -187,19 +187,19 @@ impl<K: MapKey, V: State> State for Map<K, V> {
     fn handle<'a>(
         &mut self,
         path: &mut impl Iterator<Item = &'a u16>,
-        kind: &ReplayKind,
+        kind: ReplayKind,
         reader: &mut Eof<impl io::Read>,
     ) -> io::Result<()> {
         if let Some(&tag) = path.next() {
             let path = &mut path.peekable();
 
-            if kind == &ReplayKind::Update && path.peek().is_none() {
+            if kind == ReplayKind::Update && path.peek().is_none() {
                 let mut value = V::with_runtime(self.runtime().nested(tag));
                 value.merge(reader)?;
                 self.entries.insert(tag, value);
                 Ok(())
             } else if let Some(value) = self.entries.get_mut(&tag) {
-                if kind == &ReplayKind::Remove && path.peek().is_none() {
+                if kind == ReplayKind::Remove && path.peek().is_none() {
                     self.entries.remove(&tag);
                     Ok(())
                 } else {
