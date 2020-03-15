@@ -21,6 +21,7 @@ impl CSharpGenerator {
             .writeln("using System.Collections.Generic;")
             .newline()
             .writeln("using Steit;")
+            .writeln("using Steit.Builtins;")
             .writeln("using Steit.Collections;")
             .writeln("using Steit.Encoding;")
             .writeln("using Steit.State;")
@@ -479,6 +480,7 @@ fn get_type(ty: &'static FieldType) -> String {
 
         FieldType::MetaRef(name) => name.to_string(),
 
+        FieldType::Bytes => "ByteArray".to_owned(),
         FieldType::List(field_type) => format!("StateList<{}>", get_type(field_type)),
         FieldType::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
         FieldType::Vec(field_type) => format!("FixedList<{}>", get_type(field_type)),

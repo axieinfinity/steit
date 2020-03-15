@@ -40,6 +40,7 @@ pub enum FieldType {
     Primitive(&'static str),
     Meta(&'static Meta),
     MetaRef(&'static str),
+    Bytes,
     List(&'static FieldType),
     Map(&'static FieldType),
     Vec(&'static FieldType),

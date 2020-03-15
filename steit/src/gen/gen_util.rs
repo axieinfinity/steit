@@ -29,9 +29,10 @@ fn collect_meta_from_field(
     meta_list: &mut HashMap<&'static str, Meta>,
 ) {
     match field_type {
-        FieldType::Primitive(_) => {}
+        FieldType::Primitive(_) => (),
         FieldType::Meta(meta) => collect_meta(meta, meta_list),
-        FieldType::MetaRef(_) => {}
+        FieldType::MetaRef(_) => (),
+        FieldType::Bytes => (),
         FieldType::List(field_type) | FieldType::Map(field_type) | FieldType::Vec(field_type) => {
             collect_meta_from_field(field_type, meta_list)
         }

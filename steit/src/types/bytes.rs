@@ -4,6 +4,7 @@ use std::{
 };
 
 use crate::{
+    gen::{FieldType, IsFieldType},
     impl_state_for_plain,
     wire_type::{WireType, WIRE_TYPE_SIZED},
     Eof, Merge, Serialize, State,
@@ -65,6 +66,10 @@ impl Merge for Bytes {
 
 impl State for Bytes {
     impl_state_for_plain!("bytes");
+}
+
+impl IsFieldType for Bytes {
+    const FIELD_TYPE: &'static FieldType = &FieldType::Bytes;
 }
 
 #[cfg(test)]

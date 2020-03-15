@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 
 using Steit;
+using Steit.Builtins;
 using Steit.Collections;
 using Steit.Encoding;
 using Steit.State;
