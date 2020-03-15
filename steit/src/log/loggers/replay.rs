@@ -1,16 +1,26 @@
 use crate::{
     log::{LogEntry, Logger},
-    Serialize,
+    ReplayEntry, Serialize,
 };
 
-pub struct BufferLogger {
-    log: Vec<LogEntry>,
+pub struct ReplayLogger {
+    log: Vec<ReplayEntry>,
 }
 
-impl BufferLogger {
+impl ReplayLogger {
     #[inline]
     pub fn new() -> Self {
         Self { log: Vec::new() }
+    }
+
+    #[inline]
+    pub fn log_raw(&mut self, entry: ReplayEntry) {
+        self.log.push(entry);
+    }
+
+    #[inline]
+    pub fn log_raws(&mut self, mut entries: Vec<ReplayEntry>) {
+        self.log.append(&mut entries);
     }
 
     #[inline]
@@ -33,17 +43,15 @@ impl BufferLogger {
     }
 
     #[inline]
-    pub fn pluck(&mut self) -> Vec<u8> {
-        let bytes = self.bytes();
-        self.clear();
-        bytes
+    pub fn pluck(&mut self) -> Vec<ReplayEntry> {
+        std::mem::replace(&mut self.log, Vec::new())
     }
 }
 
-impl Logger for BufferLogger {
+impl Logger for ReplayLogger {
     #[inline]
     fn log(&mut self, entry: LogEntry) -> std::io::Result<()> {
-        self.log.push(entry);
+        self.log.push(entry.into());
         Ok(())
     }
 }
