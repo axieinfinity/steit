@@ -5,7 +5,7 @@ namespace Steit.Encoding {
         private IReader reader;
         private int remaining;
 
-        public Reader() : this(new Bytes(new byte[] {}), 0) {
+        public Reader() : this(new Bytes(new byte[0]), 0) {
         }
 
         public Reader(byte[] bytes) : this(new Bytes(bytes), bytes.Length) {
@@ -20,11 +20,15 @@ namespace Steit.Encoding {
             return new Reader(this, (int) this.ReadUInt32());
         }
 
-        public bool Eof() {
+        public override bool Eof() {
             return this.remaining <= 0 || this.reader.Eof();
         }
 
-        public byte Read() {
+        public override int Remaining() {
+            return this.remaining;
+        }
+
+        public override byte Read() {
             if (this.remaining > 0) {
                 this.remaining--;
                 return this.reader.Read();
@@ -64,7 +68,7 @@ namespace Steit.Encoding {
             return (tag, wireType);
         }
 
-        public void Skip(int length) {
+        public override void Skip(int length) {
             if (length <= this.remaining) {
                 this.reader.Skip(length);
                 this.remaining -= length;
@@ -79,11 +83,6 @@ namespace Steit.Encoding {
                 case WireType.Sized: this.Skip((int) this.ReadUInt32()); break;
                 default: throw new Exception(string.Format("Invalid wire type {0}", wireType));
             }
-        }
-
-        public void Exhaust() {
-            this.reader.Skip(this.remaining);
-            this.remaining = 0;
         }
 
         private ulong ReadUnsignedVarint() {

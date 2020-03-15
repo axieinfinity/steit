@@ -1,7 +1,9 @@
 namespace Steit.Encoding {
-    public interface IReader {
-        bool Eof();
-        byte Read();
-        void Skip(int length);
+    public abstract class IReader {
+        public abstract bool Eof();
+        public abstract int Remaining();
+        public abstract byte Read();
+        public abstract void Skip(int length);
+        public void Exhaust() { this.Skip(this.Remaining()); }
     }
 }

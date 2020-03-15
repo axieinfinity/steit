@@ -10,11 +10,15 @@ namespace Steit.Encoding {
             this.index = 0;
         }
 
-        public bool Eof() {
+        public override bool Eof() {
             return this.index >= this.bytes.Length;
         }
 
-        public byte Read() {
+        public override int Remaining() {
+            return this.bytes.Length - this.index;
+        }
+
+        public override byte Read() {
             if (this.index < this.bytes.Length) {
                 return this.bytes[this.index++];
             } else {
@@ -22,7 +26,7 @@ namespace Steit.Encoding {
             }
         }
 
-        public void Skip(int length) {
+        public override void Skip(int length) {
             if (this.index + length <= this.bytes.Length) {
                 this.index += length;
             } else {
