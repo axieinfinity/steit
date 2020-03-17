@@ -29,6 +29,11 @@ impl<T: State> List<T> {
     }
 
     #[inline]
+    pub fn len_upper(&self) -> usize {
+        self.items.len()
+    }
+
+    #[inline]
     pub fn get(&self, tag: u16) -> Option<&T> {
         match self.items.get(tag as usize) {
             Some(item) => item.as_ref(),
