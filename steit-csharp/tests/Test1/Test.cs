@@ -103,21 +103,56 @@ namespace Test1 {
             var list2 = new StateList<SByte>();
 
             list2.OnUpdate((newItem, oldItem, tag, container) => {
-                Console.WriteLine("List<Inner>, update #{0}: {1} => {2}", tag, oldItem, newItem);
+                Console.WriteLine("List<SByte>, update #{0}: {1} => {2}", tag, oldItem, newItem);
             });
 
             list2.OnAdd((item, tag, container) => {
-                Console.WriteLine("List<Inner>, add #{0}: {1}", tag, item);
+                Console.WriteLine("List<SByte>, add #{0}: {1}", tag, item);
             });
 
             list2.OnRemove((item, tag, container) => {
-                Console.WriteLine("List<Inner>, remove #{0}: {1}", tag, item);
+                Console.WriteLine("List<SByte>, remove #{0}: {1}", tag, item);
             });
 
             Replayer.Replay(ref list2, new Reader(new byte[] {
                 4, 1, 10, 1, 20,
                 4, 1, 10, 1, 22,
                 4, 1, 10, 1, 0,
+                4, 2, 2, 1, 1,
+            }));
+
+            var map1 = new StateDictionary<Inner>();
+
+            map1.OnUpdate((newItem, oldItem, tag, container) => {
+                Console.WriteLine("Dictionary<Inner>, update #{0}: {1} => {2}", tag, InnerToString(oldItem), InnerToString(newItem));
+            });
+
+            map1.OnRemove((item, tag, container) => {
+                Console.WriteLine("Dictionary<Inner>, remove #{0}: {1}", tag, InnerToString(item));
+            });
+
+            Replayer.Replay(ref map1, new Reader(new byte[] {
+                8, 0, 2, 1, 5, 10, 2, 0, 12,
+                11, 0, 2, 1, 1, 10, 5, 0, 154, 1, 8, 1,
+                4, 0, 2, 1, 0,
+                9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
+                4, 2, 2, 1, 0,
+            }));
+
+            var map2 = new StateDictionary<SByte>();
+
+            map2.OnUpdate((newItem, oldItem, tag, container) => {
+                Console.WriteLine("Dictionary<SByte>, update #{0}: {1} => {2}", tag, oldItem, newItem);
+            });
+
+            map2.OnRemove((item, tag, container) => {
+                Console.WriteLine("Dictionary<SByte>, remove #{0}: {1}", tag, item);
+            });
+
+            Replayer.Replay(ref map2, new Reader(new byte[] {
+                7, 0, 2, 1, 1, 10, 1, 20,
+                7, 0, 2, 1, 3, 10, 1, 22,
+                7, 0, 2, 1, 7, 10, 1, 0,
                 4, 2, 2, 1, 1,
             }));
 
@@ -170,11 +205,11 @@ namespace Test1 {
         }
 
         private static String InnerToString(Inner inner) {
-            return string.Format("{{ Foo: {0}, Bar: {1} }}", inner.Foo, inner.Bar);
+            return inner != null ? string.Format("{{ Foo: {0}, Bar: {1} }}", inner.Foo, inner.Bar) : "<null>";
         }
 
         private static String HitToString(Hit hit) {
-            return string.Format("{{ Dummy: {0} }}", hit.Dummy);
+            return hit != null ? string.Format("{{ Dummy: {0} }}", hit.Dummy) : "<null>";
         }
     }
 }

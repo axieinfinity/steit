@@ -4,7 +4,7 @@ mod tests {
         gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
         steitize,
-        types::List,
+        types::{List, Map},
         Runtime, Serialize, State,
     };
 
@@ -196,6 +196,40 @@ mod tests {
         list.push(11);
         list.push(0);
         list.remove(1);
+
+        println!("\nMAP #1");
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut map = Map::new(runtime);
+
+        map.insert_with(5, |runtime| {
+            let mut inner = Inner::new(runtime);
+            inner.set_foo(6);
+            inner
+        });
+
+        map.insert_with(1, |runtime| {
+            let mut inner = Inner::new(runtime);
+            inner.set_foo(77).set_bar(true);
+            inner
+        });
+
+        map.insert_with(0, Inner::new);
+        map.get_mut(&1).unwrap().set_foo(68);
+        map.remove(&0);
+
+        println!("\nMAP #2");
+
+        let logger = PrintLogger::with_stdout();
+        let runtime = Runtime::with_logger(Box::new(logger));
+
+        let mut map = Map::new(runtime);
+        map.insert(1, 10i8);
+        map.insert(3, 11);
+        map.insert(7, 0);
+        map.remove(&1);
 
         println!("\nACTION!");
 
