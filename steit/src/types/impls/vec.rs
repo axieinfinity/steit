@@ -45,7 +45,7 @@ impl<T: Deserialize> Merge for Vec<T> {
 }
 
 impl<T: IsFieldType> IsFieldType for Vec<T> {
-    const FIELD_TYPE: &'static FieldType = &FieldType::Vec(T::FIELD_TYPE);
+    const FIELD_TYPE: &'static FieldType = &FieldType::Vec(T::FIELD_TYPE_REF);
 }
 
 #[cfg(test)]
