@@ -10,6 +10,7 @@ pub trait Logger: Send + Sync {
 }
 
 impl<T: Logger> Logger for Arc<Mutex<T>> {
+    #[inline]
     fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         self.lock().unwrap().log(entry)
     }

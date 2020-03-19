@@ -1,6 +1,7 @@
 #[macro_export]
 macro_rules! impl_state_for_plain {
     ($name:expr) => {
+        #[inline]
         fn with_runtime(_runtime: $crate::Runtime) -> Self {
             Self::default()
         }

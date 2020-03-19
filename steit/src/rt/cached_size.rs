@@ -49,6 +49,7 @@ impl CachedSize {
 }
 
 impl Clone for CachedSize {
+    #[inline]
     fn clone(&self) -> Self {
         Self {
             size: AtomicU32::new(self.get()),
@@ -57,6 +58,7 @@ impl Clone for CachedSize {
 }
 
 impl PartialEq for CachedSize {
+    #[inline]
     fn eq(&self, _other: &CachedSize) -> bool {
         true
     }
@@ -65,12 +67,14 @@ impl PartialEq for CachedSize {
 impl Eq for CachedSize {}
 
 impl fmt::Debug for CachedSize {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.get().fmt(f)
     }
 }
 
 impl Hash for CachedSize {
+    #[inline]
     fn hash<H: Hasher>(&self, _state: &mut H) {
         // Ignore cached size in hash computation
     }

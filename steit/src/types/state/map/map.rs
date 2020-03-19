@@ -273,7 +273,7 @@ mod tests {
     }
 
     fn map_with_logger<K: MapKey, V: State>() -> (Map<K, V>, Arc<Mutex<BufferLogger>>) {
-        let logger = Arc::new(Mutex::new(BufferLogger::default()));
+        let logger = Arc::new(Mutex::new(BufferLogger::new()));
         let map = Map::new(Runtime::with_logger(Box::new(logger.clone())));
         (map, logger)
     }

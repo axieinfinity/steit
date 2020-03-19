@@ -6,4 +6,3 @@ mod varint;
 
 pub use bytes::*;
 pub use state::*;
-pub use varint::*;

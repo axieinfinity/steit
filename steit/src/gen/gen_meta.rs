@@ -56,20 +56,22 @@ pub trait IsFieldType {
     const FIELD_TYPE_REF: &'static FieldType = Self::FIELD_TYPE;
 }
 
-macro_rules! impl_has_field_type {
-    ($t:ty, $t_name:expr) => {
-        impl IsFieldType for $t {
-            const FIELD_TYPE: &'static FieldType = &FieldType::Primitive($t_name);
+macro_rules! impl_primitive_field_type {
+    ($primitive:ty) => {
+        impl IsFieldType for $primitive {
+            const FIELD_TYPE: &'static FieldType = &FieldType::Primitive(stringify!($primitive));
         }
     };
 }
 
-impl_has_field_type!(u8, "u8");
-impl_has_field_type!(u16, "u16");
-impl_has_field_type!(u32, "u32");
-impl_has_field_type!(u64, "u64");
-impl_has_field_type!(i8, "i8");
-impl_has_field_type!(i16, "i16");
-impl_has_field_type!(i32, "i32");
-impl_has_field_type!(i64, "i64");
-impl_has_field_type!(bool, "bool");
+impl_primitive_field_type!(u8);
+impl_primitive_field_type!(u16);
+impl_primitive_field_type!(u32);
+impl_primitive_field_type!(u64);
+
+impl_primitive_field_type!(i8);
+impl_primitive_field_type!(i16);
+impl_primitive_field_type!(i32);
+impl_primitive_field_type!(i64);
+
+impl_primitive_field_type!(bool);

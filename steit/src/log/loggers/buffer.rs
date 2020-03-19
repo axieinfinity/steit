@@ -10,6 +10,11 @@ pub struct BufferLogger {
 
 impl BufferLogger {
     #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[inline]
     pub fn bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
 

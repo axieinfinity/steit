@@ -15,6 +15,11 @@ impl Writer {
     }
 
     #[inline]
+    pub fn end(self) -> String {
+        self.out
+    }
+
+    #[inline]
     pub fn indent(&mut self) -> &mut Self {
         self.current_indent_level += 1;
         self
@@ -48,11 +53,6 @@ impl Writer {
     #[inline]
     pub fn outdent_writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.outdent().writeln(s)
-    }
-
-    #[inline]
-    pub fn end(self) -> String {
-        self.out
     }
 
     #[inline]

@@ -428,6 +428,7 @@ impl Generator for CSharpGenerator {
 
 struct CSharpVariant {
     raw: &'static Variant,
+    // SCREAMING_SNAKE_CASE
     screaming_snake_case_name: String,
 }
 
@@ -442,7 +443,9 @@ impl CSharpVariant {
 
 struct CSharpField {
     raw: &'static Field,
+    // UpperCamelCase
     upper_camel_case_name: String,
+    // lowerCamelCase
     lower_camel_case_name: String,
     ty: String,
 }

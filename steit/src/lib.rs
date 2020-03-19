@@ -1,11 +1,12 @@
-mod de;
 pub mod gen;
 pub mod log;
+pub mod types;
+pub mod wire_type;
+
+mod de;
 mod rt;
 mod ser;
 mod state;
-pub mod types;
-pub mod wire_type;
 
 pub use de::*;
 pub use rt::*;

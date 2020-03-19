@@ -2,22 +2,22 @@ use std::collections::HashMap;
 
 use super::gen_meta::{FieldType, Meta};
 
-pub fn collect_meta(root: &'static Meta, meta_list: &mut HashMap<&'static str, Meta>) {
+pub fn collect_meta(root: &'static Meta, all_meta: &mut HashMap<&'static str, Meta>) {
     match *root {
         Meta::Struct(r#struct) => {
-            meta_list.insert(r#struct.name, Meta::Struct(r#struct));
+            all_meta.insert(r#struct.name, Meta::Struct(r#struct));
 
             for field in r#struct.fields {
-                collect_meta_from_field(field.ty, meta_list);
+                collect_meta_from_field(field.ty, all_meta);
             }
         }
 
         Meta::Enum(r#enum) => {
-            meta_list.insert(r#enum.name, Meta::Enum(r#enum));
+            all_meta.insert(r#enum.name, Meta::Enum(r#enum));
 
             for variant in r#enum.variants {
                 for field in variant.ty.fields {
-                    collect_meta_from_field(field.ty, meta_list);
+                    collect_meta_from_field(field.ty, all_meta);
                 }
             }
         }
@@ -26,15 +26,15 @@ pub fn collect_meta(root: &'static Meta, meta_list: &mut HashMap<&'static str, M
 
 fn collect_meta_from_field(
     field_type: &'static FieldType,
-    meta_list: &mut HashMap<&'static str, Meta>,
+    all_meta: &mut HashMap<&'static str, Meta>,
 ) {
-    match field_type {
+    match *field_type {
         FieldType::Primitive(_) => (),
-        FieldType::Meta(meta) => collect_meta(meta, meta_list),
+        FieldType::Meta(meta) => collect_meta(meta, all_meta),
         FieldType::MetaRef(_) => (),
         FieldType::Bytes => (),
         FieldType::List(field_type) | FieldType::Map(field_type) | FieldType::Vec(field_type) => {
-            collect_meta_from_field(field_type, meta_list)
+            collect_meta_from_field(field_type, all_meta)
         }
     }
 }

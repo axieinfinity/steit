@@ -10,6 +10,11 @@ pub struct ReplayLogger {
 
 impl ReplayLogger {
     #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    #[inline]
     pub fn log_raw(&mut self, entry: ReplayEntry) {
         self.log.push(entry);
     }

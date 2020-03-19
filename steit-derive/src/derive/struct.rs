@@ -209,6 +209,7 @@ impl<'a> Struct<'a> {
 
                 let name = format_ident!("{}", name);
                 let field = ExtraField::new(name, ty, index);
+
                 fields.named.extend(field.declare());
                 field
             }
@@ -225,6 +226,7 @@ impl<'a> Struct<'a> {
                 }
 
                 let field = ExtraField::new(None, ty, index);
+
                 fields.unnamed.extend(field.declare());
                 field
             }
