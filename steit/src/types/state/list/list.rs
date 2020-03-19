@@ -287,7 +287,7 @@ mod tests {
     use super::List;
 
     fn list_with_logger<T: State>() -> (List<T>, Arc<Mutex<BufferLogger>>) {
-        let logger = Arc::new(Mutex::new(BufferLogger::new()));
+        let logger = Arc::new(Mutex::new(BufferLogger::default()));
         let list = List::new(Runtime::with_logger(Box::new(logger.clone())));
         (list, logger)
     }

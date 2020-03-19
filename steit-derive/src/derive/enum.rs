@@ -178,9 +178,10 @@ impl<'a> Enum<'a> {
         self.impl_util.impl_with(
             self.state_bounds(),
             if let Some(default_ctor_name) = default_ctor_name {
-                let (declare_arg, call_arg) = match self.setting.runtime() {
-                    true => (quote!(runtime: Runtime), quote!(runtime)),
-                    false => (quote!(), quote!()),
+                let (declare_arg, call_arg) = if self.setting.runtime() {
+                    (quote!(runtime: Runtime), quote!(runtime))
+                } else {
+                    (quote!(), quote!())
                 };
 
                 quote! {
@@ -238,9 +239,10 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
-        let arg = match self.setting.runtime() {
-            true => quote!(Runtime::default()),
-            false => quote!(),
+        let arg = if self.setting.runtime() {
+            quote!(Runtime::default())
+        } else {
+            quote!()
         };
 
         self.impl_util.impl_for_with(
@@ -352,9 +354,10 @@ impl<'a> Enum<'a> {
             let qual = variant.qual();
             let ctor_name = variant.ctor_name();
 
-            let arg = match self.setting.runtime() {
-                true => quote!(self.runtime().parent()),
-                false => quote!(),
+            let arg = if self.setting.runtime() {
+                quote!(self.runtime().parent())
+            } else {
+                quote!()
             };
 
             let destructure = r#struct.destructure();

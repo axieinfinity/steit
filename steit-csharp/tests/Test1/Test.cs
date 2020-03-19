@@ -54,20 +54,20 @@ namespace Test1 {
                 Console.WriteLine("Multicase: variant {0} ({1}) => variant {2} ({3}", oldVariant, oldValue, newVariant, newValue);
             });
 
-            Multicase.FirstCase.OnUpdateFoo((newValue, oldValue, container) => {
-                Console.WriteLine("Multicase / FirstCase / Foo: {0} => {1}", oldValue, newValue);
+            Multicase.FirstCase.OnUpdateCounter((newValue, oldValue, container) => {
+                Console.WriteLine("Multicase / FirstCase / Counter: {0} => {1}", oldValue, newValue);
             });
 
-            Multicase.FirstCase.OnUpdateBar((newValue, oldValue, container) => {
-                Console.WriteLine("Multicase / FirstCase / Bar: {0} => {1}", oldValue, newValue);
+            Multicase.FirstCase.OnUpdateEnabled((newValue, oldValue, container) => {
+                Console.WriteLine("Multicase / FirstCase / Enabled: {0} => {1}", oldValue, newValue);
             });
 
-            Multicase.SecondCase.OnUpdateFoo((newValue, oldValue, container) => {
-                Console.WriteLine("Multicase / SecondCase / Foo: {0} => {1}", oldValue, newValue);
+            Multicase.SecondCase.OnUpdateCounter((newValue, oldValue, container) => {
+                Console.WriteLine("Multicase / SecondCase / Counter: {0} => {1}", oldValue, newValue);
             });
 
-            Multicase.SecondCase.OnUpdateBar((newValue, oldValue, container) => {
-                Console.WriteLine("Multicase / SecondCase / Bar: {0} => {1}", oldValue, newValue);
+            Multicase.SecondCase.OnUpdateEnabled((newValue, oldValue, container) => {
+                Console.WriteLine("Multicase / SecondCase / Enabled: {0} => {1}", oldValue, newValue);
             });
 
             var multicase = new Multicase();

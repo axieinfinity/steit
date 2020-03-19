@@ -11,10 +11,9 @@ pub fn uncap_first_char(s: &str) -> String {
 }
 
 pub fn to_camel_case(s: &str, mut upper: bool) -> String {
-    let mut chars = s.chars();
     let mut out = String::new();
 
-    while let Some(c) = chars.next() {
+    for c in s.chars() {
         if c == '_' {
             upper = true;
         } else if upper {
@@ -36,7 +35,7 @@ pub fn to_snake_case(s: &str) -> String {
         out.extend(c.to_lowercase());
     }
 
-    while let Some(c) = chars.next() {
+    for c in chars {
         if c.is_uppercase() {
             out.push('_');
         }

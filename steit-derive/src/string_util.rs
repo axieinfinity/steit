@@ -6,7 +6,7 @@ pub fn to_snake_case(s: &str) -> String {
         out.extend(c.to_lowercase());
     }
 
-    while let Some(c) = chars.next() {
+    for c in chars {
         if c.is_uppercase() {
             out.push('_');
         }

@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use super::gen_meta::{FieldType, Meta};
 
 pub fn collect_meta(root: &'static Meta, meta_list: &mut HashMap<&'static str, Meta>) {
-    match root {
+    match *root {
         Meta::Struct(r#struct) => {
             meta_list.insert(r#struct.name, Meta::Struct(r#struct));
 
@@ -13,7 +13,7 @@ pub fn collect_meta(root: &'static Meta, meta_list: &mut HashMap<&'static str, M
         }
 
         Meta::Enum(r#enum) => {
-            meta_list.insert(r#enum.name, Meta::Enum(r#enum.clone()));
+            meta_list.insert(r#enum.name, Meta::Enum(r#enum));
 
             for variant in r#enum.variants {
                 for field in variant.ty.fields {

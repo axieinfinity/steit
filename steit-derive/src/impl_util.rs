@@ -59,7 +59,7 @@ impl<'a> ImplUtil<'a> {
         tokens: TokenStream,
     ) -> TokenStream {
         let r#trait = r#trait.into();
-        let bounds: Vec<_> = r#trait.iter().map(|&bound| bound).collect();
+        let bounds: Vec<_> = r#trait.iter().copied().collect();
         self.impl_for_with(r#trait, bounds.as_slice(), tokens)
     }
 }

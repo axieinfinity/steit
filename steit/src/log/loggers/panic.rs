@@ -2,14 +2,8 @@ use std::io;
 
 use crate::log::{LogEntry, Logger};
 
+#[derive(Default)]
 pub struct PanicLogger;
-
-impl PanicLogger {
-    #[inline]
-    pub fn new() -> Self {
-        Self
-    }
-}
 
 impl Logger for PanicLogger {
     #[inline]

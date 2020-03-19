@@ -24,7 +24,7 @@ impl RuntimeLogger {
 
     #[inline]
     pub fn log(&mut self, entry: LogEntry) -> io::Result<()> {
-        if self.paused <= 0 {
+        if self.paused == 0 {
             self.logger.log(entry)?;
         }
 

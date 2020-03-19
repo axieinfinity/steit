@@ -3,16 +3,12 @@ use crate::{
     ReplayEntry, Serialize,
 };
 
+#[derive(Default)]
 pub struct ReplayLogger {
     log: Vec<ReplayEntry>,
 }
 
 impl ReplayLogger {
-    #[inline]
-    pub fn new() -> Self {
-        Self { log: Vec::new() }
-    }
-
     #[inline]
     pub fn log_raw(&mut self, entry: ReplayEntry) {
         self.log.push(entry);

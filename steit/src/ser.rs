@@ -40,7 +40,7 @@ pub trait Serialize: WireType {
             size += size.compute_size();
         }
 
-        if let Some(tag) = tag.into() {
+        if let Some(tag) = tag {
             size += Self::key(tag).compute_size();
         }
 

@@ -3,16 +3,12 @@ use crate::{
     Serialize,
 };
 
+#[derive(Default)]
 pub struct BufferLogger {
     log: Vec<LogEntry>,
 }
 
 impl BufferLogger {
-    #[inline]
-    pub fn new() -> Self {
-        Self { log: Vec::new() }
-    }
-
     #[inline]
     pub fn bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();

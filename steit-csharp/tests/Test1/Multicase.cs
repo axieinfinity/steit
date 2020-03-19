@@ -80,13 +80,13 @@ namespace Test1 {
         }
 
         public sealed class FirstCase : IState {
-            private static IList<Listener<Int32>> fooListeners = new List<Listener<Int32>>();
-            private static IList<Listener<Boolean>> barListeners = new List<Listener<Boolean>>();
+            private static IList<Listener<Int32>> counterListeners = new List<Listener<Int32>>();
+            private static IList<Listener<Boolean>> enabledListeners = new List<Listener<Boolean>>();
 
             public Path Path { get; private set; }
 
-            public Int32 Foo { get; private set; }
-            public Boolean Bar { get; private set; }
+            public Int32 Counter { get; private set; }
+            public Boolean Enabled { get; private set; }
 
             // This is not meant to be used directly.
             public FirstCase(Path path = null) {
@@ -95,21 +95,21 @@ namespace Test1 {
 
             public delegate void Listener<T>(T newValue, T oldValue, FirstCase container);
 
-            public static int OnUpdateFoo(Listener<Int32> listener) { return Utilities.Add(fooListeners, listener); }
-            public static int OnUpdateBar(Listener<Boolean> listener) { return Utilities.Add(barListeners, listener); }
+            public static int OnUpdateCounter(Listener<Int32> listener) { return Utilities.Add(counterListeners, listener); }
+            public static int OnUpdateEnabled(Listener<Boolean> listener) { return Utilities.Add(enabledListeners, listener); }
 
-            public static void RemoveFooListener(Listener<Int32> listener) { fooListeners.Remove(listener); }
-            public static void RemoveBarListener(Listener<Boolean> listener) { barListeners.Remove(listener); }
+            public static void RemoveCounterListener(Listener<Int32> listener) { counterListeners.Remove(listener); }
+            public static void RemoveEnabledListener(Listener<Boolean> listener) { enabledListeners.Remove(listener); }
 
-            public static void RemoveFooListenerAt(int index) { fooListeners.RemoveAt(index); }
-            public static void RemoveBarListenerAt(int index) { barListeners.RemoveAt(index); }
+            public static void RemoveCounterListenerAt(int index) { counterListeners.RemoveAt(index); }
+            public static void RemoveEnabledListenerAt(int index) { enabledListeners.RemoveAt(index); }
 
-            public static void ClearFooListeners() { fooListeners.Clear(); }
-            public static void ClearBarListeners() { barListeners.Clear(); }
+            public static void ClearCounterListeners() { counterListeners.Clear(); }
+            public static void ClearEnabledListeners() { enabledListeners.Clear(); }
 
             public static void ClearAllListeners() {
-                fooListeners.Clear();
-                barListeners.Clear();
+                counterListeners.Clear();
+                enabledListeners.Clear();
             }
 
             // This is not meant to be used directly.
@@ -141,8 +141,8 @@ namespace Test1 {
 
             public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
                 switch (tag) {
-                    case 0: this.Foo = this.Notify(reader.ReadInt32(), this.Foo, shouldNotify, fooListeners); break;
-                    case 1: this.Bar = this.Notify(reader.ReadBoolean(), this.Bar, shouldNotify, barListeners); break;
+                    case 0: this.Counter = this.Notify(reader.ReadInt32(), this.Counter, shouldNotify, counterListeners); break;
+                    case 1: this.Enabled = this.Notify(reader.ReadBoolean(), this.Enabled, shouldNotify, enabledListeners); break;
                     default: reader.SkipWireTyped(wireType); break;
                 }
             }
@@ -159,13 +159,13 @@ namespace Test1 {
         }
 
         public sealed class SecondCase : IState {
-            private static IList<Listener<Int32>> fooListeners = new List<Listener<Int32>>();
-            private static IList<Listener<Boolean>> barListeners = new List<Listener<Boolean>>();
+            private static IList<Listener<Int32>> counterListeners = new List<Listener<Int32>>();
+            private static IList<Listener<Boolean>> enabledListeners = new List<Listener<Boolean>>();
 
             public Path Path { get; private set; }
 
-            public Int32 Foo { get; private set; }
-            public Boolean Bar { get; private set; }
+            public Int32 Counter { get; private set; }
+            public Boolean Enabled { get; private set; }
 
             // This is not meant to be used directly.
             public SecondCase(Path path = null) {
@@ -174,21 +174,21 @@ namespace Test1 {
 
             public delegate void Listener<T>(T newValue, T oldValue, SecondCase container);
 
-            public static int OnUpdateFoo(Listener<Int32> listener) { return Utilities.Add(fooListeners, listener); }
-            public static int OnUpdateBar(Listener<Boolean> listener) { return Utilities.Add(barListeners, listener); }
+            public static int OnUpdateCounter(Listener<Int32> listener) { return Utilities.Add(counterListeners, listener); }
+            public static int OnUpdateEnabled(Listener<Boolean> listener) { return Utilities.Add(enabledListeners, listener); }
 
-            public static void RemoveFooListener(Listener<Int32> listener) { fooListeners.Remove(listener); }
-            public static void RemoveBarListener(Listener<Boolean> listener) { barListeners.Remove(listener); }
+            public static void RemoveCounterListener(Listener<Int32> listener) { counterListeners.Remove(listener); }
+            public static void RemoveEnabledListener(Listener<Boolean> listener) { enabledListeners.Remove(listener); }
 
-            public static void RemoveFooListenerAt(int index) { fooListeners.RemoveAt(index); }
-            public static void RemoveBarListenerAt(int index) { barListeners.RemoveAt(index); }
+            public static void RemoveCounterListenerAt(int index) { counterListeners.RemoveAt(index); }
+            public static void RemoveEnabledListenerAt(int index) { enabledListeners.RemoveAt(index); }
 
-            public static void ClearFooListeners() { fooListeners.Clear(); }
-            public static void ClearBarListeners() { barListeners.Clear(); }
+            public static void ClearCounterListeners() { counterListeners.Clear(); }
+            public static void ClearEnabledListeners() { enabledListeners.Clear(); }
 
             public static void ClearAllListeners() {
-                fooListeners.Clear();
-                barListeners.Clear();
+                counterListeners.Clear();
+                enabledListeners.Clear();
             }
 
             // This is not meant to be used directly.
@@ -220,8 +220,8 @@ namespace Test1 {
 
             public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {
                 switch (tag) {
-                    case 0: this.Foo = this.Notify(reader.ReadInt32(), this.Foo, shouldNotify, fooListeners); break;
-                    case 1: this.Bar = this.Notify(reader.ReadBoolean(), this.Bar, shouldNotify, barListeners); break;
+                    case 0: this.Counter = this.Notify(reader.ReadInt32(), this.Counter, shouldNotify, counterListeners); break;
+                    case 1: this.Enabled = this.Notify(reader.ReadBoolean(), this.Enabled, shouldNotify, enabledListeners); break;
                     default: reader.SkipWireTyped(wireType); break;
                 }
             }

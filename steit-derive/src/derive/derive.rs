@@ -102,16 +102,18 @@ impl DeriveSetting {
     }
 
     pub fn extern_crate(&self) -> TokenStream {
-        match self.own_crate {
-            true => quote!(),
-            false => quote! { extern crate steit; },
+        if self.own_crate {
+            quote!()
+        } else {
+            quote! { extern crate steit; }
         }
     }
 
     pub fn krate(&self) -> TokenStream {
-        match self.own_crate {
-            true => quote!(crate),
-            false => quote!(steit),
+        if self.own_crate {
+            quote!(crate)
+        } else {
+            quote!(steit)
         }
     }
 

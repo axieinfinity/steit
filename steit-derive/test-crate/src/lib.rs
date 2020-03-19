@@ -34,16 +34,16 @@ mod tests {
         #[steit(tag = 0)]
         FirstCase {
             #[steit(tag = 0)]
-            foo: i32,
+            counter: i32,
             #[steit(tag = 1)]
-            bar: bool,
+            enabled: bool,
         },
         #[steit(tag = 1)]
         SecondCase {
             #[steit(tag = 0)]
-            foo: i32,
+            counter: i32,
             #[steit(tag = 1)]
-            bar: bool,
+            enabled: bool,
         },
     }
 
@@ -152,7 +152,7 @@ mod tests {
 
         let mut multicase = Multicase::new(runtime);
 
-        multicase.set_second_case_foo(68);
+        multicase.set_second_case_counter(68);
 
         println!("{:?}", multicase);
 

@@ -92,9 +92,10 @@ impl<'a> Field<'a> {
     pub fn init(&self) -> TokenStream {
         let tag = self.tag();
 
-        let value = match self.state() {
-            true => quote!(State::with_runtime(runtime.nested(#tag))),
-            false => quote!(Default::default()),
+        let value = if self.state() {
+            quote!(State::with_runtime(runtime.nested(#tag)))
+        } else {
+            quote!(Default::default())
         };
 
         init(self.access(), value)
