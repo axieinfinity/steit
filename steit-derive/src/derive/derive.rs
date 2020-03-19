@@ -3,8 +3,8 @@ use quote::ToTokens;
 
 use crate::{
     attr::{Attr, AttrParse},
-    ctx::Context,
-    r#impl::Impl,
+    context::Context,
+    impl_util::ImplUtil,
     string_util,
 };
 
@@ -177,17 +177,19 @@ impl DeriveSetting {
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
     let context = Context::new();
     let setting = DeriveSetting::parse(&context, args);
-    let r#impl = Impl::new(&input.ident, &input.generics);
+    let impl_util = ImplUtil::new(&input.ident, &input.generics);
 
     let output = match &mut input.data {
-        syn::Data::Enum(data) => Enum::parse(&setting, &context, &r#impl, &mut input.attrs, data)
-            .ok()
-            .into_token_stream(),
+        syn::Data::Enum(data) => {
+            Enum::parse(&setting, &context, &impl_util, &mut input.attrs, data)
+                .ok()
+                .into_token_stream()
+        }
 
         syn::Data::Struct(data) => Struct::parse(
             &setting,
             &context,
-            &r#impl,
+            &impl_util,
             &mut input.attrs,
             &mut data.fields,
             None,
@@ -196,7 +198,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
         .ok()
         .into_token_stream(),
 
-        syn::Data::Union(data) => Union::parse(&setting, &context, &r#impl, data)
+        syn::Data::Union(data) => Union::parse(&setting, &context, &impl_util, data)
             .ok()
             .into_token_stream(),
     };

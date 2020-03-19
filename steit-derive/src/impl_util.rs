@@ -1,11 +1,11 @@
 use proc_macro2::TokenStream;
 
-pub struct Impl<'a> {
+pub struct ImplUtil<'a> {
     name: &'a syn::Ident,
     generics: &'a syn::Generics,
 }
 
-impl<'a> Impl<'a> {
+impl<'a> ImplUtil<'a> {
     pub fn new(name: &'a syn::Ident, generics: &'a syn::Generics) -> Self {
         Self { name, generics }
     }
@@ -18,7 +18,7 @@ impl<'a> Impl<'a> {
         self.impl_for(None, tokens)
     }
 
-    pub fn r#impl_with(&self, bounds: &[&str], tokens: TokenStream) -> TokenStream {
+    pub fn impl_with(&self, bounds: &[&str], tokens: TokenStream) -> TokenStream {
         self.impl_for_with(None, bounds, tokens)
     }
 

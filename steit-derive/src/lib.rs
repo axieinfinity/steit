@@ -5,9 +5,9 @@ extern crate quote;
 use proc_macro::TokenStream;
 
 mod attr;
-mod ctx;
+mod context;
 mod derive;
-mod r#impl;
+mod impl_util;
 mod string_util;
 
 #[proc_macro_attribute]
