@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod derive;
 mod r#enum;
 mod field;
