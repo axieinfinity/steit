@@ -9,62 +9,38 @@ use crate::{
     Serialize,
 };
 
-use super::node::Node;
-
-struct RuntimeLogger {
-    logger: Box<dyn Logger>,
-    paused: u32,
-}
-
-impl RuntimeLogger {
-    #[inline]
-    pub fn new(logger: Box<dyn Logger>) -> Self {
-        Self { logger, paused: 0 }
-    }
-
-    #[inline]
-    pub fn log(&mut self, entry: LogEntry) -> io::Result<()> {
-        if self.paused == 0 {
-            self.logger.log(entry)?;
-        }
-
-        Ok(())
-    }
-
-    #[inline]
-    pub fn pause(&mut self) -> u32 {
-        self.paused += 1;
-        self.paused
-    }
-
-    #[inline]
-    pub fn unpause(&mut self) -> u32 {
-        if self.paused > 0 {
-            self.paused -= 1;
-        }
-
-        self.paused
-    }
-}
+use super::{
+    logger::{LoggerHandle, PausableLogger, RuntimeLogger},
+    node::Node,
+};
 
 #[derive(Clone)]
 pub struct Runtime {
-    logger: Arc<Mutex<RuntimeLogger>>,
+    logger: Arc<Mutex<dyn PausableLogger>>,
     path: Arc<Node<u16>>,
 }
 
 impl Runtime {
     #[inline]
     pub fn new() -> Self {
-        Self::with_logger(Box::new(PrintLogger::with_stdout()))
+        Self::with_logger_thrown(PrintLogger::with_stdout())
     }
 
     #[inline]
-    pub fn with_logger(logger: Box<dyn Logger>) -> Self {
-        Self {
-            logger: Arc::new(Mutex::new(RuntimeLogger::new(logger))),
+    pub fn with_logger<T: Logger + 'static>(logger: T) -> (Self, LoggerHandle<T>) {
+        let logger = Arc::new(Mutex::new(RuntimeLogger::new(logger)));
+
+        let runtime = Self {
+            logger: logger.clone(),
             path: Arc::new(Node::Root),
-        }
+        };
+
+        (runtime, logger)
+    }
+
+    #[inline]
+    pub fn with_logger_thrown<T: Logger + 'static>(logger: T) -> Self {
+        Self::with_logger(logger).0
     }
 
     #[inline]

@@ -1,4 +1,4 @@
-use std::io::{self};
+use std::io;
 
 use crate::{
     log::{LogEntry, Logger},
@@ -11,18 +11,20 @@ pub struct PrintLogger {
 
 impl PrintLogger {
     #[inline]
-    pub fn new(writer: Box<dyn io::Write + Send + Sync>) -> Self {
-        Self { writer }
+    pub fn new(writer: impl io::Write + Send + Sync + 'static) -> Self {
+        Self {
+            writer: Box::new(writer),
+        }
     }
 
     #[inline]
     pub fn with_stdout() -> Self {
-        Self::new(Box::new(io::stdout()))
+        Self::new(io::stdout())
     }
 
     #[inline]
     pub fn with_stderr() -> Self {
-        Self::new(Box::new(io::stderr()))
+        Self::new(io::stderr())
     }
 }
 

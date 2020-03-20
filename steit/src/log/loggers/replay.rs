@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::{
     log::{LogEntry, Logger},
     ReplayEntry, Serialize,
@@ -51,7 +53,7 @@ impl ReplayLogger {
 
 impl Logger for ReplayLogger {
     #[inline]
-    fn log(&mut self, entry: LogEntry) -> std::io::Result<()> {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         self.log.push(entry.into());
         Ok(())
     }

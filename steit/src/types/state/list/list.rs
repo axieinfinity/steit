@@ -276,19 +276,17 @@ impl<T: State + IsFieldType> IsFieldType for List<T> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
     use crate::{
         log::loggers::BufferLogger,
         test_util::{assert_serialize, merge, replay, Point},
-        Runtime, State,
+        LoggerHandle, Runtime, State,
     };
 
     use super::List;
 
-    fn list_with_logger<T: State>() -> (List<T>, Arc<Mutex<BufferLogger>>) {
-        let logger = Arc::new(Mutex::new(BufferLogger::new()));
-        let list = List::new(Runtime::with_logger(Box::new(logger.clone())));
+    fn list_with_logger<T: State>() -> (List<T>, LoggerHandle<BufferLogger>) {
+        let (runtime, logger) = Runtime::with_logger(BufferLogger::new());
+        let list = List::new(runtime);
         (list, logger)
     }
 

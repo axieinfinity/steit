@@ -101,9 +101,7 @@ mod tests {
 
         println!("\nHELLO!");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut hello = Hello::new(runtime);
 
         hello
@@ -122,9 +120,7 @@ mod tests {
 
         println!("\nOUTER");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut outer = Outer::new(runtime);
 
         outer.set_foo(127).set_bar(true).set_inner_with(|runtime| {
@@ -138,36 +134,28 @@ mod tests {
 
         println!("{:?}", outer);
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger)).nested(10);
-
-        outer.set_runtime(runtime);
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
+        outer.set_runtime(runtime.nested(10));
 
         println!("{:?}", outer);
 
         println!("\nENUM");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut multicase = Multicase::new(runtime);
 
         multicase.set_second_case_counter(68);
 
         println!("{:?}", multicase);
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger)).nested(10);
-
-        multicase.set_runtime(runtime);
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
+        multicase.set_runtime(runtime.nested(10));
 
         println!("{:?}", multicase);
 
         println!("\nLIST #1");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut list = List::new(runtime);
 
         list.push_with(|runtime| {
@@ -188,10 +176,9 @@ mod tests {
 
         println!("\nLIST #2");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut list = List::new(runtime);
+
         list.push(10i8);
         list.push(11);
         list.push(0);
@@ -199,9 +186,7 @@ mod tests {
 
         println!("\nMAP #1");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut map = Map::new(runtime);
 
         map.insert_with(5, |runtime| {
@@ -222,10 +207,9 @@ mod tests {
 
         println!("\nMAP #2");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut map = Map::new(runtime);
+
         map.insert(1, 10i8);
         map.insert(3, 11);
         map.insert(7, 0);
@@ -233,9 +217,7 @@ mod tests {
 
         println!("\nACTION!");
 
-        let logger = PrintLogger::with_stdout();
-        let runtime = Runtime::with_logger(Box::new(logger));
-
+        let runtime = Runtime::with_logger_thrown(PrintLogger::with_stdout());
         let mut action = Action::new(runtime);
 
         action.set_attack_attacker(1);

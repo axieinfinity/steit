@@ -1,3 +1,5 @@
+use std::io;
+
 use crate::{
     log::{LogEntry, Logger},
     Serialize,
@@ -43,7 +45,7 @@ impl BufferLogger {
 
 impl Logger for BufferLogger {
     #[inline]
-    fn log(&mut self, entry: LogEntry) -> std::io::Result<()> {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         self.log.push(entry);
         Ok(())
     }

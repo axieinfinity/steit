@@ -230,12 +230,10 @@ impl<K: MapKey, T: State + IsFieldType> IsFieldType for Map<K, T> {
 
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
     use crate::{
         log::loggers::BufferLogger,
         test_util::{assert_serialize, merge, replay, Point},
-        Runtime, State,
+        LoggerHandle, Runtime, State,
     };
 
     use super::{Map, MapKey};
@@ -272,9 +270,9 @@ mod tests {
         }
     }
 
-    fn map_with_logger<K: MapKey, V: State>() -> (Map<K, V>, Arc<Mutex<BufferLogger>>) {
-        let logger = Arc::new(Mutex::new(BufferLogger::new()));
-        let map = Map::new(Runtime::with_logger(Box::new(logger.clone())));
+    fn map_with_logger<K: MapKey, V: State>() -> (Map<K, V>, LoggerHandle<BufferLogger>) {
+        let (runtime, logger) = Runtime::with_logger(BufferLogger::new());
+        let map = Map::new(runtime);
         (map, logger)
     }
 
