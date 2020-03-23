@@ -8,7 +8,7 @@ use crate::log::{LogEntry, Logger};
 
 pub type LoggerHandle<T> = Arc<Mutex<RuntimeLogger<T>>>;
 
-pub trait PausableLogger: Logger {
+pub(super) trait PausableLogger: Logger {
     fn pause(&mut self) -> u32;
     fn unpause(&mut self) -> u32;
 }
