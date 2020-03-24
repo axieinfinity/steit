@@ -152,11 +152,11 @@ impl<'a> Enum<'a> {
         }
     }
 
-    fn state_bounds(&self) -> &[&str] {
+    fn state_bounds(&self, fallback: &'static [&str]) -> &[&str] {
         if self.setting.runtime() {
             &["State"]
         } else {
-            &[]
+            fallback
         }
     }
 
@@ -176,7 +176,7 @@ impl<'a> Enum<'a> {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
         self.impl_util.impl_with(
-            self.state_bounds(),
+            self.state_bounds(&["Default"]),
             if let Some(default_ctor_name) = default_ctor_name {
                 let (declare_arg, call_arg) = if self.setting.runtime() {
                     (quote!(runtime: Runtime), quote!(runtime))
@@ -235,7 +235,7 @@ impl<'a> Enum<'a> {
         let setters = self.variants.iter().map(|r#struct| r#struct.setters());
 
         self.impl_util
-            .impl_with(self.state_bounds(), quote!(#(#setters)*))
+            .impl_with(self.state_bounds(&["Default"]), quote!(#(#setters)*))
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -247,7 +247,7 @@ impl<'a> Enum<'a> {
 
         self.impl_util.impl_for_with(
             "Default",
-            self.state_bounds(),
+            self.state_bounds(&["Default"]),
             quote! {
                 #[inline]
                 fn default() -> Self {
@@ -379,7 +379,7 @@ impl<'a> Enum<'a> {
 
         self.impl_util.impl_for_with(
             "Merge",
-            self.state_bounds(),
+            self.state_bounds(&["Default", "Merge"]),
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
                     let tag = u16::deserialize(reader)?;

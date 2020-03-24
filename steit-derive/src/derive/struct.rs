@@ -247,14 +247,6 @@ impl<'a> Struct<'a> {
         self.variant.as_ref()
     }
 
-    fn state_bounds(&self) -> &[&str] {
-        if self.runtime.is_some() {
-            &["State"]
-        } else {
-            &[]
-        }
-    }
-
     pub fn ctor_name(&self) -> syn::Ident {
         match &self.variant {
             Some(variant) => variant.ctor_name(),
@@ -305,7 +297,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_ctor(&self) -> TokenStream {
-        self.impl_util.impl_with(self.state_bounds(), self.ctor())
+        self.impl_util.impl_with(&["Default"], self.ctor())
     }
 
     pub fn setters(&self) -> TokenStream {
@@ -316,9 +308,7 @@ impl<'a> Struct<'a> {
 
     fn impl_setters(&self) -> TokenStream {
         let setters = self.setters();
-
-        self.impl_util
-            .impl_with(self.state_bounds(), quote!(#setters))
+        self.impl_util.r#impl(quote!(#setters))
     }
 
     fn impl_default(&self) -> TokenStream {
