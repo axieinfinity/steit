@@ -86,8 +86,7 @@ namespace Test1 {
 
             public StateList<Byte> LogEntries { get; private set; }
 
-            // This is not meant to be used directly.
-            public Raw(Path path = null) {
+            internal Raw(Path path = null) {
                 this.Path = path != null ? path : Path.Root;
                 this.LogEntries = new StateList<Byte>(this.Path.Nested(0));
             }
@@ -106,8 +105,7 @@ namespace Test1 {
                 logEntriesListeners.Clear();
             }
 
-            // This is not meant to be used directly.
-            public static Raw Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
+            internal static Raw Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
                 var raw = new Raw(path);
                 raw.ReplaceAll(reader, shouldNotify);
                 return raw;
@@ -162,8 +160,7 @@ namespace Test1 {
             public Byte Defender { get; private set; }
             public StateList<Hit> Hits { get; private set; }
 
-            // This is not meant to be used directly.
-            public Attack(Path path = null) {
+            internal Attack(Path path = null) {
                 this.Path = path != null ? path : Path.Root;
                 this.Hits = new StateList<Hit>(this.Path.Nested(2));
             }
@@ -192,8 +189,7 @@ namespace Test1 {
                 hitsListeners.Clear();
             }
 
-            // This is not meant to be used directly.
-            public static Attack Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
+            internal static Attack Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
                 var attack = new Attack(path);
                 attack.ReplaceAll(reader, shouldNotify);
                 return attack;

@@ -54,6 +54,8 @@ impl Generator for CSharpGenerator {
             .map(CSharpField::with_field)
             .collect();
 
+        let variant_accessibility = if is_variant { "internal" } else { "public" };
+
         if !is_variant {
             self.generate_file_opening(writer);
         }
@@ -83,14 +85,12 @@ impl Generator for CSharpGenerator {
             ));
         }
 
-        writer.newline();
-
-        if is_variant {
-            writer.writeln("// This is not meant to be used directly.");
-        }
-
         writer
-            .writeln(format!("public {}(Path path = null) {{", name))
+            .newline()
+            .writeln(format!(
+                "{} {}(Path path = null) {{",
+                variant_accessibility, name,
+            ))
             .indent_writeln("this.Path = path != null ? path : Path.Root;");
 
         // Initiate nested states
@@ -170,15 +170,12 @@ impl Generator for CSharpGenerator {
             writer.writeln(format!("{}Listeners.Clear();", field.lower_camel_case_name));
         }
 
-        writer.outdent_writeln("}").newline();
-
-        if is_variant {
-            writer.writeln("// This is not meant to be used directly.");
-        }
-
         writer
+            .outdent_writeln("}")
+            .newline()
             .writeln(format!(
-                "public static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
+                "{} static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
+                variant_accessibility,
                 name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, name))

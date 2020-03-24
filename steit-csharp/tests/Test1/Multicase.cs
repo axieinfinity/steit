@@ -88,8 +88,7 @@ namespace Test1 {
             public Int32 Counter { get; private set; }
             public Boolean Enabled { get; private set; }
 
-            // This is not meant to be used directly.
-            public FirstCase(Path path = null) {
+            internal FirstCase(Path path = null) {
                 this.Path = path != null ? path : Path.Root;
             }
 
@@ -112,8 +111,7 @@ namespace Test1 {
                 enabledListeners.Clear();
             }
 
-            // This is not meant to be used directly.
-            public static FirstCase Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
+            internal static FirstCase Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
                 var firstCase = new FirstCase(path);
                 firstCase.ReplaceAll(reader, shouldNotify);
                 return firstCase;
@@ -167,8 +165,7 @@ namespace Test1 {
             public Int32 Counter { get; private set; }
             public Boolean Enabled { get; private set; }
 
-            // This is not meant to be used directly.
-            public SecondCase(Path path = null) {
+            internal SecondCase(Path path = null) {
                 this.Path = path != null ? path : Path.Root;
             }
 
@@ -191,8 +188,7 @@ namespace Test1 {
                 enabledListeners.Clear();
             }
 
-            // This is not meant to be used directly.
-            public static SecondCase Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
+            internal static SecondCase Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {
                 var secondCase = new SecondCase(path);
                 secondCase.ReplaceAll(reader, shouldNotify);
                 return secondCase;
