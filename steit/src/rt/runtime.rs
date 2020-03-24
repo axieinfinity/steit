@@ -135,12 +135,14 @@ impl PartialEq for Runtime {
 impl Eq for Runtime {}
 
 impl Default for Runtime {
+    #[inline]
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl fmt::Debug for Runtime {
+    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.path.compute_size();
         self.path.fmt(f)

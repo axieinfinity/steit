@@ -23,6 +23,14 @@ impl<T: Logger> RuntimeLogger<T> {
     pub(super) fn new(logger: T) -> Self {
         Self { logger, paused: 0 }
     }
+
+    #[inline]
+    pub fn without_pause(&mut self, mut run: impl FnMut()) {
+        let paused = self.paused;
+        self.paused = 0;
+        run();
+        self.paused = paused;
+    }
 }
 
 impl<T: Logger> Logger for RuntimeLogger<T> {
