@@ -104,7 +104,7 @@ impl<'a> Field<'a> {
     pub fn alias(&self) -> TokenStream {
         match &self.name {
             Some(name) => name.to_token_stream(),
-            None => format_ident!("f_{}", self.index).to_token_stream(),
+            None => format_ident!("f{}", self.index).to_token_stream(),
         }
     }
 
@@ -132,7 +132,7 @@ impl<'a> Field<'a> {
     pub fn setter(&self, struct_name: &syn::Ident, variant: Option<&Variant>) -> TokenStream {
         let field_name = match &self.name {
             Some(name) => name.clone(),
-            None => format_ident!("f_{}", self.index),
+            None => format_ident!("f{}", self.index),
         };
 
         let setter_name = match variant {

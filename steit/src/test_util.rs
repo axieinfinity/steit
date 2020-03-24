@@ -21,10 +21,10 @@ macro_rules! test_case {
 pub struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);
 
 impl Foo {
-    pub fn with(f_0: i32, f_1: i32) -> Self {
+    pub fn with(f0: i32, f1: i32) -> Self {
         Self {
-            0: f_0,
-            1: f_1,
+            0: f0,
+            1: f1,
             ..Foo::new()
         }
     }
