@@ -1,5 +1,5 @@
-pub fn uncap_first_char(s: &str) -> String {
-    let mut chars = s.chars();
+pub fn uncap_first_char(s: impl AsRef<str>) -> String {
+    let mut chars = s.as_ref().chars();
     let mut out = String::new();
 
     if let Some(c) = chars.next() {
@@ -10,10 +10,10 @@ pub fn uncap_first_char(s: &str) -> String {
     out
 }
 
-pub fn to_camel_case(s: &str, mut upper: bool) -> String {
+pub fn to_camel_case(s: impl AsRef<str>, mut upper: bool) -> String {
     let mut out = String::new();
 
-    for c in s.chars() {
+    for c in s.as_ref().chars() {
         if c == '_' {
             upper = true;
         } else if upper {
@@ -27,8 +27,8 @@ pub fn to_camel_case(s: &str, mut upper: bool) -> String {
     out
 }
 
-pub fn to_snake_case(s: &str) -> String {
-    let mut chars = s.chars();
+pub fn to_snake_case(s: impl AsRef<str>) -> String {
+    let mut chars = s.as_ref().chars();
     let mut out = String::new();
 
     if let Some(c) = chars.next() {

@@ -1,5 +1,5 @@
-pub fn to_snake_case(s: &str) -> String {
-    let mut chars = s.chars();
+pub fn to_snake_case(s: impl AsRef<str>) -> String {
+    let mut chars = s.as_ref().chars();
     let mut out = String::new();
 
     if let Some(c) = chars.next() {
