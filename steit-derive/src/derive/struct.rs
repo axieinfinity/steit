@@ -6,7 +6,7 @@ use quote::ToTokens;
 use crate::{
     attr::{Attr, AttrParse, VecAttr},
     context::Context,
-    impl_util::ImplUtil,
+    impler::Impler,
 };
 
 use super::{
@@ -55,7 +55,7 @@ macro_rules! map_fields {
 pub struct Struct<'a> {
     setting: &'a DeriveSetting,
     context: &'a Context,
-    impl_util: &'a ImplUtil<'a>,
+    impler: &'a Impler<'a>,
     fields: Vec<Field<'a>>,
     cached_size: Option<ExtraField>,
     runtime: Option<ExtraField>,
@@ -66,7 +66,7 @@ impl<'a> Struct<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
         context: &'a Context,
-        impl_util: &'a ImplUtil<'a>,
+        impler: &'a Impler<'a>,
         attrs: impl AttrParse,
         fields: &'a mut syn::Fields,
         named_hint: Option<bool>,
@@ -132,7 +132,7 @@ impl<'a> Struct<'a> {
             Ok(Self {
                 setting,
                 context,
-                impl_util,
+                impler,
                 fields: parsed,
                 cached_size,
                 runtime,
@@ -261,7 +261,7 @@ impl<'a> Struct<'a> {
 
     pub fn ctor(&self) -> TokenStream {
         let ctor_name = self.ctor_name();
-        let name = self.impl_util.name();
+        let name = self.impler.name();
 
         let qual = self.variant.as_ref().map(|r#struct| r#struct.qual());
         let mut inits: Vec<_> = map_fields!(self, init).collect();
@@ -297,24 +297,24 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_ctor(&self) -> TokenStream {
-        self.impl_util.impl_with(&["Default"], self.ctor())
+        self.impler.impl_with(&["Default"], self.ctor())
     }
 
     pub fn setters(&self) -> TokenStream {
-        let name = self.impl_util.name();
+        let name = self.impler.name();
         let setters = map_fields!(self, setter(name, self.variant()));
         quote!(#(#setters)*)
     }
 
     fn impl_setters(&self) -> TokenStream {
         let setters = self.setters();
-        self.impl_util.r#impl(quote!(#setters))
+        self.impler.r#impl(quote!(#setters))
     }
 
     fn impl_default(&self) -> TokenStream {
         let arg = self.runtime.as_ref().map(|_| quote!(Runtime::default()));
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "Default",
             quote! {
                 #[inline]
@@ -326,7 +326,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_wire_type(&self) -> TokenStream {
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "WireType",
             &[],
             quote! {
@@ -369,7 +369,7 @@ impl<'a> Struct<'a> {
             None => (quote!(), quote!()),
         };
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "Serialize",
             quote! {
                 fn compute_size(&self) -> u32 {
@@ -409,7 +409,7 @@ impl<'a> Struct<'a> {
     fn impl_merge(&self) -> TokenStream {
         let merger = self.merger();
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "Merge",
             quote! {
                 fn merge(&mut self, reader: &mut Eof<impl io::Read>) -> io::Result<()> {
@@ -487,7 +487,7 @@ impl<'a> Struct<'a> {
         let replayer = self.replayer();
         let runtime_setter = self.runtime_setter();
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "State",
             quote! {
                 #[inline]
@@ -521,7 +521,7 @@ impl<'a> Struct<'a> {
     pub fn meta(&self) -> TokenStream {
         let name = match &self.variant {
             Some(variant) => variant.name(),
-            None => self.impl_util.name(),
+            None => self.impler.name(),
         };
 
         let name = name.to_token_stream().to_string();
@@ -537,9 +537,9 @@ impl<'a> Struct<'a> {
 
     fn impl_meta(&self) -> TokenStream {
         let meta = self.meta();
-        let name = self.impl_util.name().to_token_stream().to_string();
+        let name = self.impler.name().to_token_stream().to_string();
 
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "HasMeta",
             &["IsFieldType"],
             quote! {
@@ -550,7 +550,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_field_type(&self) -> TokenStream {
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "IsFieldType",
             quote! {
                 const FIELD_TYPE: &'static FieldType = &FieldType::Meta(Self::META);

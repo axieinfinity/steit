@@ -6,7 +6,7 @@ use quote::ToTokens;
 use crate::{
     attr::{AttrParse, VecAttr},
     context::Context,
-    impl_util::ImplUtil,
+    impler::Impler,
 };
 
 use super::{
@@ -37,7 +37,7 @@ impl EnumAttrs {
 pub struct Enum<'a> {
     setting: &'a DeriveSetting,
     context: &'a Context,
-    impl_util: &'a ImplUtil<'a>,
+    impler: &'a Impler<'a>,
     variants: Vec<Struct<'a>>,
 }
 
@@ -45,7 +45,7 @@ impl<'a> Enum<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
         context: &'a Context,
-        impl_util: &'a ImplUtil,
+        impler: &'a Impler,
         attrs: impl AttrParse,
         data: &'a mut syn::DataEnum,
     ) -> derive::Result<Self> {
@@ -54,20 +54,20 @@ impl<'a> Enum<'a> {
             return Err(());
         }
 
-        Self::parse_variants(setting, context, impl_util, attrs, &mut data.variants).map(
-            |variants| Self {
+        Self::parse_variants(setting, context, impler, attrs, &mut data.variants).map(|variants| {
+            Self {
                 setting,
                 context,
-                impl_util,
+                impler,
                 variants,
-            },
-        )
+            }
+        })
     }
 
     fn parse_variants(
         setting: &'a DeriveSetting,
         context: &'a Context,
-        impl_util: &'a ImplUtil,
+        impler: &'a Impler,
         attrs: impl AttrParse,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Vec<Struct<'a>>> {
@@ -131,7 +131,7 @@ impl<'a> Enum<'a> {
             if let Ok(r#struct) = Struct::parse(
                 setting,
                 context,
-                impl_util,
+                impler,
                 unknown_attrs,
                 fields,
                 named_hint,
@@ -175,7 +175,7 @@ impl<'a> Enum<'a> {
 
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
-        self.impl_util.impl_with(
+        self.impler.impl_with(
             self.state_bounds(&["Default"]),
             if let Some(default_ctor_name) = default_ctor_name {
                 let (declare_arg, call_arg) = if self.setting.runtime() {
@@ -195,7 +195,7 @@ impl<'a> Enum<'a> {
             } else {
                 if self.setting.default() {
                     self.context.error(
-                        self.impl_util.name(),
+                        self.impler.name(),
                         "expected a variant with tag 0 as the default variant of this enum",
                     );
                 }
@@ -206,7 +206,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_cached_size(&self) -> TokenStream {
-        let name = self.impl_util.name();
+        let name = self.impler.name();
 
         let cached_sizes = self.variants.iter().map(|r#struct| {
             let cached_size = r#struct
@@ -223,7 +223,7 @@ impl<'a> Enum<'a> {
             quote!(#name #qual { #destructure, .. } => cached_size)
         });
 
-        self.impl_util.r#impl(quote! {
+        self.impler.r#impl(quote! {
             #[inline]
             fn cached_size(&self) -> &CachedSize {
                 match self { #(#cached_sizes,)* }
@@ -234,7 +234,7 @@ impl<'a> Enum<'a> {
     fn impl_setters(&self) -> TokenStream {
         let setters = self.variants.iter().map(|r#struct| r#struct.setters());
 
-        self.impl_util
+        self.impler
             .impl_with(self.state_bounds(&["Default"]), quote!(#(#setters)*))
     }
 
@@ -245,7 +245,7 @@ impl<'a> Enum<'a> {
             quote!()
         };
 
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "Default",
             self.state_bounds(&["Default"]),
             quote! {
@@ -258,7 +258,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_wire_type(&self) -> TokenStream {
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "WireType",
             &[],
             quote! {
@@ -268,7 +268,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_serialize(&self) -> TokenStream {
-        let name = self.impl_util.name();
+        let name = self.impler.name();
 
         let sizers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
@@ -322,7 +322,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "Serialize",
             quote! {
                 fn compute_size(&self) -> u32 {
@@ -343,7 +343,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_merge(&self) -> TokenStream {
-        let name = self.impl_util.name();
+        let name = self.impler.name();
 
         let mergers = self.variants.iter().map(|r#struct| {
             let variant = r#struct
@@ -377,7 +377,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "Merge",
             self.state_bounds(&["Default", "Merge"]),
             quote! {
@@ -402,7 +402,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_state(&self) -> TokenStream {
-        let name = self.impl_util.name();
+        let name = self.impler.name();
 
         let runtimes = self.variants.iter().map(|r#struct| {
             let variant = r#struct
@@ -469,7 +469,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "State",
             quote! {
                 #[inline]
@@ -524,7 +524,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_meta(&self) -> TokenStream {
-        let name = self.impl_util.name().to_token_stream().to_string();
+        let name = self.impler.name().to_token_stream().to_string();
 
         let variants = self.variants.iter().map(|r#struct| {
             let variant = r#struct
@@ -542,7 +542,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impl_util.impl_for_with(
+        self.impler.impl_for_with(
             "HasMeta",
             &["IsFieldType"],
             quote! {
@@ -557,7 +557,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_field_type(&self) -> TokenStream {
-        self.impl_util.impl_for(
+        self.impler.impl_for(
             "IsFieldType",
             quote! {
                 const FIELD_TYPE: &'static FieldType = &FieldType::Meta(Self::META);

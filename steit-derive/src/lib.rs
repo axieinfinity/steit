@@ -8,7 +8,7 @@ mod attr;
 mod context;
 mod derive;
 mod derive_v2;
-mod impl_util;
+mod impler;
 mod string_util;
 
 #[proc_macro_attribute]

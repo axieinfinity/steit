@@ -1,7 +1,7 @@
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use crate::{context::Context, impl_util::ImplUtil};
+use crate::{context::Context, impler::Impler};
 
 use super::derive::{self, DeriveSetting};
 
@@ -11,7 +11,7 @@ impl Union {
     pub fn parse(
         _setting: &DeriveSetting,
         context: &Context,
-        _impl: &ImplUtil,
+        _impler: &Impler,
         data: &mut syn::DataUnion,
     ) -> derive::Result<Self> {
         context.error(data.union_token, "cannot derive for unions yet");
