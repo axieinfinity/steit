@@ -1,20 +1,22 @@
 use std::{
-    fmt,
     hash::{Hash, Hasher},
     sync::atomic::{AtomicU32, Ordering},
 };
 
-/// Cached size to prevent duplicate calculation in serialization.
+/// Cached size to prevent duplicate size calculation in serialization.
 ///
-/// It is always equal to itself so the containing object can use `#[derive(Eq)]`.
+/// A `CachedSize` is always equal to itself so its containing object can use `#[derive(Eq)]`.
+/// This implementation references another [`CachedSize`] implementation from [rust-protobuf].
 ///
-/// Reference: https://github.com/stepancheg/rust-protobuf/blob/68c7a5a/protobuf/src/cached_size.rs
-#[derive(Default)]
+/// [rust-protobuf]: https://github.com/stepancheg/rust-protobuf
+/// [`CachedSize`]: https://github.com/stepancheg/rust-protobuf/blob/68c7a5a/protobuf/src/cached_size.rs
+#[derive(Default, Debug)]
 pub struct CachedSize {
     size: AtomicU32,
 }
 
 impl CachedSize {
+    /// Creates a new `CachedSize` and initializes it to 0.
     #[inline]
     pub fn new() -> Self {
         Self::default()
@@ -30,7 +32,7 @@ impl CachedSize {
     /// ```
     #[inline]
     pub fn get(&self) -> u32 {
-        self.size.load(Ordering::Relaxed) as u32
+        self.size.load(Ordering::Relaxed)
     }
 
     /// Sets cached size.
@@ -65,13 +67,6 @@ impl PartialEq for CachedSize {
 }
 
 impl Eq for CachedSize {}
-
-impl fmt::Debug for CachedSize {
-    #[inline]
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        self.get().fmt(f)
-    }
-}
 
 impl Hash for CachedSize {
     #[inline]
