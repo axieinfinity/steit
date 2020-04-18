@@ -3,7 +3,7 @@ mod tests {
     use steit::{
         gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
-        steitize,
+        steit_derive, steitize,
         types::{List, Map},
         Runtime, Serialize, State,
     };
@@ -237,4 +237,7 @@ mod tests {
             hits
         });
     }
+
+    #[steit_derive(Serialize, Debug)]
+    pub struct Test {}
 }
