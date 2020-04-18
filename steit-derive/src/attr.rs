@@ -4,6 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use super::context::Context;
+use syn::NestedMeta;
 
 pub struct Attr<'a, T> {
     context: &'a Context,
@@ -46,10 +47,10 @@ impl<'a, T> Attr<'a, T> {
     pub fn parse_name_value(
         &mut self,
         meta: &syn::MetaNameValue,
-        mut f: impl FnMut(&syn::Lit) -> Result<T, &str>,
+        mut parse_literal: impl FnMut(&syn::Lit) -> Result<T, &str>,
     ) -> bool {
         if meta.path.is_ident(self.name) {
-            match f(&meta.lit) {
+            match parse_literal(&meta.lit) {
                 Ok(value) => self.set(meta, value),
                 Err(ty) => self.context.error(
                     &meta.lit,
@@ -130,12 +131,12 @@ impl<'a, T> VecAttr<'a, T> {
     pub fn parse_list(
         &mut self,
         meta: &syn::MetaList,
-        mut f: impl FnMut(&syn::Lit) -> Result<T, &str>,
+        mut parse_literal: impl FnMut(&syn::Lit) -> Result<T, &str>,
     ) -> bool {
         if meta.path.is_ident(self.name) {
             for meta in &meta.nested {
                 match meta {
-                    syn::NestedMeta::Lit(lit) => match f(lit) {
+                    syn::NestedMeta::Lit(lit) => match parse_literal(lit) {
                         Ok(value) => self.insert(value),
                         Err(ty) => self.context.error(
                             lit,
@@ -174,7 +175,7 @@ pub trait AttrParse {
         self,
         context: &Context,
         error_on_unknown: bool,
-        f: &mut impl FnMut(&syn::Meta) -> bool,
+        should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs;
 }
 
@@ -183,31 +184,39 @@ impl AttrParse for syn::AttributeArgs {
         self,
         context: &Context,
         error_on_unknown: bool,
-        f: &mut impl FnMut(&syn::Meta) -> bool,
+        mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
         let mut unknown = Vec::new();
 
         for meta in self {
-            unknown.extend(parse_meta(meta, context, error_on_unknown, f));
+            unknown.extend(parse_meta(
+                meta,
+                context,
+                error_on_unknown,
+                &mut should_accept,
+            ));
         }
 
         unknown
     }
 }
 
-// Cannot merge this with the implementation above
-// since that would cause a conflict with the one of `&mut Vec<syn::Attribute>`.
 impl AttrParse for syn::punctuated::Punctuated<syn::NestedMeta, syn::Token![,]> {
     fn parse(
         self,
         context: &Context,
         error_on_unknown: bool,
-        f: &mut impl FnMut(&syn::Meta) -> bool,
+        mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
         let mut unknown = Vec::new();
 
         for meta in self {
-            unknown.extend(parse_meta(meta, context, error_on_unknown, f));
+            unknown.extend(parse_meta(
+                meta,
+                context,
+                error_on_unknown,
+                &mut should_accept,
+            ));
         }
 
         unknown
@@ -219,31 +228,27 @@ impl AttrParse for &mut Vec<syn::Attribute> {
         self,
         context: &Context,
         error_on_unknown: bool,
-        f: &mut impl FnMut(&syn::Meta) -> bool,
+        mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
         let mut unknown = Vec::new();
 
-        // Retain only non-steit attributes
         self.retain(|attr| {
+            // Retain only non-steit attributes
             if !attr.path.is_ident("steit") {
                 return true;
             }
 
-            let meta_list = match attr.parse_meta() {
-                Ok(syn::Meta::List(meta)) => meta.nested,
+            match attr.parse_meta() {
+                Ok(syn::Meta::List(meta)) => unknown.extend(meta.nested.parse(
+                    context,
+                    error_on_unknown,
+                    |meta| should_accept(meta),
+                )),
 
-                Ok(other) => {
-                    context.error(other, "expected #[steit(...)]");
-                    return false;
-                }
-
-                Err(error) => {
-                    context.syn_error(error);
-                    return false;
-                }
+                Ok(other) => context.error(other, "expected #[steit(...)]"),
+                Err(error) => context.syn_error(error),
             };
 
-            unknown.extend(meta_list.parse(context, error_on_unknown, f));
             false
         });
 
@@ -255,30 +260,24 @@ fn parse_meta(
     meta: syn::NestedMeta,
     context: &Context,
     error_on_unknown: bool,
-    f: &mut impl FnMut(&syn::Meta) -> bool,
-) -> syn::AttributeArgs {
-    let mut unknown = Vec::new();
-
-    match meta {
-        syn::NestedMeta::Meta(meta) if f(&meta) => (),
+    should_accept: &mut impl FnMut(&syn::Meta) -> bool,
+) -> Option<NestedMeta> {
+    match &meta {
+        syn::NestedMeta::Meta(meta) if should_accept(meta) => return None,
 
         syn::NestedMeta::Meta(item) => {
             if error_on_unknown {
                 let path = item.path().to_token_stream().to_string().replace(' ', "");
                 context.error(item.path(), format!("unknown steit attribute `{}`", path));
             }
-
-            unknown.push(syn::NestedMeta::Meta(item));
         }
 
         syn::NestedMeta::Lit(lit) => {
             if error_on_unknown {
                 context.error(&lit, "unexpected literal in steit attributes");
             }
-
-            unknown.push(syn::NestedMeta::Lit(lit));
         }
     }
 
-    unknown
+    Some(meta)
 }

@@ -20,7 +20,7 @@ impl VariantAttrs {
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
         let mut tag = Attr::new(context, "tag");
 
-        let unknown_attrs = (&mut variant.attrs).parse(context, false, &mut |meta| match meta {
+        let unknown_attrs = (&mut variant.attrs).parse(context, false, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
             _ => false,
         });

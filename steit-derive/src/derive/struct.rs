@@ -27,7 +27,7 @@ impl StructAttrs {
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
         let mut reserved = VecAttr::new(context, "reserved");
 
-        attrs.parse(context, true, &mut |meta| match meta {
+        attrs.parse(context, true, |meta| match meta {
             syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,

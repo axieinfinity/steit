@@ -43,7 +43,7 @@ impl DeriveSetting {
         let mut no_cached_size = Attr::new(context, "no_cached_size");
         let mut no_meta = Attr::new(context, "no_meta");
 
-        AttrParse::parse(args, context, true, &mut |meta| match meta {
+        args.parse(context, true, |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
             syn::Meta::Path(path) if merge.parse_path(path) => true,
             syn::Meta::Path(path) if deserialize.parse_path(path) => true,

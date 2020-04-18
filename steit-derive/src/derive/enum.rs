@@ -23,7 +23,7 @@ impl EnumAttrs {
     pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
         let mut reserved = VecAttr::new(context, "reserved");
 
-        attrs.parse(context, true, &mut |meta| match meta {
+        attrs.parse(context, true, |meta| match meta {
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
             _ => false,
         });

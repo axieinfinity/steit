@@ -24,7 +24,7 @@ impl FieldAttrs {
         let mut skip_state = Attr::new(context, "skip_state");
         let mut meta_name = Attr::new(context, "meta_name");
 
-        AttrParse::parse(&mut field.attrs, context, true, &mut |meta| match meta {
+        (&mut field.attrs).parse(context, true, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
             syn::Meta::Path(path) if skip_state.parse_path(path) => true,
