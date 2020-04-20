@@ -5,7 +5,9 @@ use std::{
 
 use iowrap::Eof;
 
-use super::{de_v2::DeserializeV2, wire_format::WireTypeV2};
+use crate::wire_format::WireTypeV2;
+
+use super::de::DeserializeV2;
 
 pub struct Reader<R: io::Read> {
     inner: Eof<R>,

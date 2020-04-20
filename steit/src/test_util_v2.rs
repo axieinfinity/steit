@@ -1,8 +1,7 @@
 use std::fmt;
 
 use super::{
-    de_v2::{DeserializeV2, MergeV2},
-    reader::Reader,
+    de_v2::{DeserializeV2, MergeV2, Reader},
     ser_v2::{SerializeNested, SerializeOmissible, SerializeV2},
 };
 

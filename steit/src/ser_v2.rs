@@ -1,7 +1,7 @@
 use std::io;
 
 use super::{
-    rt::SizeCache,
+    runtime::SizeCache,
     wire_format::{HasWireType, WireTypeV2},
 };
 

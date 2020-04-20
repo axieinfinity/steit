@@ -190,12 +190,9 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                SizeCache,
-                HasWireType,
-                Runtime,
-                SerializeNested,
-                SerializeV2,
-                WireTypeV2,
+                runtime::{Runtime, SizeCache},
+                ser_v2::{SerializeNested, SerializeV2},
+                wire_format::{HasWireType, WireTypeV2},
             };
 
             #tokens

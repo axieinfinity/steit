@@ -1,9 +1,7 @@
 use std::io::{self, Read};
 
 use crate::{
-    de_v2::{DeserializeV2, MergeV2},
-    reader::Reader,
-    rt::SizeCache,
+    de_v2::{DeserializeV2, MergeV2, Reader},
     ser_v2::{SerializeOmissible, SerializePrimitive},
     wire_format::{HasWireType, WireTypeV2},
 };
