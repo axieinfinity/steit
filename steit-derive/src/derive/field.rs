@@ -177,6 +177,7 @@ impl<'a> Field<'a> {
                     },
                 )
             }
+
             None => (quote!(), quote! { #field = value; }),
         };
 

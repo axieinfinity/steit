@@ -109,11 +109,13 @@ impl From<LogEntry> for ReplayEntry {
                 value,
                 size_cache: SizeCache::new(),
             },
+
             LogEntry::Add { path, item, .. } => ReplayEntry::Add {
                 path: path.values(),
                 item,
                 size_cache: SizeCache::new(),
             },
+
             LogEntry::Remove { path, .. } => ReplayEntry::Remove {
                 path: path.values(),
                 size_cache: SizeCache::new(),

@@ -143,6 +143,7 @@ impl<'a, T> VecAttr<'a, T> {
                             format!("expected `{}` attribute to be a list of {}", self.name, ty),
                         ),
                     },
+
                     _ => self.context.error(
                         meta,
                         format!("expected `{}` attribute to be a literal", self.name),
