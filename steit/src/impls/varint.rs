@@ -1,6 +1,8 @@
 use std::io::{self, Read};
 
 use crate::{
+    de_v2::{DeserializeV2, MergeV2},
+    reader::Reader,
     rt::SizeCache,
     ser_v2::{SerializeOmissible, SerializePrimitive},
     wire_format::{HasWireType, WireTypeV2},
@@ -21,7 +23,6 @@ macro_rules! impl_unsigned_varint {
                 $size_fn(*self as $size_t)
             }
 
-            #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
@@ -40,6 +41,27 @@ macro_rules! impl_unsigned_varint {
             #[inline]
             fn should_omit(&self) -> bool {
                 *self == 0
+            }
+        }
+
+        impl MergeV2 for $t {
+            fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                let mut value = 0;
+
+                let mut buf = [0];
+                let mut offset = 0;
+
+                loop {
+                    reader.read_exact(&mut buf)?;
+                    value |= (buf[0] & 0x7f) as $t << offset;
+
+                    if buf[0] & 0x80 == 0 {
+                        *self = value;
+                        return Ok(());
+                    }
+
+                    offset += 7;
+                }
             }
         }
     };
@@ -72,6 +94,15 @@ macro_rules! impl_signed_varint {
             #[inline]
             fn should_omit(&self) -> bool {
                 *self == 0
+            }
+        }
+
+        impl MergeV2 for $t {
+            #[inline]
+            fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                let encoded = <$ut>::deserialize_v2(reader)? as $t;
+                *self = impl_signed_varint!(@decode encoded);
+                Ok(())
             }
         }
     };
@@ -167,7 +198,9 @@ fn size_64(mut value: i64) -> u32 {
 mod tests {
     use crate::{
         test_case,
-        test_util_v2::{assert_serialize, assert_serialize_nested},
+        test_util_v2::{
+            assert_deserialize, assert_ser_de, assert_serialize, assert_serialize_nested,
+        },
     };
 
     test_case!(encode_zig_zag_01: assert_serialize;  0 => &[0]);
@@ -176,17 +209,17 @@ mod tests {
     test_case!(encode_zig_zag_04: assert_serialize; -2 => &[3]);
     test_case!(encode_zig_zag_05: assert_serialize;  2 => &[4]);
 
-    // test_case!(decode_zig_zag_01: assert_deserialize; &[0] =>  0);
-    // test_case!(decode_zig_zag_02: assert_deserialize; &[1] => -1);
-    // test_case!(decode_zig_zag_03: assert_deserialize; &[2] =>  1);
-    // test_case!(decode_zig_zag_04: assert_deserialize; &[3] => -2);
-    // test_case!(decode_zig_zag_05: assert_deserialize; &[4] =>  2);
-    //
-    // test_case!(back_and_forth_01: assert_ser_de; -1i8 as u64);
-    // test_case!(back_and_forth_02: assert_ser_de; !0u64);
-    // test_case!(back_and_forth_03: assert_ser_de; -1i8 as u32);
-    // test_case!(back_and_forth_04: assert_ser_de; 1_000_000);
-    // test_case!(back_and_forth_05: assert_ser_de; 42);
+    test_case!(decode_zig_zag_01: assert_deserialize; &[0] =>  0);
+    test_case!(decode_zig_zag_02: assert_deserialize; &[1] => -1);
+    test_case!(decode_zig_zag_03: assert_deserialize; &[2] =>  1);
+    test_case!(decode_zig_zag_04: assert_deserialize; &[3] => -2);
+    test_case!(decode_zig_zag_05: assert_deserialize; &[4] =>  2);
+
+    test_case!(back_and_forth_01: assert_ser_de; -1i8 as u64);
+    test_case!(back_and_forth_02: assert_ser_de; !0u64);
+    test_case!(back_and_forth_03: assert_ser_de; -1i8 as u32);
+    test_case!(back_and_forth_04: assert_ser_de; 1_000_000);
+    test_case!(back_and_forth_05: assert_ser_de; 42);
 
     test_case!(serialize_nested_01: assert_serialize_nested; 0, None => &[0]);
     test_case!(serialize_nested_02: assert_serialize_nested; 1, None => &[2]);
