@@ -1,6 +1,10 @@
 use std::fmt;
 
-use super::ser_v2::{SerializeNested, SerializeOmissible, SerializeV2};
+use super::{
+    de_v2::{DeserializeV2, MergeV2},
+    reader::Reader,
+    ser_v2::{SerializeNested, SerializeOmissible, SerializeV2},
+};
 
 // #[macro_export]
 // macro_rules! test_case {
@@ -85,27 +89,31 @@ pub fn assert_serialize_nested(
     assert_eq!(&*serialize_nested(value, tag), bytes);
 }
 
-// pub fn merge<T: Merge>(mut value: T, bytes: &[u8]) -> T {
-//     value.merge(&mut Eof::new(bytes)).unwrap();
-//     value
-// }
-//
-// pub fn assert_merge<T: PartialEq + fmt::Debug + Merge>(value: T, bytes: &[u8], expected_value: T) {
-//     assert_eq!(merge(value, bytes), expected_value);
-// }
-//
-// pub fn deserialize<T: Deserialize>(bytes: &[u8]) -> T {
-//     T::deserialize(&mut Eof::new(bytes)).unwrap()
-// }
-//
-// pub fn assert_deserialize<T: PartialEq + fmt::Debug + Deserialize>(bytes: &[u8], value: T) {
-//     assert_eq!(deserialize::<T>(bytes), value);
-// }
-//
-// pub fn assert_ser_de<T: Clone + PartialEq + fmt::Debug + Serialize + Deserialize>(value: T) {
-//     assert_eq!(deserialize::<T>(&*serialize(value.clone())), value);
-// }
-//
+pub fn merge<T: MergeV2>(mut value: T, bytes: &[u8]) -> T {
+    value.merge_v2(&mut Reader::new(bytes)).unwrap();
+    value
+}
+
+pub fn assert_merge<T: PartialEq + fmt::Debug + MergeV2>(
+    value: T,
+    bytes: &[u8],
+    expected_value: T,
+) {
+    assert_eq!(merge(value, bytes), expected_value);
+}
+
+pub fn deserialize<T: DeserializeV2>(bytes: &[u8]) -> T {
+    T::deserialize_v2(&mut Reader::new(bytes)).unwrap()
+}
+
+pub fn assert_deserialize<T: PartialEq + fmt::Debug + DeserializeV2>(bytes: &[u8], value: T) {
+    assert_eq!(deserialize::<T>(bytes), value);
+}
+
+pub fn assert_ser_de<T: Clone + PartialEq + fmt::Debug + SerializeV2 + DeserializeV2>(value: T) {
+    assert_eq!(deserialize::<T>(&*serialize(value.clone())), value);
+}
+
 // pub fn replay<T: State>(mut value: T, bytes: &[u8]) -> T {
 //     value.replay(&mut Eof::new(bytes)).unwrap();
 //     value
