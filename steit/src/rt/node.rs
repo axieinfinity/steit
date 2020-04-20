@@ -2,7 +2,7 @@ use std::{fmt, io, sync::Arc};
 
 use crate::{
     wire_type::{WireType, WIRE_TYPE_SIZED},
-    CachedSize, Serialize,
+    Serialize, SizeCache,
 };
 
 pub enum Node<T> {
@@ -10,7 +10,7 @@ pub enum Node<T> {
     Child {
         parent: Arc<Self>,
         value: T,
-        cached_size: CachedSize,
+        size_cache: SizeCache,
     },
 }
 
@@ -20,7 +20,7 @@ impl<T> Node<T> {
         Node::Child {
             parent: parent.clone(),
             value,
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
         }
     }
 
@@ -66,11 +66,11 @@ impl<'a, T: fmt::Debug> fmt::Debug for DebugNode<'a, T> {
         match self.0 {
             Node::Root => f.debug_struct("Root").finish(),
             Node::Child {
-                value, cached_size, ..
+                value, size_cache, ..
             } => f
                 .debug_struct("Child")
                 .field("value", value)
-                .field("cached_size", cached_size)
+                .field("size_cache", size_cache)
                 .finish(),
         }
     }
@@ -104,10 +104,10 @@ impl<T: Serialize> Serialize for Node<T> {
             Node::Child {
                 parent,
                 value,
-                cached_size,
+                size_cache,
             } => {
                 let size = parent.compute_size() + value.compute_size_nested(None);
-                cached_size.set(size);
+                size_cache.set(size);
                 size
             }
         }
@@ -127,7 +127,7 @@ impl<T: Serialize> Serialize for Node<T> {
     fn cached_size(&self) -> u32 {
         match self {
             Node::Root => 0,
-            Node::Child { cached_size, .. } => cached_size.get(),
+            Node::Child { size_cache, .. } => size_cache.get(),
         }
     }
 }
@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn cached_size() {
+    fn size_cache() {
         let node = node(vec![0, 1337, 0, 1]);
         assert_eq!(node.cached_size(), 0);
         assert_eq!(node.compute_size(), 5);

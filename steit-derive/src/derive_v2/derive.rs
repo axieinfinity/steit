@@ -22,9 +22,9 @@ pub struct DeriveSetting {
 
     pub steit_owned: bool,
 
-    pub no_cached_size: bool,
+    pub no_size_cache: bool,
 
-    pub cached_size_renamed: Option<(String, TokenStream)>,
+    pub size_cache_renamed: Option<(String, TokenStream)>,
     pub runtime_renamed: Option<(String, TokenStream)>,
 }
 
@@ -58,19 +58,19 @@ impl DeriveSetting {
 
         let mut steit_owned = Attr::new(context, "steit_owned");
 
-        let mut no_cached_size = Attr::new(context, "no_cached_size");
+        let mut no_size_cache = Attr::new(context, "no_size_cache");
 
-        let mut cached_size_renamed = Attr::new(context, "cached_size_renamed");
+        let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
         let unknown_attrs = attrs.parse(context, false, |meta| match meta {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
+            syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
-            syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
+            syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
 
             _ => false,
@@ -87,9 +87,9 @@ impl DeriveSetting {
 
                 steit_owned: steit_owned.get().unwrap_or_default(),
 
-                no_cached_size: no_cached_size.get().unwrap_or_default(),
+                no_size_cache: no_size_cache.get().unwrap_or_default(),
 
-                cached_size_renamed: cached_size_renamed.get_with_tokens(),
+                size_cache_renamed: size_cache_renamed.get_with_tokens(),
                 runtime_renamed: runtime_renamed.get_with_tokens(),
             },
             unknown_attrs,
@@ -112,8 +112,8 @@ impl DeriveSetting {
         }
     }
 
-    pub fn has_cached_size(&self) -> bool {
-        self.serialize && !self.no_cached_size
+    pub fn has_size_cache(&self) -> bool {
+        self.serialize && !self.no_size_cache
     }
 
     pub fn has_runtime(&self) -> bool {
@@ -190,7 +190,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                CachedSize,
+                SizeCache,
                 HasWireType,
                 Runtime,
                 SerializeNested,

@@ -1,7 +1,7 @@
 use std::io;
 
 use super::{
-    rt::CachedSize,
+    rt::SizeCache,
     wire_format::{HasWireType, WireTypeV2},
 };
 
@@ -9,7 +9,7 @@ pub trait SerializeV2: HasWireType {
     fn compute_size(&self) -> u32;
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()>;
 
-    fn size_cache(&self) -> Option<&CachedSize>;
+    fn size_cache(&self) -> Option<&SizeCache>;
 
     #[inline]
     fn cache_size(&self) -> u32 {
@@ -54,7 +54,7 @@ impl<T: SerializePrimitive> SerializeV2 for T {
     }
 
     #[inline]
-    fn size_cache(&self) -> Option<&CachedSize> {
+    fn size_cache(&self) -> Option<&SizeCache> {
         None
     }
 

@@ -3,20 +3,24 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
-/// Cached size to prevent duplicate size calculation in serialization.
+/// Caches serialization size to prevent duplicate calculation.
 ///
-/// A `CachedSize` is always equal to itself so its containing object can use `#[derive(Eq)]`.
-/// This implementation references another [`CachedSize`] implementation from [rust-protobuf].
+/// A [`SizeCache`] is always equal to itself so its containing object can use `#[derive(Eq)]`.
 ///
+/// This references [`CachedSize`] from [rust-protobuf].
+///
+/// [`SizeCache`]: struct.SizeCache.html
 /// [rust-protobuf]: https://github.com/stepancheg/rust-protobuf
 /// [`CachedSize`]: https://github.com/stepancheg/rust-protobuf/blob/68c7a5a/protobuf/src/cached_size.rs
 #[derive(Default, Debug)]
-pub struct CachedSize {
+pub struct SizeCache {
     size: AtomicU32,
 }
 
-impl CachedSize {
-    /// Creates a new `CachedSize` and initializes it to 0.
+impl SizeCache {
+    /// Creates a new [`SizeCache`] and initializes it to 0.
+    ///
+    /// [`SizeCache`]: struct.SizeCache.html
     #[inline]
     pub fn new() -> Self {
         Self::default()
@@ -25,10 +29,9 @@ impl CachedSize {
     /// Gets cached size.
     ///
     /// ```
-    /// use steit::CachedSize;
-    ///
-    /// let cached_size = CachedSize::new();
-    /// assert_eq!(cached_size.get(), 0);
+    /// # use steit::SizeCache;
+    /// let size_cache = SizeCache::new();
+    /// assert_eq!(size_cache.get(), 0);
     /// ```
     #[inline]
     pub fn get(&self) -> u32 {
@@ -38,11 +41,10 @@ impl CachedSize {
     /// Sets cached size.
     ///
     /// ```
-    /// use steit::CachedSize;
-    ///
-    /// let cached_size = CachedSize::new();
-    /// cached_size.set(1337);
-    /// assert_eq!(cached_size.get(), 1337);
+    /// # use steit::SizeCache;
+    /// let size_cache = SizeCache::new();
+    /// size_cache.set(1337);
+    /// assert_eq!(size_cache.get(), 1337);
     /// ```
     #[inline]
     pub fn set(&self, size: u32) {
@@ -50,7 +52,7 @@ impl CachedSize {
     }
 }
 
-impl Clone for CachedSize {
+impl Clone for SizeCache {
     #[inline]
     fn clone(&self) -> Self {
         Self {
@@ -59,16 +61,16 @@ impl Clone for CachedSize {
     }
 }
 
-impl PartialEq for CachedSize {
+impl PartialEq for SizeCache {
     #[inline]
-    fn eq(&self, _other: &CachedSize) -> bool {
+    fn eq(&self, _other: &SizeCache) -> bool {
         true
     }
 }
 
-impl Eq for CachedSize {}
+impl Eq for SizeCache {}
 
-impl Hash for CachedSize {
+impl Hash for SizeCache {
     #[inline]
     fn hash<H: Hasher>(&self, _state: &mut H) {
         // Ignore cached size in hash computation
@@ -79,12 +81,12 @@ impl Hash for CachedSize {
 mod tests {
     use crate::test_case;
 
-    use super::CachedSize;
+    use super::SizeCache;
 
     fn assert_back_and_forth(value: u32) {
-        let cached_size = CachedSize::new();
-        cached_size.set(value);
-        assert_eq!(cached_size.get(), value);
+        let size_cache = SizeCache::new();
+        size_cache.set(value);
+        assert_eq!(size_cache.get(), value);
     }
 
     test_case!(back_and_forth_01: assert_back_and_forth; 0);

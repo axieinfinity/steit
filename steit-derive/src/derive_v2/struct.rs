@@ -16,9 +16,9 @@ use super::{
 };
 
 struct StructAttrs {
-    no_cached_size: bool,
+    no_size_cache: bool,
 
-    cached_size_renamed: Option<(String, TokenStream)>,
+    size_cache_renamed: Option<(String, TokenStream)>,
     runtime_renamed: Option<(String, TokenStream)>,
 
     reserved: Vec<u32>,
@@ -26,18 +26,18 @@ struct StructAttrs {
 
 impl StructAttrs {
     pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
-        let mut no_cached_size = Attr::new(context, "no_cached_size");
+        let mut no_size_cache = Attr::new(context, "no_size_cache");
 
-        let mut cached_size_renamed = Attr::new(context, "cached_size_renamed");
+        let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
         let mut reserved = VecAttr::new(context, "reserved");
 
         attrs.parse(context, true, |meta| match meta {
-            syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
+            syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
-            syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
+            syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
 
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
@@ -46,9 +46,9 @@ impl StructAttrs {
         });
 
         Self {
-            no_cached_size: no_cached_size.get().unwrap_or_default(),
+            no_size_cache: no_size_cache.get().unwrap_or_default(),
 
-            cached_size_renamed: cached_size_renamed.get_with_tokens(),
+            size_cache_renamed: size_cache_renamed.get_with_tokens(),
             runtime_renamed: runtime_renamed.get_with_tokens(),
 
             reserved: reserved.get(),
@@ -61,7 +61,7 @@ pub struct Struct<'a> {
     impler: &'a Impler<'a>,
     setting: &'a DeriveSetting,
     fields: Vec<DeriveField<'a>>,
-    cached_size: Option<Field>,
+    size_cache: Option<Field>,
     runtime: Option<Field>,
     variant: Option<Variant>,
 }
@@ -87,15 +87,15 @@ impl<'a> Struct<'a> {
         let krate = setting.krate();
         let mut index = parsed_fields.len();
 
-        let cached_size = if setting.has_cached_size() && !attrs.no_cached_size {
+        let size_cache = if setting.has_size_cache() && !attrs.no_size_cache {
             Some(add_field(
                 fields,
                 attrs
-                    .cached_size_renamed
-                    .or(setting.cached_size_renamed.clone())
+                    .size_cache_renamed
+                    .or(setting.size_cache_renamed.clone())
                     .map(|(name, _)| name)
-                    .unwrap_or("cached_size".to_owned()),
-                syn::parse_quote!(#krate::CachedSize),
+                    .unwrap_or("size_cache".to_owned()),
+                syn::parse_quote!(#krate::SizeCache),
                 {
                     index += 1;
                     index - 1
@@ -128,7 +128,7 @@ impl<'a> Struct<'a> {
             context,
             impler,
             fields: parsed_fields,
-            cached_size,
+            size_cache,
             runtime,
             variant,
         })
@@ -138,8 +138,8 @@ impl<'a> Struct<'a> {
         self.variant.as_ref()
     }
 
-    pub fn cached_size(&self) -> Option<&Field> {
-        self.cached_size.as_ref()
+    pub fn size_cache(&self) -> Option<&Field> {
+        self.size_cache.as_ref()
     }
 
     pub fn runtime(&self) -> Option<&Field> {
@@ -177,8 +177,8 @@ impl<'a> Struct<'a> {
         let sizer = self.sizer();
         let serializer = self.serializer();
 
-        let cached_size = if let Some(cached_size) = &self.cached_size {
-            let field = cached_size.field(false);
+        let size_cache = if let Some(size_cache) = &self.size_cache {
+            let field = size_cache.field(false);
             quote!(Some(&#field))
         } else {
             quote!(None)
@@ -199,8 +199,8 @@ impl<'a> Struct<'a> {
                 }
 
                 #[inline]
-                fn size_cache(&self) -> Option<&CachedSize> {
-                    #cached_size
+                fn size_cache(&self) -> Option<&SizeCache> {
+                    #size_cache
                 }
             },
         )

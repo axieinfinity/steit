@@ -1,7 +1,7 @@
 use std::io::{self, Read};
 
 use crate::{
-    rt::CachedSize,
+    rt::SizeCache,
     ser_v2::{SerializeOmissible, SerializePrimitive},
     wire_format::{HasWireType, WireTypeV2},
 };

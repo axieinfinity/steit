@@ -205,28 +205,28 @@ impl<'a> Enum<'a> {
         )
     }
 
-    fn impl_cached_size(&self) -> TokenStream {
+    fn impl_size_cache(&self) -> TokenStream {
         let name = self.impler.name();
 
-        let cached_sizes = self.variants.iter().map(|r#struct| {
-            let cached_size = r#struct
-                .cached_size()
-                .unwrap_or_else(|| unreachable!("expected a `CachedSize` field"));
+        let size_caches = self.variants.iter().map(|r#struct| {
+            let size_cache = r#struct
+                .size_cache()
+                .unwrap_or_else(|| unreachable!("expected a `SizeCache` field"));
 
             let variant = r#struct
                 .variant()
                 .unwrap_or_else(|| unreachable!("expected a variant"));
 
             let qual = variant.qual();
-            let destructure = cached_size.destructure(quote!(cached_size));
+            let destructure = size_cache.destructure(quote!(size_cache));
 
-            quote!(#name #qual { #destructure, .. } => cached_size)
+            quote!(#name #qual { #destructure, .. } => size_cache)
         });
 
         self.impler.r#impl(quote! {
             #[inline]
-            fn cached_size(&self) -> &CachedSize {
-                match self { #(#cached_sizes,)* }
+            fn size_cache(&self) -> &SizeCache {
+                match self { #(#size_caches,)* }
             }
         })
     }
@@ -289,13 +289,13 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let (set_cached_size, cached_size) = if self.setting.cached_size() {
+        let (set_cached_size, cached_size) = if self.setting.size_cache() {
             (
-                quote! { self.cached_size().set(size); },
+                quote! { self.size_cache().set(size); },
                 quote! {
                     #[inline]
                     fn cached_size(&self) -> u32 {
-                        self.cached_size().get()
+                        self.size_cache().get()
                     }
                 },
             )
@@ -577,8 +577,8 @@ impl<'a> ToTokens for Enum<'a> {
             tokens.extend(self.impl_setters());
         }
 
-        if self.setting.cached_size() {
-            tokens.extend(self.impl_cached_size());
+        if self.setting.size_cache() {
+            tokens.extend(self.impl_size_cache());
         }
 
         if self.setting.default() {

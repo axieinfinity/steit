@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::{node::Node, types::Bytes, CachedSize, Serialize};
+use crate::{node::Node, types::Bytes, Serialize, SizeCache};
 
-// `path` is put in each variant and `Entry` is flattened to save serialization size.
+// `path` is put in each variant and `Entry` is flattened to save some serialization size.
 #[crate::steitize(Serialize, own_crate, no_ctors, no_setters)]
 #[derive(Debug)]
 pub enum LogEntry {
@@ -33,7 +33,7 @@ impl LogEntry {
         LogEntry::Update {
             path,
             value: Bytes::with_value(value),
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
         }
     }
 
@@ -42,7 +42,7 @@ impl LogEntry {
         LogEntry::Add {
             path,
             item: Bytes::with_value(item),
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
         }
     }
 
@@ -50,7 +50,7 @@ impl LogEntry {
     pub fn new_remove(path: Arc<Node<u16>>) -> Self {
         LogEntry::Remove {
             path,
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
         }
     }
 

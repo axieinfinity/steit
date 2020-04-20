@@ -3,7 +3,7 @@ use std::io;
 use crate::{
     gen::{FieldType, IsFieldType},
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
-    CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
+    Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, SizeCache, State,
 };
 
 use super::{
@@ -14,7 +14,7 @@ use super::{
 #[derive(Default, Debug)]
 pub struct List<T: State> {
     items: Vec<Option<T>>,
-    cached_size: CachedSize,
+    size_cache: SizeCache,
     runtime: Runtime,
 }
 
@@ -23,7 +23,7 @@ impl<T: State> List<T> {
     pub fn new(runtime: Runtime) -> Self {
         Self {
             items: Vec::new(),
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
             runtime,
         }
     }
@@ -142,7 +142,7 @@ impl<T: State> Serialize for List<T> {
             }
         }
 
-        self.cached_size.set(size);
+        self.size_cache.set(size);
         size
     }
 
@@ -164,7 +164,7 @@ impl<T: State> Serialize for List<T> {
 
     #[inline]
     fn cached_size(&self) -> u32 {
-        self.cached_size.get()
+        self.size_cache.get()
     }
 }
 

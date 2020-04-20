@@ -110,13 +110,13 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let cached_sizes = self.variants.iter().map(|r#struct| {
+        let size_caches = self.variants.iter().map(|r#struct| {
             let variant = r#struct.variant().unwrap();
             let qual = variant.qual();
 
-            if let Some(cached_size) = r#struct.cached_size() {
-                let destructure = cached_size.destructure(quote!(cached_size));
-                quote!(#name #qual { #destructure, .. } => Some(cached_size))
+            if let Some(size_cache) = r#struct.size_cache() {
+                let destructure = size_cache.destructure(quote!(size_cache));
+                quote!(#name #qual { #destructure, .. } => Some(size_cache))
             } else {
                 quote!(#name #qual { .. } => None)
             }
@@ -136,8 +136,8 @@ impl<'a> Enum<'a> {
                     Ok(())
                 }
 
-                fn size_cache(&self) -> Option<&CachedSize> {
-                    match self { #(#cached_sizes,)* }
+                fn size_cache(&self) -> Option<&SizeCache> {
+                    match self { #(#size_caches,)* }
                 }
             },
         )

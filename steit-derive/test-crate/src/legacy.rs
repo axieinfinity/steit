@@ -2,7 +2,7 @@
 mod tests {
     use std::fmt;
 
-    use steit::{steitize, CachedSize, Deserialize, Eof, Merge, Runtime, Serialize, State};
+    use steit::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, SizeCache, State};
 
     /* #[derive(State)]
     struct Good {
@@ -345,7 +345,7 @@ mod tests {
         let test = Test {
             x: 17,
             y: -223,
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
             runtime: Runtime::new(),
         };
 
@@ -360,7 +360,7 @@ mod tests {
         let mut test_test = TestTest::Foo {
             foo: -22,
             test,
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
             runtime: Runtime::new(),
         };
 
@@ -376,7 +376,7 @@ mod tests {
             *test = Test {
                 x: 0,
                 y: 0,
-                cached_size: CachedSize::new(),
+                size_cache: SizeCache::new(),
                 runtime: runtime.nested(27).nested(7),
             };
         }

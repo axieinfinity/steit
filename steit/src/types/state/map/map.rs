@@ -5,7 +5,7 @@ use indexmap::map::IndexMap;
 use crate::{
     gen::{FieldType, IsFieldType},
     wire_type::{self, WireType, WIRE_TYPE_SIZED},
-    CachedSize, Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, State,
+    Deserialize, Eof, Merge, ReplayKind, Runtime, Serialize, SizeCache, State,
 };
 
 use super::{
@@ -17,7 +17,7 @@ use super::{
 pub struct Map<K: MapKey, V: State> {
     entries: IndexMap<u16, V>,
     phantom: PhantomData<*const K>,
-    cached_size: CachedSize,
+    size_cache: SizeCache,
     runtime: Runtime,
 }
 
@@ -27,7 +27,7 @@ impl<K: MapKey, V: State> Map<K, V> {
         Self {
             entries: IndexMap::new(),
             phantom: PhantomData,
-            cached_size: CachedSize::new(),
+            size_cache: SizeCache::new(),
             runtime,
         }
     }
@@ -114,7 +114,7 @@ impl<K: MapKey, V: State> Serialize for Map<K, V> {
             size += value.compute_size_nested_omittable(tag, false);
         }
 
-        self.cached_size.set(size);
+        self.size_cache.set(size);
         size
     }
 
@@ -129,7 +129,7 @@ impl<K: MapKey, V: State> Serialize for Map<K, V> {
 
     #[inline]
     fn cached_size(&self) -> u32 {
-        self.cached_size.get()
+        self.size_cache.get()
     }
 }
 

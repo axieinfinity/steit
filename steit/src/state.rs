@@ -3,7 +3,7 @@ use std::io;
 use super::{
     de::Deserialize,
     log::LogEntry,
-    rt::{CachedSize, Runtime},
+    rt::{Runtime, SizeCache},
     ser::Serialize,
     types::Bytes,
     Eof,
@@ -107,16 +107,16 @@ impl From<LogEntry> for ReplayEntry {
             LogEntry::Update { path, value, .. } => ReplayEntry::Update {
                 path: path.values(),
                 value,
-                cached_size: CachedSize::new(),
+                size_cache: SizeCache::new(),
             },
             LogEntry::Add { path, item, .. } => ReplayEntry::Add {
                 path: path.values(),
                 item,
-                cached_size: CachedSize::new(),
+                size_cache: SizeCache::new(),
             },
             LogEntry::Remove { path, .. } => ReplayEntry::Remove {
                 path: path.values(),
-                cached_size: CachedSize::new(),
+                size_cache: SizeCache::new(),
             },
         }
     }

@@ -26,7 +26,7 @@ pub struct DeriveSetting {
     pub no_setters: bool,
     pub no_setters_tokens: Option<TokenStream>,
 
-    pub no_cached_size: bool,
+    pub no_size_cache: bool,
     pub no_meta: bool,
 }
 
@@ -40,7 +40,7 @@ impl DeriveSetting {
         let mut own_crate = Attr::new(context, "own_crate");
         let mut no_ctors = Attr::new(context, "no_ctors");
         let mut no_setters = Attr::new(context, "no_setters");
-        let mut no_cached_size = Attr::new(context, "no_cached_size");
+        let mut no_size_cache = Attr::new(context, "no_size_cache");
         let mut no_meta = Attr::new(context, "no_meta");
 
         args.parse(context, true, |meta| match meta {
@@ -58,8 +58,8 @@ impl DeriveSetting {
             syn::Meta::Path(path) if no_setters.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_setters.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
+            syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_meta.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
@@ -96,7 +96,7 @@ impl DeriveSetting {
             no_setters,
             no_setters_tokens,
 
-            no_cached_size: no_cached_size.get().unwrap_or_default(),
+            no_size_cache: no_size_cache.get().unwrap_or_default(),
             no_meta: no_meta.get().unwrap_or_default(),
         }
     }
@@ -163,8 +163,8 @@ impl DeriveSetting {
         self.deserialize
     }
 
-    pub fn cached_size(&self) -> bool {
-        !self.no_cached_size
+    pub fn size_cache(&self) -> bool {
+        !self.no_size_cache
     }
 
     pub fn runtime(&self) -> bool {
@@ -241,7 +241,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
                 exhaust_nested,
                 gen::*,
                 wire_type::{self, WireType},
-                CachedSize,
+                SizeCache,
                 Deserialize,
                 Eof,
                 Merge,

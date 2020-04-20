@@ -1,9 +1,9 @@
 pub mod node;
 
-mod cached_size;
 mod logger;
 mod runtime;
+mod size_cache;
 
-pub use cached_size::*;
 pub use logger::*;
 pub use runtime::*;
+pub use size_cache::*;
