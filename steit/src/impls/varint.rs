@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     rt::CachedSize,
-    ser_v2::{SerializeOmissible, SerializeV2},
+    ser_v2::{SerializeOmissible, SerializePrimitive},
     wire_format::{HasWireType, WireTypeV2},
 };
 
@@ -15,19 +15,14 @@ macro_rules! impl_unsigned_varint {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
 
-        impl SerializeV2 for $t {
+        impl SerializePrimitive for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
                 $size_fn(*self as $size_t)
             }
 
             #[inline]
-            fn cached_size(&self) -> Option<&CachedSize> {
-                None
-            }
-
-            #[inline]
-            fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 let mut value = *self;
 
                 loop {
@@ -61,20 +56,15 @@ macro_rules! impl_signed_varint {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
 
-        impl SerializeV2 for $t {
+        impl SerializePrimitive for $t {
             #[inline]
             fn compute_size(&self) -> u32 {
                 (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
             }
 
             #[inline]
-            fn cached_size(&self) -> Option<&CachedSize> {
-                None
-            }
-
-            #[inline]
-            fn serialize_with_cached_size(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                (impl_signed_varint!(@encode self, $t) as $ut).serialize_with_cached_size(writer)
+            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
             }
         }
 
