@@ -211,7 +211,7 @@ impl<'a> Enum<'a> {
         let cached_sizes = self.variants.iter().map(|r#struct| {
             let cached_size = r#struct
                 .cached_size()
-                .unwrap_or_else(|| unreachable!("expected a `Runtime` field"));
+                .unwrap_or_else(|| unreachable!("expected a `CachedSize` field"));
 
             let variant = r#struct
                 .variant()

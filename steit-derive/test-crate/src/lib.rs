@@ -238,6 +238,27 @@ mod tests {
         });
     }
 
-    #[steit_derive(Serialize, Debug)]
-    pub struct Test {}
+    #[steit_derive(State, Debug)]
+    enum Foo {
+        #[steit(tag = 1)]
+        FirstCase {
+            #[steit(tag = 1)]
+            counter: i32,
+            #[steit(tag = 2)]
+            enabled: bool,
+        },
+        #[steit(tag = 2)]
+        SecondCase {
+            #[steit(tag = 1)]
+            counter: i32,
+            #[steit(tag = 2)]
+            enabled: bool,
+        },
+        #[steit(tag = 3)]
+        ThirdCase {},
+        #[steit(tag = 4)]
+        FourthCase(),
+        #[steit(tag = 5)]
+        FifthCase,
+    }
 }

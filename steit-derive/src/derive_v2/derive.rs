@@ -1,11 +1,16 @@
 use proc_macro2::TokenStream;
+use quote::ToTokens;
 
 use crate::{
     attr::{Attr, AttrParse},
     context::Context,
-    impl_util::ImplUtil,
+    impler::Impler,
     string_util,
 };
+
+use super::{r#enum::Enum, r#struct::Struct};
+
+pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct DeriveSetting {
     pub serialize: bool,
@@ -16,10 +21,11 @@ pub struct DeriveSetting {
     pub derives: syn::AttributeArgs,
 
     pub steit_owned: bool,
+
+    pub no_cached_size: bool,
+
     pub cached_size_renamed: Option<(String, TokenStream)>,
     pub runtime_renamed: Option<(String, TokenStream)>,
-
-    pub unknown: syn::AttributeArgs,
 }
 
 impl DeriveSetting {
@@ -27,7 +33,9 @@ impl DeriveSetting {
         context: &Context,
         args: syn::AttributeArgs,
         attrs: &mut Vec<syn::Attribute>,
-    ) -> Self {
+    ) -> (Self, syn::AttributeArgs) {
+        // Arguments
+
         let mut serialize = Attr::new(context, "Serialize");
         let mut merge = Attr::new(context, "Merge");
         let mut deserialize = Attr::new(context, "Deserialize");
@@ -41,13 +49,26 @@ impl DeriveSetting {
             _ => false,
         });
 
+        let state = state.get().unwrap_or_default();
+        let serialize = state || serialize.get().unwrap_or_default();
+        let deserialize = state || deserialize.get().unwrap_or_default();
+        let merge = deserialize || merge.get().unwrap_or_default();
+
+        // Attributes
+
         let mut steit_owned = Attr::new(context, "steit_owned");
+
+        let mut no_cached_size = Attr::new(context, "no_cached_size");
+
         let mut cached_size_renamed = Attr::new(context, "cached_size_renamed");
         let mut runtime_renamed = Attr::new(context, "runtime_renamed");
 
-        let unknown = attrs.parse(context, false, |meta| match meta {
+        let unknown_attrs = attrs.parse(context, false, |meta| match meta {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_cached_size.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_cached_size.parse_bool(meta) => true,
 
             syn::Meta::NameValue(meta) if cached_size_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
@@ -55,27 +76,31 @@ impl DeriveSetting {
             _ => false,
         });
 
-        Self {
-            serialize: serialize.get().unwrap_or_default(),
-            merge: merge.get().unwrap_or_default(),
-            deserialize: deserialize.get().unwrap_or_default(),
-            state: state.get().unwrap_or_default(),
+        (
+            Self {
+                serialize,
+                merge,
+                deserialize,
+                state,
 
-            derives,
+                derives,
 
-            steit_owned: steit_owned.get().unwrap_or_default(),
-            cached_size_renamed: cached_size_renamed.get_with_tokens(),
-            runtime_renamed: runtime_renamed.get_with_tokens(),
+                steit_owned: steit_owned.get().unwrap_or_default(),
 
-            unknown,
-        }
+                no_cached_size: no_cached_size.get().unwrap_or_default(),
+
+                cached_size_renamed: cached_size_renamed.get_with_tokens(),
+                runtime_renamed: runtime_renamed.get_with_tokens(),
+            },
+            unknown_attrs,
+        )
     }
 
-    pub fn extern_crate(&self) -> TokenStream {
-        if self.steit_owned {
-            quote!()
+    pub fn extern_crate(&self) -> Option<TokenStream> {
+        if !self.steit_owned {
+            Some(quote! { extern crate steit; })
         } else {
-            quote! { extern crate steit; }
+            None
         }
     }
 
@@ -86,17 +111,47 @@ impl DeriveSetting {
             quote!(steit)
         }
     }
+
+    pub fn has_cached_size(&self) -> bool {
+        self.serialize && !self.no_cached_size
+    }
+
+    pub fn has_runtime(&self) -> bool {
+        self.state
+    }
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
     let context = Context::new();
-    let setting = DeriveSetting::parse(&context, args, &mut input.attrs);
-    let impl_util = ImplUtil::new(&input.ident, &input.generics);
+    let impler = Impler::new(&input.ident, &input.generics);
+    let (setting, unknown_attrs) = DeriveSetting::parse(&context, args, &mut input.attrs);
 
     let output = match &mut input.data {
-        syn::Data::Enum(_data) => quote!(),
-        syn::Data::Struct(_data) => quote!(),
-        syn::Data::Union(_data) => quote!(),
+        syn::Data::Enum(data) => Enum::parse(
+            &context,
+            &impler,
+            &setting,
+            unknown_attrs,
+            &mut data.variants,
+        )
+        .ok()
+        .into_token_stream(),
+
+        syn::Data::Struct(data) => Struct::parse(
+            &context,
+            &impler,
+            &setting,
+            unknown_attrs,
+            &mut data.fields,
+            None,
+        )
+        .ok()
+        .into_token_stream(),
+
+        syn::Data::Union(data) => {
+            context.error(data.union_token, "union is not supported");
+            quote!()
+        }
     };
 
     let output = wrap_in_const(&setting, &input.ident, output);
@@ -135,17 +190,12 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                exhaust_nested,
-                gen::*,
-                wire_type::{self, WireType},
                 CachedSize,
-                Deserialize,
-                Eof,
-                Merge,
-                ReplayKind,
+                HasWireType,
                 Runtime,
-                Serialize,
-                State,
+                SerializeNested,
+                SerializeV2,
+                WireTypeV2,
             };
 
             #tokens
