@@ -35,7 +35,6 @@ impl EnumAttrs {
 }
 
 pub struct Enum<'a> {
-    context: &'a Context,
     impler: &'a Impler<'a>,
     setting: &'a DeriveSetting,
     variants: Vec<Struct<'a>>,
@@ -58,11 +57,23 @@ impl<'a> Enum<'a> {
         let variants = parse_variants(context, impler, setting, &attrs, variants)?;
 
         Ok(Self {
-            setting,
-            context,
             impler,
+            setting,
             variants,
         })
+    }
+
+    fn impl_ctors(&self) -> TokenStream {
+        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+
+        self.impler.impl_with(
+            if self.setting.state {
+                &["State"]
+            } else {
+                &["Default"]
+            },
+            quote!(#(#ctors)*),
+        )
     }
 
     fn impl_wire_type(&self) -> TokenStream {
@@ -148,11 +159,11 @@ impl<'a> Enum<'a> {
 
         let mergers = self.variants.iter().map(|r#struct| {
             let variant = r#struct.variant().unwrap();
+            let ctor_name = variant.ctor_name();
             let qual = variant.qual();
             let tag = variant.tag();
 
-            let ctor_name = variant.ctor_name();
-            let ctor_args = if self.setting.state {
+            let args = if self.setting.state {
                 quote!(self.runtime().parent())
             } else {
                 quote!()
@@ -165,7 +176,7 @@ impl<'a> Enum<'a> {
                 #tag => {
                     if let #name #qual { .. } = self {
                     } else {
-                        *self = Self::#ctor_name(#ctor_args);
+                        *self = Self::#ctor_name(#args);
                     }
 
                     if let #name #qual { #destructure .. } = self {
@@ -257,6 +268,10 @@ fn parse_variants<'a>(
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.setting.has_ctors() {
+            tokens.extend(self.impl_ctors());
+        }
+
         tokens.extend(self.impl_wire_type());
 
         if self.setting.serialize {

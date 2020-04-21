@@ -174,7 +174,7 @@ impl<'a> DeriveField<'a> {
     pub fn init_default(&self) -> TokenStream {
         self.init(if self.is_state() {
             let tag = self.tag();
-            quote!(State::with_runtime(runtime.nested(#tag)))
+            quote!(State::with_runtime(runtime.nested(#tag as u16)))
         } else {
             quote!(Default::default())
         })

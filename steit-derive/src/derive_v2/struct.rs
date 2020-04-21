@@ -57,7 +57,6 @@ impl StructAttrs {
 }
 
 pub struct Struct<'a> {
-    context: &'a Context,
     impler: &'a Impler<'a>,
     setting: &'a DeriveSetting,
     fields: Vec<DeriveField<'a>>,
@@ -124,9 +123,8 @@ impl<'a> Struct<'a> {
         };
 
         Ok(Self {
-            setting,
-            context,
             impler,
+            setting,
             fields: parsed_fields,
             size_cache,
             runtime,
@@ -146,9 +144,60 @@ impl<'a> Struct<'a> {
         self.runtime.as_ref()
     }
 
+    pub fn ctor_name(&self) -> syn::Ident {
+        match &self.variant {
+            Some(variant) => variant.ctor_name(),
+            None => format_ident!("new"),
+        }
+    }
+
     pub fn destructure(&self) -> TokenStream {
         let destructure = map_fields!(self, _.destructure_alias());
         quote!(#(#destructure,)*)
+    }
+
+    pub fn ctor(&self) -> TokenStream {
+        let ctor_name = self.ctor_name();
+        let name = self.impler.name();
+        let qual = self.variant().map(|variant| variant.qual());
+        let mut inits: Vec<_> = map_fields!(self, _.init_default()).collect();
+
+        if let Some(size_cache) = self.size_cache() {
+            inits.push(size_cache.init(quote!(SizeCache::new())));
+        }
+
+        let (args, set_variant_runtime) = if let Some(runtime) = self.runtime() {
+            inits.push(runtime.init(quote!(runtime)));
+
+            (
+                quote!(runtime: Runtime),
+                self.variant().map(|variant| {
+                    let tag = variant.tag();
+                    quote! { let runtime = runtime.nested(#tag as u16); }
+                }),
+            )
+        } else {
+            (quote!(), None)
+        };
+
+        quote! {
+            #[inline]
+            pub fn #ctor_name(#args) -> Self {
+                #set_variant_runtime
+                #name #qual { #(#inits,)* }
+            }
+        }
+    }
+
+    fn impl_ctor(&self) -> TokenStream {
+        self.impler.impl_with(
+            if self.setting.state {
+                &["State"]
+            } else {
+                &["Default"]
+            },
+            self.ctor(),
+        )
     }
 
     fn impl_wire_type(&self) -> TokenStream {
@@ -298,6 +347,10 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        if self.setting.has_ctors() {
+            tokens.extend(self.impl_ctor());
+        }
+
         tokens.extend(self.impl_wire_type());
 
         if self.setting.serialize {
