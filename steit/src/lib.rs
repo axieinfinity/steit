@@ -3,6 +3,7 @@ pub mod gen;
 pub mod log;
 pub mod rt;
 pub mod ser_v2;
+pub mod state_v2;
 pub mod types;
 pub mod wire_format;
 pub mod wire_type;
