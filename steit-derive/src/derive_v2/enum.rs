@@ -133,8 +133,9 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impler.impl_for(
+        self.impler.impl_for_with(
             "SerializeV2",
+            &["SerializeNested"],
             quote! {
                 fn compute_size(&self) -> u32 {
                     let mut size = 0;
