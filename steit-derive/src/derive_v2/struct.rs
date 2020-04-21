@@ -233,9 +233,8 @@ impl<'a> Struct<'a> {
             quote!(None)
         };
 
-        self.impler.impl_for_with(
+        self.impler.impl_for(
             "SerializeV2",
-            &["SerializeNested"],
             quote! {
                 fn compute_size(&self) -> u32 {
                     let mut size = 0;
@@ -275,9 +274,8 @@ impl<'a> Struct<'a> {
     fn impl_merge(&self) -> TokenStream {
         let merger = self.merger();
 
-        self.impler.impl_for_with(
+        self.impler.impl_for(
             "MergeV2",
-            &["MergeNested"],
             quote! {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     #merger

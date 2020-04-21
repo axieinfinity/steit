@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{DeserializeV2, MergeV2, Reader},
-    ser_v2::{SerializeOmissible, SerializePrimitive},
+    ser_v2::SerializePrimitive,
     wire_format::{HasWireType, WireTypeV2},
 };
 
@@ -32,13 +32,6 @@ macro_rules! impl_unsigned_varint {
                         value >>= 7;
                     }
                 }
-            }
-        }
-
-        impl SerializeOmissible for $t {
-            #[inline]
-            fn should_omit(&self) -> bool {
-                *self == 0
             }
         }
 
@@ -85,13 +78,6 @@ macro_rules! impl_signed_varint {
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
                 (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
-            }
-        }
-
-        impl SerializeOmissible for $t {
-            #[inline]
-            fn should_omit(&self) -> bool {
-                *self == 0
             }
         }
 

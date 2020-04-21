@@ -35,9 +35,65 @@ pub trait SerializeV2: HasWireType {
         self.cache_size();
         self.serialize_cached(writer)
     }
+
+    #[inline]
+    fn is_omissible(&self) -> bool {
+        self.compute_size() == 0
+    }
+
+    #[inline]
+    fn compute_size_nested_v2(
+        &self,
+        field_number: impl Into<Option<u32>>,
+        is_omissible: bool,
+    ) -> u32 {
+        let field_number = field_number.into();
+
+        if field_number.is_some() && is_omissible && self.is_omissible() {
+            return 0;
+        }
+
+        let mut size = self.cache_size();
+
+        match Self::WIRE_TYPE {
+            WireTypeV2::Varint => (),
+            WireTypeV2::Sized => size += size.cache_size(),
+        }
+
+        if let Some(field_number) = field_number {
+            size += self.tag(field_number).value().cache_size();
+        }
+
+        size
+    }
+
+    #[inline]
+    fn serialize_nested(
+        &self,
+        field_number: impl Into<Option<u32>>,
+        is_omissible: bool,
+        writer: &mut impl io::Write,
+    ) -> io::Result<()> {
+        let field_number = field_number.into();
+
+        if field_number.is_some() && is_omissible && self.is_omissible() {
+            return Ok(());
+        }
+
+        if let Some(field_number) = field_number {
+            self.tag(field_number).value().serialize_cached(writer)?;
+        }
+
+        match Self::WIRE_TYPE {
+            WireTypeV2::Varint => (),
+            WireTypeV2::Sized => self.cached_size().serialize_cached(writer)?,
+        }
+
+        self.serialize_cached(writer)
+    }
 }
 
-pub trait SerializePrimitive: HasWireType {
+pub trait SerializePrimitive: PartialEq + Default + HasWireType {
     fn compute_size(&self) -> u32;
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()>;
 }
@@ -72,77 +128,9 @@ impl<T: SerializePrimitive> SerializeV2 for T {
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         SerializePrimitive::serialize(self, writer)
     }
-}
-
-pub trait SerializeNested: HasWireType {
-    fn compute_size_nested_v2(
-        &self,
-        field_number: impl Into<Option<u32>>,
-        is_omissible: bool,
-    ) -> u32;
-
-    fn serialize_nested(
-        &self,
-        field_number: impl Into<Option<u32>>,
-        is_omissible: bool,
-        writer: &mut impl io::Write,
-    ) -> io::Result<()>;
-}
-
-pub trait SerializeOmissible: SerializeV2 {
-    #[inline]
-    fn should_omit(&self) -> bool {
-        self.compute_size() == 0
-    }
-}
-
-impl<T: SerializeOmissible> SerializeNested for T {
-    #[inline]
-    fn compute_size_nested_v2(
-        &self,
-        field_number: impl Into<Option<u32>>,
-        is_omissible: bool,
-    ) -> u32 {
-        let field_number = field_number.into();
-
-        if field_number.is_some() && is_omissible && self.should_omit() {
-            return 0;
-        }
-
-        let mut size = self.cache_size();
-
-        if Self::WIRE_TYPE == WireTypeV2::Sized {
-            size += size.cache_size();
-        }
-
-        if let Some(field_number) = field_number {
-            size += self.tag(field_number).value().cache_size();
-        }
-
-        size
-    }
 
     #[inline]
-    fn serialize_nested(
-        &self,
-        field_number: impl Into<Option<u32>>,
-        is_omissible: bool,
-        writer: &mut impl io::Write,
-    ) -> io::Result<()> {
-        let field_number = field_number.into();
-
-        if field_number.is_some() && is_omissible && self.should_omit() {
-            return Ok(());
-        }
-
-        if let Some(field_number) = field_number {
-            self.tag(field_number).value().serialize_cached(writer)?;
-        }
-
-        if Self::WIRE_TYPE == WireTypeV2::Sized {
-            self.cached_size().serialize_cached(writer)?;
-        }
-
-        self.serialize_cached(writer)
+    fn is_omissible(&self) -> bool {
+        *self == Default::default()
     }
 }

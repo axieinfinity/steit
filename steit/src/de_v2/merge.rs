@@ -6,17 +6,7 @@ use super::reader::Reader;
 
 pub trait MergeV2: HasWireType {
     fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()>;
-}
 
-pub trait MergeNested: HasWireType {
-    fn merge_nested_v2(
-        &mut self,
-        wire_type: WireTypeV2,
-        reader: &mut Reader<impl io::Read>,
-    ) -> io::Result<()>;
-}
-
-impl<T: MergeV2> MergeNested for T {
     #[inline]
     fn merge_nested_v2(
         &mut self,

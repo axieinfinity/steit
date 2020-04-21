@@ -2,7 +2,7 @@ use std::fmt;
 
 use super::{
     de_v2::{DeserializeV2, MergeV2, Reader},
-    ser_v2::{SerializeNested, SerializeOmissible, SerializeV2},
+    ser_v2::SerializeV2,
 };
 
 // #[macro_export]
@@ -73,18 +73,14 @@ pub fn assert_serialize<T: SerializeV2>(value: T, bytes: &[u8]) {
     assert_eq!(&*serialize(value), bytes);
 }
 
-pub fn serialize_nested(value: impl SerializeOmissible, tag: impl Into<Option<u32>>) -> Vec<u8> {
+pub fn serialize_nested(value: impl SerializeV2, tag: impl Into<Option<u32>>) -> Vec<u8> {
     let mut bytes = Vec::new();
     value.cache_size();
     value.serialize_nested(tag, true, &mut bytes).unwrap();
     bytes
 }
 
-pub fn assert_serialize_nested(
-    value: impl SerializeOmissible,
-    tag: impl Into<Option<u32>>,
-    bytes: &[u8],
-) {
+pub fn assert_serialize_nested(value: impl SerializeV2, tag: impl Into<Option<u32>>, bytes: &[u8]) {
     assert_eq!(&*serialize_nested(value, tag), bytes);
 }
 

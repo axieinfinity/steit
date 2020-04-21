@@ -169,9 +169,8 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impler.impl_for_with(
+        self.impler.impl_for(
             "SerializeV2",
-            &["SerializeNested"],
             quote! {
                 fn compute_size(&self) -> u32 {
                     let mut size = 0;
@@ -226,9 +225,9 @@ impl<'a> Enum<'a> {
         self.impler.impl_for_with(
             "MergeV2",
             if self.setting.state {
-                &["MergeNested", "State"]
+                &["MergeV2", "State"]
             } else {
-                &["Default", "MergeNested"]
+                &["Default", "MergeV2"]
             },
             quote! {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {

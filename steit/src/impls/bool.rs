@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{MergeV2, Reader},
-    ser_v2::{SerializeOmissible, SerializePrimitive},
+    ser_v2::SerializePrimitive,
     wire_format::{HasWireType, WireTypeV2},
 };
 
@@ -19,13 +19,6 @@ impl SerializePrimitive for bool {
     #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&[*self as u8])
-    }
-}
-
-impl SerializeOmissible for bool {
-    #[inline]
-    fn should_omit(&self) -> bool {
-        !*self
     }
 }
 

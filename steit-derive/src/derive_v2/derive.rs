@@ -229,9 +229,9 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                de_v2::{DeserializeV2, MergeNested, MergeV2, Reader},
+                de_v2::{DeserializeV2, MergeV2, Reader},
                 runtime::{Runtime, SizeCache},
-                ser_v2::{SerializeNested, SerializeV2},
+                ser_v2::SerializeV2,
                 state_v2::StateV2,
                 wire_format::{HasWireType, WireTypeV2},
             };
