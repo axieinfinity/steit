@@ -160,9 +160,9 @@ impl<'a> Enum<'a> {
 
         let mergers = self.variants.iter().map(|r#struct| {
             let variant = r#struct.variant().unwrap();
-            let ctor_name = variant.ctor_name();
             let qual = variant.qual();
             let tag = variant.tag();
+            let ctor_name = variant.ctor_name();
 
             let args = if self.setting.state {
                 quote!(self.runtime().parent())
@@ -210,6 +210,58 @@ impl<'a> Enum<'a> {
                     }
 
                     Ok(())
+                }
+            },
+        )
+    }
+
+    fn impl_state(&self) -> TokenStream {
+        let name = self.impler.name();
+
+        let runtimes = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+
+            let runtime = r#struct.runtime().unwrap();
+            let destructure = runtime.destructure(quote!(runtime));
+
+            quote!(#name #qual { #destructure, .. } => runtime)
+        });
+
+        let runtime_setters = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let destructure = r#struct.destructure();
+
+            let runtime = r#struct.runtime().unwrap();
+            let runtime_destructure = runtime.destructure(quote!(self_runtime));
+
+            let runtime_setter = r#struct.runtime_setter();
+
+            quote! {
+                #name #qual { #destructure #runtime_destructure, .. } => {
+                    let runtime = runtime.nested(#tag as u16);
+                    #runtime_setter
+                }
+            }
+        });
+
+        self.impler.impl_for(
+            "StateV2",
+            quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                fn runtime(&self) -> &Runtime {
+                    match self { #(#runtimes,)* }
+                }
+
+                fn set_runtime(&mut self, runtime: Runtime) {
+                    match self { #(#runtime_setters)* }
                 }
             },
         )
@@ -281,6 +333,10 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.merge {
             tokens.extend(self.impl_merge());
+        }
+
+        if self.setting.state {
+            tokens.extend(self.impl_state());
         }
     }
 }

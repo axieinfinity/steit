@@ -228,6 +228,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
                 de_v2::{DeserializeV2, MergeNested, MergeV2, Reader},
                 runtime::{Runtime, SizeCache},
                 ser_v2::{SerializeNested, SerializeV2},
+                state_v2::StateV2,
                 wire_format::{HasWireType, WireTypeV2},
             };
 

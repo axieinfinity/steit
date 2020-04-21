@@ -227,8 +227,8 @@ impl<'a> Struct<'a> {
         let serializer = self.serializer();
 
         let size_cache = if let Some(size_cache) = &self.size_cache {
-            let field = size_cache.field(false);
-            quote!(Some(&#field))
+            let size_cache = size_cache.field(false);
+            quote!(Some(&#size_cache))
         } else {
             quote!(None)
         };
@@ -282,6 +282,49 @@ impl<'a> Struct<'a> {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     #merger
                     Ok(())
+                }
+            },
+        )
+    }
+
+    pub fn runtime_setter(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let runtime_setters = map_fields!(self, _.runtime_setter(is_variant));
+
+        if is_variant {
+            quote! {
+                #(#runtime_setters)*
+                *self_runtime = runtime;
+            }
+        } else {
+            let runtime = self.runtime().unwrap().access();
+
+            quote! {
+                #(#runtime_setters)*
+                self.#runtime = runtime;
+            }
+        }
+    }
+
+    fn impl_state(&self) -> TokenStream {
+        let runtime = self.runtime().unwrap().field(false);
+        let runtime_setter = self.runtime_setter();
+
+        self.impler.impl_for(
+            "StateV2",
+            quote! {
+                #[inline]
+                fn with_runtime(runtime: Runtime) -> Self {
+                    Self::new(runtime)
+                }
+
+                #[inline]
+                fn runtime(&self) -> &Runtime {
+                    &#runtime
+                }
+
+                fn set_runtime(&mut self, runtime: Runtime) {
+                    #runtime_setter
                 }
             },
         )
@@ -360,6 +403,10 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.merge {
             tokens.extend(self.impl_merge());
+        }
+
+        if self.setting.state {
+            tokens.extend(self.impl_state());
         }
     }
 }

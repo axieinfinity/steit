@@ -197,4 +197,14 @@ impl<'a> DeriveField<'a> {
         let field = self.field(is_variant);
         quote! { #tag => #field.merge_nested_v2(wire_type, reader)? }
     }
+
+    pub fn runtime_setter(&self, is_variant: bool) -> Option<TokenStream> {
+        if self.is_state() {
+            let tag = self.tag();
+            let field = self.field(is_variant);
+            Some(quote! { #field.set_runtime(runtime.nested(#tag as u16)); })
+        } else {
+            None
+        }
+    }
 }
