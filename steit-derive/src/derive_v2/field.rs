@@ -191,4 +191,10 @@ impl<'a> DeriveField<'a> {
         let field = self.field(is_variant);
         quote! { #field.serialize_nested(#tag, true, writer)?; }
     }
+
+    pub fn merger(&self, is_variant: bool) -> TokenStream {
+        let tag = self.tag();
+        let field = self.field(is_variant);
+        quote! { #tag => #field.merge_nested_v2(wire_type, reader)? }
+    }
 }

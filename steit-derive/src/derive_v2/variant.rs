@@ -3,6 +3,7 @@ use proc_macro2::TokenStream;
 use crate::{
     attr::{Attr, AttrParse},
     context::Context,
+    string_util,
 };
 
 use super::{derive, tag};
@@ -66,8 +67,16 @@ impl Variant {
         (self.attrs.tag, &self.attrs.tag_tokens)
     }
 
+    pub fn snake_case_name(&self) -> String {
+        string_util::to_snake_case(self.name.to_string())
+    }
+
     pub fn qual(&self) -> TokenStream {
         let name = &self.name;
         quote!(::#name)
+    }
+
+    pub fn ctor_name(&self) -> syn::Ident {
+        format_ident!("new_{}", self.snake_case_name())
     }
 }

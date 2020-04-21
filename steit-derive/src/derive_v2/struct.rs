@@ -205,6 +205,37 @@ impl<'a> Struct<'a> {
             },
         )
     }
+
+    pub fn merger(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let mergers = map_fields!(self, _.merger(is_variant));
+
+        quote! {
+            while !reader.eof()? {
+                let (field_number, wire_type) = reader.read_tag()?;
+
+                match field_number {
+                    #(#mergers,)*
+                    _ => reader.skip_field(wire_type)?,
+                }
+            }
+        }
+    }
+
+    fn impl_merge(&self) -> TokenStream {
+        let merger = self.merger();
+
+        self.impler.impl_for_with(
+            "MergeV2",
+            &["MergeNested"],
+            quote! {
+                fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                    #merger
+                    Ok(())
+                }
+            },
+        )
+    }
 }
 
 fn parse_fields<'a>(
@@ -271,6 +302,10 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.serialize {
             tokens.extend(self.impl_serialize());
+        }
+
+        if self.setting.merge {
+            tokens.extend(self.impl_merge());
         }
     }
 }

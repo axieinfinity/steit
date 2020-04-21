@@ -4,7 +4,6 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use super::context::Context;
-use syn::NestedMeta;
 
 pub struct Attr<'a, T> {
     context: &'a Context,
@@ -262,7 +261,7 @@ fn parse_meta(
     context: &Context,
     error_on_unknown: bool,
     should_accept: &mut impl FnMut(&syn::Meta) -> bool,
-) -> Option<NestedMeta> {
+) -> Option<syn::NestedMeta> {
     match &meta {
         syn::NestedMeta::Meta(meta) if should_accept(meta) => return None,
 

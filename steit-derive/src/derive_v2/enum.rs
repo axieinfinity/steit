@@ -142,6 +142,66 @@ impl<'a> Enum<'a> {
             },
         )
     }
+
+    fn impl_merge(&self) -> TokenStream {
+        let name = self.impler.name();
+
+        let mergers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let ctor_name = variant.ctor_name();
+            let ctor_args = if self.setting.state {
+                quote!(self.runtime().parent())
+            } else {
+                quote!()
+            };
+
+            let destructure = r#struct.destructure();
+            let merger = r#struct.merger();
+
+            quote! {
+                #tag => {
+                    if let #name #qual { .. } = self {
+                    } else {
+                        *self = Self::#ctor_name(#ctor_args);
+                    }
+
+                    if let #name #qual { #destructure .. } = self {
+                        #merger
+                    }
+                }
+            }
+        });
+
+        self.impler.impl_for_with(
+            "MergeV2",
+            if self.setting.state {
+                &["MergeNested", "State"]
+            } else {
+                &["Default", "MergeNested"]
+            },
+            quote! {
+                fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                    let tag = u32::deserialize_v2(reader)?;
+
+                    match tag {
+                        #(#mergers)*
+
+                        _ => {
+                            return Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unknown variant tag {}", tag),
+                            ));
+                        }
+                    }
+
+                    Ok(())
+                }
+            },
+        )
+    }
 }
 
 fn parse_variants<'a>(
@@ -201,6 +261,10 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.serialize {
             tokens.extend(self.impl_serialize());
+        }
+
+        if self.setting.merge {
+            tokens.extend(self.impl_merge());
         }
     }
 }
