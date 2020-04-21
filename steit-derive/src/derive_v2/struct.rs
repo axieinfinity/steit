@@ -84,7 +84,7 @@ impl<'a> Struct<'a> {
         let parsed_fields = parse_fields(context, setting, &attrs, fields)?;
 
         let krate = setting.krate();
-        let mut index = parsed_fields.len();
+        let mut field_index = parsed_fields.len();
 
         let size_cache = if setting.has_size_cache() && !attrs.no_size_cache {
             Some(add_field(
@@ -96,8 +96,8 @@ impl<'a> Struct<'a> {
                     .unwrap_or("size_cache".to_owned()),
                 syn::parse_quote!(#krate::runtime::SizeCache),
                 {
-                    index += 1;
-                    index - 1
+                    field_index += 1;
+                    field_index - 1
                 },
             ))
         } else {
@@ -114,8 +114,8 @@ impl<'a> Struct<'a> {
                     .unwrap_or("runtime".to_owned()),
                 syn::parse_quote!(#krate::runtime::Runtime),
                 {
-                    index += 1;
-                    index - 1
+                    field_index += 1;
+                    field_index - 1
                 },
             ))
         } else {
@@ -170,14 +170,14 @@ impl<'a> Struct<'a> {
             inits.push(runtime.init(quote!(runtime)));
 
             (
-                quote!(runtime: Runtime),
+                Some(quote!(runtime: Runtime)),
                 self.variant().map(|variant| {
                     let tag = variant.tag();
                     quote! { let runtime = runtime.nested(#tag as u16); }
                 }),
             )
         } else {
-            (quote!(), None)
+            Default::default()
         };
 
         quote! {
@@ -337,31 +337,31 @@ fn parse_fields<'a>(
     attrs: &StructAttrs,
     fields: &mut syn::Fields,
 ) -> derive::Result<Vec<DeriveField<'a>>> {
-    let mut parsed = Vec::with_capacity(fields.iter().len());
+    let mut parsed_fields = Vec::with_capacity(fields.iter().len());
 
-    let reserved: HashSet<_> = attrs.reserved.iter().collect();
+    let reserved_tags: HashSet<_> = attrs.reserved.iter().collect();
     let mut tags = HashSet::new();
-    let mut unique = true;
+    let mut unique_tags = true;
 
     for (index, field) in fields.iter_mut().enumerate() {
-        if let Ok(field) = DeriveField::parse(setting, context, field, index) {
-            let (tag, tag_tokens) = field.tag_with_tokens();
+        if let Ok(parsed_field) = DeriveField::parse(setting, context, field, index) {
+            let (tag, tag_tokens) = parsed_field.tag_with_tokens();
 
-            if reserved.contains(&tag) {
+            if reserved_tags.contains(&tag) {
                 context.error(tag_tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
                 context.error(tag_tokens, format!("duplicate tag {}", tag));
-                unique = false;
+                unique_tags = false;
             }
 
-            parsed.push(field);
+            parsed_fields.push(parsed_field);
         }
     }
 
-    if parsed.len() == parsed.capacity() && unique {
-        Ok(parsed)
+    if parsed_fields.len() == parsed_fields.capacity() && unique_tags {
+        Ok(parsed_fields)
     } else {
         Err(())
     }
@@ -391,7 +391,7 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.has_ctors() {
+        if self.setting.impl_ctors() {
             tokens.extend(self.impl_ctor());
         }
 

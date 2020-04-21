@@ -38,6 +38,7 @@ pub struct Enum<'a> {
     impler: &'a Impler<'a>,
     setting: &'a DeriveSetting,
     variants: Vec<Struct<'a>>,
+    default_variant_index: Option<usize>,
 }
 
 impl<'a> Enum<'a> {
@@ -54,17 +55,49 @@ impl<'a> Enum<'a> {
         }
 
         let attrs = EnumAttrs::parse(context, attrs);
-        let variants = parse_variants(context, impler, setting, &attrs, variants)?;
+
+        let (variants, default_variant_index) =
+            parse_variants(context, impler, setting, &attrs, variants)?;
 
         Ok(Self {
             impler,
             setting,
             variants,
+            default_variant_index,
         })
+    }
+
+    pub fn default_variant(&self) -> Option<&Struct<'a>> {
+        self.default_variant_index
+            .and_then(|index| self.variants.get(index))
     }
 
     fn impl_ctors(&self) -> TokenStream {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+
+        let default_ctor = if self.setting.impl_default() || self.setting.state {
+            let (ctor_args, call_args) = if self.setting.state {
+                (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
+            } else {
+                Default::default()
+            };
+
+            let new_default = if let Some(default_variant) = self.default_variant() {
+                let default_ctor_name = default_variant.ctor_name();
+                quote!(Self::#default_ctor_name(#call_args))
+            } else {
+                quote!(unimplemented!("no default variant"))
+            };
+
+            Some(quote! {
+                #[inline]
+                pub fn new(#ctor_args) -> Self {
+                    #new_default
+                }
+            })
+        } else {
+            None
+        };
 
         self.impler.impl_with(
             if self.setting.state {
@@ -72,7 +105,10 @@ impl<'a> Enum<'a> {
             } else {
                 &["Default"]
             },
-            quote!(#(#ctors)*),
+            quote! {
+                #default_ctor
+                #(#ctors)*
+            },
         )
     }
 
@@ -165,9 +201,9 @@ impl<'a> Enum<'a> {
             let ctor_name = variant.ctor_name();
 
             let args = if self.setting.state {
-                quote!(self.runtime().parent())
+                Some(quote!(self.runtime().parent()))
             } else {
-                quote!()
+                None
             };
 
             let destructure = r#struct.destructure();
@@ -274,12 +310,14 @@ fn parse_variants<'a>(
     setting: &'a DeriveSetting,
     attrs: &EnumAttrs,
     variants: &mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
-) -> derive::Result<Vec<Struct<'a>>> {
-    let mut parsed = Vec::with_capacity(variants.iter().len());
+) -> derive::Result<(Vec<Struct<'a>>, Option<usize>)> {
+    let mut parsed_variants = Vec::with_capacity(variants.iter().len());
 
-    let reserved: HashSet<_> = attrs.reserved.iter().collect();
+    let reserved_tags: HashSet<_> = attrs.reserved.iter().collect();
     let mut tags = HashSet::new();
-    let mut unique = true;
+    let mut unique_tags = true;
+
+    let mut default_variant_index = None;
 
     for variant in variants.iter_mut() {
         if variant.discriminant.is_some() {
@@ -289,14 +327,28 @@ fn parse_variants<'a>(
 
         if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(context, variant) {
             let (tag, tag_tokens) = parsed_variant.tag_with_tokens();
+            let (default, default_tokens) = parsed_variant.default_with_tokens();
 
-            if reserved.contains(&tag) {
+            if reserved_tags.contains(&tag) {
                 context.error(tag_tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
                 context.error(tag_tokens, format!("duplicate tag {}", tag));
-                unique = false;
+                unique_tags = false;
+            }
+
+            if default {
+                if default_variant_index.is_none() {
+                    // If struct parsing fails, `default_variant_index` could be wrong.
+                    // We accept that, so we don't miss any multiple-default-variants error.
+                    default_variant_index = Some(parsed_variants.len());
+                } else {
+                    context.error(
+                        default_tokens.unwrap(),
+                        "unexpected multiple default variants",
+                    );
+                }
             }
 
             if let Ok(r#struct) = Struct::parse(
@@ -307,13 +359,20 @@ fn parse_variants<'a>(
                 &mut variant.fields,
                 Some(parsed_variant),
             ) {
-                parsed.push(r#struct);
+                parsed_variants.push(r#struct);
             }
         }
     }
 
-    if parsed.len() == parsed.capacity() && unique {
-        Ok(parsed)
+    if (setting.impl_default() || setting.state) && default_variant_index.is_none() {
+        context.error(
+            impler.name(),
+            "expected a default variant #[steit(tag = …, default)]",
+        );
+    }
+
+    if parsed_variants.len() == parsed_variants.capacity() && unique_tags {
+        Ok((parsed_variants, default_variant_index))
     } else {
         Err(())
     }
@@ -321,7 +380,7 @@ fn parse_variants<'a>(
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.has_ctors() {
+        if self.setting.impl_ctors() {
             tokens.extend(self.impl_ctors());
         }
 

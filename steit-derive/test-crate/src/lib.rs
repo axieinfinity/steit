@@ -240,7 +240,7 @@ mod tests {
 
     #[steit_derive(State, Debug)]
     enum Foo {
-        #[steit(tag = 1)]
+        #[steit(tag = 1, default)]
         FirstCase {
             #[steit(tag = 1)]
             counter: i32,

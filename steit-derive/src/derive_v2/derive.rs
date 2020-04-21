@@ -135,8 +135,12 @@ impl DeriveSetting {
         }
     }
 
-    pub fn has_ctors(&self) -> bool {
+    pub fn impl_ctors(&self) -> bool {
         !self.no_ctors
+    }
+
+    pub fn impl_default(&self) -> bool {
+        self.deserialize
     }
 
     pub fn has_size_cache(&self) -> bool {
