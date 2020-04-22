@@ -223,7 +223,6 @@ impl<'a> Struct<'a> {
         let mut r#impl = self.impler.impl_for(
             "PartialEq",
             quote! {
-                #[inline]
                 fn eq(&self, other: &#name) -> bool {
                     #eq
                 }
@@ -248,6 +247,25 @@ impl<'a> Struct<'a> {
                 #[inline]
                 fn default() -> Self {
                     Self::empty(#args)
+                }
+            },
+        )
+    }
+
+    pub fn hasher(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let hashes = map_fields!(self, _.hash(is_variant));
+        quote!(#(#hashes)*)
+    }
+
+    fn impl_hash(&self) -> TokenStream {
+        let hasher = self.hasher();
+
+        self.impler.impl_for(
+            "Hash",
+            quote! {
+                fn hash<H: Hasher>(&self, state: &mut H) {
+                    #hasher
                 }
             },
         )
@@ -445,7 +463,7 @@ impl<'a> ToTokens for Struct<'a> {
         tokens.extend(self.impl_ctor());
         tokens.extend(self.impl_eq());
         tokens.extend(self.impl_default());
-        // tokens.extend(self.impl_hash());
+        tokens.extend(self.impl_hash());
         tokens.extend(self.impl_wire_type());
 
         if self.setting.impl_serialize() {

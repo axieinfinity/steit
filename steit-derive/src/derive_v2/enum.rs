@@ -164,6 +164,35 @@ impl<'a> Enum<'a> {
         )
     }
 
+    fn impl_hash(&self) -> TokenStream {
+        let name = self.impler.name();
+
+        let hashers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let destructure = r#struct.destructure();
+            let hasher = r#struct.hasher();
+
+            quote! {
+                #name #qual { #destructure .. } => {
+                    #tag.hash(state);
+                    #hasher
+                }
+            }
+        });
+
+        self.impler.impl_for(
+            "Hash",
+            quote! {
+                fn hash<H: Hasher>(&self, state: &mut H) {
+                    match self { #(#hashers)* }
+                }
+            },
+        )
+    }
+
     fn impl_wire_type(&self) -> TokenStream {
         self.impler.impl_for_with(
             "HasWireType",
@@ -430,7 +459,7 @@ impl<'a> ToTokens for Enum<'a> {
         tokens.extend(self.impl_ctors());
         tokens.extend(self.impl_eq());
         tokens.extend(self.impl_default());
-        // tokens.extend(self.impl_hash());
+        tokens.extend(self.impl_hash());
         tokens.extend(self.impl_wire_type());
 
         if self.setting.impl_serialize() {

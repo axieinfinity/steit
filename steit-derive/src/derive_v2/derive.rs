@@ -188,7 +188,10 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
         const #dummy_const: () = {
             #extern_crate
 
-            use std::io::{self, Read};
+            use std::{
+                hash::{Hash, Hasher},
+                io::{self, Read},
+            };
 
             use #krate::{
                 de_v2::{DeserializeV2, Reader},

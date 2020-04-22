@@ -237,6 +237,15 @@ impl<'a> DeriveField<'a> {
         }
     }
 
+    pub fn hash(&self, is_variant: bool) -> Option<TokenStream> {
+        if !self.attrs.no_hash {
+            let field = self.field(is_variant);
+            Some(quote! { #field.hash(state); })
+        } else {
+            None
+        }
+    }
+
     pub fn sizer(&self, is_variant: bool) -> TokenStream {
         let tag = self.tag();
         let field = self.field(is_variant);
