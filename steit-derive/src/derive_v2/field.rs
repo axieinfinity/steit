@@ -183,7 +183,7 @@ impl<'a> DeriveField<'a> {
     pub fn sizer(&self, is_variant: bool) -> TokenStream {
         let tag = self.tag();
         let field = self.field(is_variant);
-        quote! { size += #field.compute_size_nested_v2(#tag, true); }
+        quote! { size += #field.compute_size_nested_v2(#tag, true).unwrap(); }
     }
 
     pub fn serializer(&self, is_variant: bool) -> TokenStream {

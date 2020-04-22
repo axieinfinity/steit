@@ -33,8 +33,8 @@ impl WireTypeV2 {
     }
 
     #[inline]
-    pub fn tag(self, field_number: u32) -> Tag {
-        Tag::new(field_number, self)
+    pub fn tag(self, field_number: u32) -> io::Result<u32> {
+        tag(field_number, self)
     }
 }
 
@@ -47,64 +47,40 @@ pub trait HasWireType {
     }
 
     #[inline]
-    fn tag(&self, field_number: u32) -> Tag {
-        self.wire_type().tag(field_number)
+    fn tag(&self, field_number: u32) -> io::Result<u32> {
+        tag(field_number, Self::WIRE_TYPE)
     }
 }
 
-pub struct Tag {
-    field_number: u32,
-    wire_type: WireTypeV2,
+fn validate_field_number(field_number: u32) -> io::Result<()> {
+    if field_number == 0 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "field number must not be 0",
+        ));
+    }
+
+    if field_number > FIELD_NUMBER_MAX {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!(
+                "field number must not be greater than 2^29 - 1, got {}",
+                field_number,
+            ),
+        ));
+    }
+
+    Ok(())
 }
 
-impl Tag {
-    #[inline]
-    pub fn new(field_number: u32, wire_type: WireTypeV2) -> Tag {
-        assert!(
-            field_number >= 1 && field_number <= FIELD_NUMBER_MAX,
-            "field number must be from 1 to 2^29 - 1, inclusive",
-        );
+pub fn parse_tag(value: u32) -> io::Result<(u32, WireTypeV2)> {
+    let wire_type = WireTypeV2::from_value(value & WIRE_TYPE_MASK)?;
+    let field_number = value >> WIRE_TYPE_BITS;
+    validate_field_number(field_number)?;
+    Ok((field_number, wire_type))
+}
 
-        Self {
-            field_number,
-            wire_type,
-        }
-    }
-
-    pub fn from_value(value: u32) -> io::Result<Self> {
-        let wire_type = WireTypeV2::from_value(value & WIRE_TYPE_MASK)?;
-        let field_number = value >> WIRE_TYPE_BITS;
-
-        if field_number == 0 {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "field number must not be 0",
-            ));
-        }
-
-        if field_number > FIELD_NUMBER_MAX {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                format!(
-                    "field number must not be greater than 2^29 - 1, got {}",
-                    field_number,
-                ),
-            ));
-        }
-
-        Ok(Self {
-            field_number,
-            wire_type,
-        })
-    }
-
-    #[inline]
-    pub fn value(&self) -> u32 {
-        self.field_number << WIRE_TYPE_BITS | self.wire_type.value() as u32
-    }
-
-    #[inline]
-    pub fn unpack(self) -> (u32, WireTypeV2) {
-        (self.field_number, self.wire_type)
-    }
+pub fn tag(field_number: u32, wire_type: WireTypeV2) -> io::Result<u32> {
+    validate_field_number(field_number)?;
+    Ok(field_number << WIRE_TYPE_BITS | wire_type.value() as u32)
 }
