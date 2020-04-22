@@ -17,8 +17,7 @@ struct FieldAttrs {
     tag: u32,
     tag_tokens: TokenStream,
 
-    no_eq: bool,
-    no_hash: bool,
+    no_eq_hash: bool,
     no_state: bool,
 
     csharp_name: Option<String>,
@@ -28,8 +27,7 @@ impl FieldAttrs {
     pub fn parse(ctx: &Context, field: &mut syn::Field) -> derive::Result<Self> {
         let mut tag = Attribute::new(ctx, "tag");
 
-        let mut no_eq = Attribute::new(ctx, "no_eq");
-        let mut no_hash = Attribute::new(ctx, "no_hash");
+        let mut no_eq_hash = Attribute::new(ctx, "no_eq_hash");
         let mut no_state = Attribute::new(ctx, "no_state");
 
         let mut csharp_name = Attribute::new(ctx, "csharp_name");
@@ -37,11 +35,8 @@ impl FieldAttrs {
         (&mut field.attrs).parse(ctx, true, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
-            syn::Meta::Path(path) if no_eq.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_eq.parse_bool(meta) => true,
-
-            syn::Meta::Path(path) if no_hash.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_hash.parse_bool(meta) => true,
+            syn::Meta::Path(path) if no_eq_hash.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_eq_hash.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_state.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_state.parse_bool(meta) => true,
@@ -64,8 +59,7 @@ impl FieldAttrs {
             tag,
             tag_tokens,
 
-            no_eq: no_eq.get().unwrap_or_default(),
-            no_hash: no_hash.get().unwrap_or_default(),
+            no_eq_hash: no_eq_hash.get().unwrap_or_default(),
             no_state: no_state.get().unwrap_or_default(),
 
             csharp_name: csharp_name.get(),
@@ -223,7 +217,7 @@ impl<'a> DeriveField<'a> {
     }
 
     pub fn eq(&self, is_variant: bool) -> Option<TokenStream> {
-        if !self.attrs.no_eq {
+        if !self.attrs.no_eq_hash {
             let field = self.field(is_variant);
             let other_field = self.field_other(format_ident!("other"), is_variant);
 
@@ -238,7 +232,7 @@ impl<'a> DeriveField<'a> {
     }
 
     pub fn hash(&self, is_variant: bool) -> Option<TokenStream> {
-        if !self.attrs.no_hash {
+        if !self.attrs.no_eq_hash {
             let field = self.field(is_variant);
             Some(quote! { #field.hash(state); })
         } else {
