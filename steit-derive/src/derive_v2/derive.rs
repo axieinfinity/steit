@@ -115,8 +115,6 @@ impl DeriveSetting {
         }
     }
 
-    getter!(impl_default -> bool = _.deserialize);
-
     getter!(impl_serialize -> bool = _.serialize);
     getter!(impl_deserialize -> bool = _.deserialize);
     getter!(impl_state -> bool = _.state);

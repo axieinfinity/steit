@@ -92,8 +92,7 @@ impl<'a> Struct<'a> {
                 attrs
                     .size_cache_renamed
                     .or(setting.size_cache_renamed.clone())
-                    .map(|(name, _)| name)
-                    .unwrap_or("size_cache".to_owned()),
+                    .map_or("size_cache".to_owned(), |(name, _)| name),
                 syn::parse_quote!(#krate::rt::SizeCache),
                 {
                     field_index += 1;
@@ -110,8 +109,7 @@ impl<'a> Struct<'a> {
                 attrs
                     .runtime_renamed
                     .or(setting.runtime_renamed.clone())
-                    .map(|(name, _)| name)
-                    .unwrap_or("runtime".to_owned()),
+                    .map_or("runtime".to_owned(), |(name, _)| name),
                 syn::parse_quote!(#krate::rt::Runtime),
                 {
                     field_index += 1;
@@ -164,6 +162,12 @@ impl<'a> Struct<'a> {
         quote!(#(#destructure,)*)
     }
 
+    pub fn destructure_prefixed(&self, prefix: impl Into<Option<syn::Ident>>) -> TokenStream {
+        let prefix = &prefix.into();
+        let destructure = map_fields!(self, _.destructure_alias_prefixed(prefix.clone()));
+        quote!(#(#destructure,)*)
+    }
+
     pub fn ctor(&self) -> TokenStream {
         let ctor_name = self.ctor_name();
         let name = self.impler.name();
@@ -200,6 +204,34 @@ impl<'a> Struct<'a> {
     fn impl_ctor(&self) -> TokenStream {
         self.impler
             .impl_with(self.trait_bounds(&["Default"]), self.ctor())
+    }
+
+    pub fn eq(&self) -> TokenStream {
+        let is_variant = self.variant.is_some();
+        let eqs = map_fields!(self, _.eq(is_variant));
+
+        quote! {
+            #(#eqs)*
+            true
+        }
+    }
+
+    fn impl_eq(&self) -> TokenStream {
+        let name = self.impler.name();
+        let eq = self.eq();
+
+        let mut r#impl = self.impler.impl_for(
+            "PartialEq",
+            quote! {
+                #[inline]
+                fn eq(&self, other: &#name) -> bool {
+                    #eq
+                }
+            },
+        );
+
+        r#impl.extend(self.impler.impl_for("Eq", quote!()));
+        r#impl
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -411,11 +443,9 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctor());
-
-        if self.setting.impl_default() {
-            tokens.extend(self.impl_default());
-        }
-
+        tokens.extend(self.impl_eq());
+        tokens.extend(self.impl_default());
+        // tokens.extend(self.impl_hash());
         tokens.extend(self.impl_wire_type());
 
         if self.setting.impl_serialize() {

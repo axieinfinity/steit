@@ -16,18 +16,32 @@ use super::{
 struct FieldAttrs {
     tag: u32,
     tag_tokens: TokenStream,
+
+    no_eq: bool,
+    no_hash: bool,
     no_state: bool,
+
     csharp_name: Option<String>,
 }
 
 impl FieldAttrs {
     pub fn parse(ctx: &Context, field: &mut syn::Field) -> derive::Result<Self> {
         let mut tag = Attribute::new(ctx, "tag");
+
+        let mut no_eq = Attribute::new(ctx, "no_eq");
+        let mut no_hash = Attribute::new(ctx, "no_hash");
         let mut no_state = Attribute::new(ctx, "no_state");
+
         let mut csharp_name = Attribute::new(ctx, "csharp_name");
 
         (&mut field.attrs).parse(ctx, true, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
+
+            syn::Meta::Path(path) if no_eq.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_eq.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_hash.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_hash.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_state.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_state.parse_bool(meta) => true,
@@ -49,7 +63,11 @@ impl FieldAttrs {
         Ok(Self {
             tag,
             tag_tokens,
+
+            no_eq: no_eq.get().unwrap_or_default(),
+            no_hash: no_hash.get().unwrap_or_default(),
             no_state: no_state.get().unwrap_or_default(),
+
             csharp_name: csharp_name.get(),
         })
     }
@@ -103,28 +121,52 @@ impl Field {
         }
     }
 
-    pub fn alias(&self) -> TokenStream {
-        match &self.name {
-            Some(name) => name.to_token_stream(),
-            None => format_ident!("f{}", self.index).to_token_stream(),
+    pub fn alias_prefixed(&self, prefix: impl Into<Option<syn::Ident>>) -> syn::Ident {
+        let alias = match &self.name {
+            Some(name) => format_ident!("{}", name),
+            None => format_ident!("f{}", self.index),
+        };
+
+        match prefix.into() {
+            Some(prefix) => format_ident!("{}_{}", prefix, alias),
+            None => alias,
         }
     }
 
-    pub fn destructure(&self, name: TokenStream) -> TokenStream {
-        self.init(name)
+    pub fn alias(&self) -> syn::Ident {
+        self.alias_prefixed(None)
+    }
+
+    pub fn destructure(&self, name: syn::Ident) -> TokenStream {
+        self.init(name.into_token_stream())
     }
 
     pub fn destructure_alias(&self) -> TokenStream {
         self.destructure(self.alias())
     }
 
-    pub fn field(&self, is_variant: bool) -> TokenStream {
+    pub fn destructure_alias_prefixed(&self, prefix: impl Into<Option<syn::Ident>>) -> TokenStream {
+        self.destructure(self.alias_prefixed(prefix))
+    }
+
+    pub fn field_other(
+        &self,
+        other: impl Into<Option<syn::Ident>>,
+        is_variant: bool,
+    ) -> TokenStream {
         if is_variant {
-            self.alias()
+            self.alias_prefixed(other).into_token_stream()
         } else {
+            let other = other
+                .into()
+                .map_or(quote!(self), ToTokens::into_token_stream);
             let access = self.access();
-            quote!(self.#access)
+            quote!(#other.#access)
         }
+    }
+
+    pub fn field(&self, is_variant: bool) -> TokenStream {
+        self.field_other(None, is_variant)
     }
 }
 
@@ -178,6 +220,21 @@ impl<'a> DeriveField<'a> {
         } else {
             quote!(Default::default())
         })
+    }
+
+    pub fn eq(&self, is_variant: bool) -> Option<TokenStream> {
+        if !self.attrs.no_eq {
+            let field = self.field(is_variant);
+            let other_field = self.field_other(format_ident!("other"), is_variant);
+
+            Some(quote! {
+                if #field != #other_field {
+                    return false;
+                }
+            })
+        } else {
+            None
+        }
     }
 
     pub fn sizer(&self, is_variant: bool) -> TokenStream {

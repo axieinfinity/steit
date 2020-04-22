@@ -236,6 +236,19 @@ mod tests {
 
             hits
         });
+
+        let mut b1 = Bar::empty();
+        b1.counter = 10;
+        b1.enabled = true;
+
+        let mut b2 = Bar::empty();
+
+        assert_ne!(b1, b2);
+
+        b2.counter = 10;
+        b2.enabled = true;
+
+        assert_eq!(b1, b2);
     }
 
     #[steit_derive(State, Debug)]
@@ -260,5 +273,13 @@ mod tests {
         FourthCase(),
         #[steit(tag = 5)]
         FifthCase,
+    }
+
+    #[steit_derive(Debug)]
+    struct Bar {
+        #[steit(tag = 1)]
+        counter: i32,
+        #[steit(tag = 2)]
+        enabled: bool,
     }
 }

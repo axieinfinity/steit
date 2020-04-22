@@ -109,6 +109,42 @@ impl<'a> Enum<'a> {
         )
     }
 
+    fn impl_eq(&self) -> TokenStream {
+        let name = self.impler.name();
+
+        let eqs = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+
+            let destructure = r#struct.destructure();
+            let other_destructure = r#struct.destructure_prefixed(format_ident!("other"));
+            let eq = r#struct.eq();
+
+            quote! {
+                #name #qual { #destructure .. } => {
+                    if let #name #qual { #other_destructure .. } = other {
+                        #eq
+                    } else {
+                        false
+                    }
+                }
+            }
+        });
+
+        let mut r#impl = self.impler.impl_for(
+            "PartialEq",
+            quote! {
+                #[inline]
+                fn eq(&self, other: &#name) -> bool {
+                    match self { #(#eqs,)* }
+                }
+            },
+        );
+
+        r#impl.extend(self.impler.impl_for("Eq", quote!()));
+        r#impl
+    }
+
     fn impl_default(&self) -> TokenStream {
         let args = if self.setting.impl_state() {
             Some(quote!(Runtime::default()))
@@ -178,7 +214,7 @@ impl<'a> Enum<'a> {
             let qual = variant.qual();
 
             if let Some(size_cache) = r#struct.size_cache() {
-                let destructure = size_cache.destructure(quote!(size_cache));
+                let destructure = size_cache.destructure(format_ident!("size_cache"));
                 quote!(#name #qual { #destructure, .. } => Some(size_cache))
             } else {
                 quote!(#name #qual { .. } => None)
@@ -270,7 +306,7 @@ impl<'a> Enum<'a> {
             let qual = variant.qual();
 
             let runtime = r#struct.runtime().unwrap();
-            let destructure = runtime.destructure(quote!(runtime));
+            let destructure = runtime.destructure(format_ident!("runtime"));
 
             quote!(#name #qual { #destructure, .. } => runtime)
         });
@@ -283,7 +319,7 @@ impl<'a> Enum<'a> {
             let destructure = r#struct.destructure();
 
             let runtime = r#struct.runtime().unwrap();
-            let runtime_destructure = runtime.destructure(quote!(self_runtime));
+            let runtime_destructure = runtime.destructure(format_ident!("self_runtime"));
 
             let runtime_setter = r#struct.runtime_setter();
 
@@ -392,11 +428,9 @@ fn parse_variants<'a>(
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctors());
-
-        if self.setting.impl_default() {
-            tokens.extend(self.impl_default());
-        }
-
+        tokens.extend(self.impl_eq());
+        tokens.extend(self.impl_default());
+        // tokens.extend(self.impl_hash());
         tokens.extend(self.impl_wire_type());
 
         if self.setting.impl_serialize() {
