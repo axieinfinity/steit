@@ -13,26 +13,32 @@ use super::{r#enum::Enum, r#struct::Struct};
 pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct DeriveSetting {
-    pub serialize: bool,
-    pub merge: bool,
-    pub deserialize: bool,
-    pub state: bool,
+    serialize: bool,
+    merge: bool,
+    deserialize: bool,
+    state: bool,
 
     derives: syn::AttributeArgs,
 
     steit_owned: bool,
 
-    no_ctors: bool,
     no_size_cache: bool,
 
     pub size_cache_renamed: Option<(String, TokenStream)>,
     pub runtime_renamed: Option<(String, TokenStream)>,
 }
 
+macro_rules! getter {
+    ($getter:ident -> $type:ty = _.$field:ident) => {
+        pub fn $getter(&self) -> $type {
+            self.$field
+        }
+    };
+}
+
 impl DeriveSetting {
     pub fn parse(
         context: &Context,
-        is_struct: bool,
         args: syn::AttributeArgs,
         attrs: &mut Vec<syn::Attribute>,
     ) -> (Self, syn::AttributeArgs) {
@@ -60,7 +66,6 @@ impl DeriveSetting {
 
         let mut steit_owned = Attr::new(context, "steit_owned");
 
-        let mut no_ctors = Attr::new(context, "no_ctors");
         let mut no_size_cache = Attr::new(context, "no_size_cache");
 
         let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
@@ -70,9 +75,6 @@ impl DeriveSetting {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_ctors.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_ctors.parse_bool(meta) => true,
-
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
@@ -81,22 +83,6 @@ impl DeriveSetting {
 
             _ => false,
         });
-
-        let (mut no_ctors, no_ctors_tokens) = no_ctors.get_with_tokens().unwrap_or_default();
-        let force_ctors = if is_struct { deserialize } else { merge };
-
-        if force_ctors && no_ctors {
-            context.error(
-                no_ctors_tokens,
-                if is_struct {
-                    "constructor is required for `Deserialize` on struct"
-                } else {
-                    "constructors are required for `Merge` on enum"
-                },
-            );
-
-            no_ctors = false;
-        }
 
         (
             Self {
@@ -109,7 +95,6 @@ impl DeriveSetting {
 
                 steit_owned: steit_owned.get().unwrap_or_default(),
 
-                no_ctors,
                 no_size_cache: no_size_cache.get().unwrap_or_default(),
 
                 size_cache_renamed: size_cache_renamed.get_with_tokens(),
@@ -135,35 +120,23 @@ impl DeriveSetting {
         }
     }
 
-    pub fn impl_ctors(&self) -> bool {
-        !self.no_ctors
-    }
+    getter!(impl_serialize -> bool = _.serialize);
+    getter!(impl_merge -> bool = _.merge);
+    getter!(impl_state -> bool = _.state);
 
-    pub fn impl_default(&self) -> bool {
-        self.deserialize
-    }
+    getter!(impl_default -> bool = _.deserialize);
 
     pub fn has_size_cache(&self) -> bool {
         self.serialize && !self.no_size_cache
     }
 
-    pub fn has_runtime(&self) -> bool {
-        self.state
-    }
+    getter!(has_runtime -> bool = _.state);
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
     let context = Context::new();
     let impler = Impler::new(&input.ident, &input.generics);
-
-    let is_struct = if let syn::Data::Struct(_) = input.data {
-        true
-    } else {
-        false
-    };
-
-    let (setting, unknown_attrs) =
-        DeriveSetting::parse(&context, is_struct, args, &mut input.attrs);
+    let (setting, unknown_attrs) = DeriveSetting::parse(&context, args, &mut input.attrs);
 
     let output = match &mut input.data {
         syn::Data::Struct(data) => Struct::parse(

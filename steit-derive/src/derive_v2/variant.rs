@@ -97,6 +97,6 @@ impl Variant {
     }
 
     pub fn ctor_name(&self) -> syn::Ident {
-        format_ident!("new_{}", self.snake_case_name())
+        format_ident!("empty_{}", self.snake_case_name())
     }
 }

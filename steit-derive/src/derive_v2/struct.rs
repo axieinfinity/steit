@@ -144,10 +144,18 @@ impl<'a> Struct<'a> {
         self.runtime.as_ref()
     }
 
+    fn trait_bounds(&self, fallback: &'static [&str]) -> &[&str] {
+        if self.setting.impl_state() {
+            &["State"]
+        } else {
+            fallback
+        }
+    }
+
     pub fn ctor_name(&self) -> syn::Ident {
         match &self.variant {
             Some(variant) => variant.ctor_name(),
-            None => format_ident!("new"),
+            None => format_ident!("empty"),
         }
     }
 
@@ -166,7 +174,7 @@ impl<'a> Struct<'a> {
             inits.push(size_cache.init(quote!(SizeCache::new())));
         }
 
-        let (args, set_variant_runtime) = if let Some(runtime) = self.runtime() {
+        let (params, set_variant_runtime) = if let Some(runtime) = self.runtime() {
             inits.push(runtime.init(quote!(runtime)));
 
             (
@@ -182,7 +190,7 @@ impl<'a> Struct<'a> {
 
         quote! {
             #[inline]
-            pub fn #ctor_name(#args) -> Self {
+            pub fn #ctor_name(#params) -> Self {
                 #set_variant_runtime
                 #name #qual { #(#inits,)* }
             }
@@ -190,13 +198,26 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_ctor(&self) -> TokenStream {
-        self.impler.impl_with(
-            if self.setting.state {
-                &["State"]
-            } else {
-                &["Default"]
+        self.impler
+            .impl_with(self.trait_bounds(&["Default"]), self.ctor())
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        let args = if self.setting.impl_state() {
+            Some(quote!(Runtime::default()))
+        } else {
+            None
+        };
+
+        self.impler.impl_for_with(
+            "Default",
+            self.trait_bounds(&["Default"]),
+            quote! {
+                #[inline]
+                fn default() -> Self {
+                    Self::empty(#args)
+                }
             },
-            self.ctor(),
         )
     }
 
@@ -389,21 +410,23 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.impl_ctors() {
-            tokens.extend(self.impl_ctor());
+        tokens.extend(self.impl_ctor());
+
+        if self.setting.impl_default() {
+            tokens.extend(self.impl_default());
         }
 
         tokens.extend(self.impl_wire_type());
 
-        if self.setting.serialize {
+        if self.setting.impl_serialize() {
             tokens.extend(self.impl_serialize());
         }
 
-        if self.setting.merge {
+        if self.setting.impl_merge() {
             tokens.extend(self.impl_merge());
         }
 
-        if self.setting.state {
+        if self.setting.impl_state() {
             tokens.extend(self.impl_state());
         }
     }

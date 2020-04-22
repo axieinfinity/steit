@@ -131,6 +131,6 @@ impl<T: SerializePrimitive> SerializeV2 for T {
 
     #[inline]
     fn is_omissible(&self) -> bool {
-        *self == Default::default()
+        *self == Self::default()
     }
 }

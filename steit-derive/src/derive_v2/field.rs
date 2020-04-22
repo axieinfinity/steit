@@ -168,7 +168,7 @@ impl<'a> DeriveField<'a> {
     }
 
     pub fn is_state(&self) -> bool {
-        self.setting.state && !self.attrs.no_state
+        self.setting.impl_state() && !self.attrs.no_state
     }
 
     pub fn init_default(&self) -> TokenStream {

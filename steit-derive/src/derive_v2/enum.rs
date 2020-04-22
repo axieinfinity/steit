@@ -72,42 +72,58 @@ impl<'a> Enum<'a> {
             .and_then(|index| self.variants.get(index))
     }
 
+    fn trait_bounds(&self, fallback: &'static [&str]) -> &[&str] {
+        if self.setting.impl_state() {
+            &["State"]
+        } else {
+            fallback
+        }
+    }
+
     fn impl_ctors(&self) -> TokenStream {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
-        let default_ctor = if self.setting.impl_default() || self.setting.state {
-            let (ctor_args, call_args) = if self.setting.state {
-                (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
-            } else {
-                Default::default()
-            };
+        let (default_ctor_params, default_ctor_args) = if self.setting.impl_state() {
+            (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
+        } else {
+            Default::default()
+        };
 
-            let new_default = if let Some(default_variant) = self.default_variant() {
-                let default_ctor_name = default_variant.ctor_name();
-                quote!(Self::#default_ctor_name(#call_args))
-            } else {
-                quote!(unimplemented!("no default variant"))
-            };
+        let default_ctor = if let Some(default_variant) = self.default_variant() {
+            let default_ctor_name = default_variant.ctor_name();
+            quote!(Self::#default_ctor_name(#default_ctor_args))
+        } else {
+            quote!(unimplemented!("no default variant"))
+        };
 
-            Some(quote! {
+        self.impler.impl_with(
+            self.trait_bounds(&["Default"]),
+            quote! {
                 #[inline]
-                pub fn new(#ctor_args) -> Self {
-                    #new_default
+                pub fn empty(#default_ctor_params) -> Self {
+                    #default_ctor
                 }
-            })
+
+                #(#ctors)*
+            },
+        )
+    }
+
+    fn impl_default(&self) -> TokenStream {
+        let args = if self.setting.impl_state() {
+            Some(quote!(Runtime::default()))
         } else {
             None
         };
 
-        self.impler.impl_with(
-            if self.setting.state {
-                &["State"]
-            } else {
-                &["Default"]
-            },
+        self.impler.impl_for_with(
+            "Default",
+            self.trait_bounds(&["Default"]),
             quote! {
-                #default_ctor
-                #(#ctors)*
+                #[inline]
+                fn default() -> Self {
+                    Self::empty(#args)
+                }
             },
         )
     }
@@ -199,7 +215,7 @@ impl<'a> Enum<'a> {
             let tag = variant.tag();
             let ctor_name = variant.ctor_name();
 
-            let args = if self.setting.state {
+            let args = if self.setting.impl_state() {
                 Some(quote!(self.runtime().parent()))
             } else {
                 None
@@ -224,11 +240,7 @@ impl<'a> Enum<'a> {
 
         self.impler.impl_for_with(
             "MergeV2",
-            if self.setting.state {
-                &["MergeV2", "State"]
-            } else {
-                &["Default", "MergeV2"]
-            },
+            self.trait_bounds(&["Default", "MergeV2"]),
             quote! {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     let tag = u32::deserialize_v2(reader)?;
@@ -288,7 +300,7 @@ impl<'a> Enum<'a> {
             quote! {
                 #[inline]
                 fn with_runtime(runtime: Runtime) -> Self {
-                    Self::new(runtime)
+                    Self::empty(runtime)
                 }
 
                 fn runtime(&self) -> &Runtime {
@@ -363,7 +375,7 @@ fn parse_variants<'a>(
         }
     }
 
-    if (setting.impl_default() || setting.state) && default_variant_index.is_none() {
+    if default_variant_index.is_none() {
         context.error(
             impler.name(),
             "expected a default variant #[steit(tag = …, default)]",
@@ -379,21 +391,23 @@ fn parse_variants<'a>(
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.impl_ctors() {
-            tokens.extend(self.impl_ctors());
+        tokens.extend(self.impl_ctors());
+
+        if self.setting.impl_default() {
+            tokens.extend(self.impl_default());
         }
 
         tokens.extend(self.impl_wire_type());
 
-        if self.setting.serialize {
+        if self.setting.impl_serialize() {
             tokens.extend(self.impl_serialize());
         }
 
-        if self.setting.merge {
+        if self.setting.impl_merge() {
             tokens.extend(self.impl_merge());
         }
 
-        if self.setting.state {
+        if self.setting.impl_state() {
             tokens.extend(self.impl_state());
         }
     }
