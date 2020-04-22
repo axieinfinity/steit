@@ -1,8 +1,8 @@
 use std::io;
 
 use super::{
-    runtime::SizeCache,
-    wire_format::{HasWireType, WireTypeV2},
+    rt::SizeCache,
+    wire_fmt::{HasWireType, WireTypeV2},
 };
 
 pub trait SerializeV2: HasWireType {

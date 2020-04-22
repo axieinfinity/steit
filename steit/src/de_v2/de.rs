@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::wire_format::{HasWireType, WireTypeV2};
+use crate::wire_fmt::{HasWireType, WireTypeV2};
 
 use super::reader::Reader;
 

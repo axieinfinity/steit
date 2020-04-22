@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use iowrap::Eof;
 
-use crate::wire_format::{self, WireTypeV2};
+use crate::wire_fmt::{self, WireTypeV2};
 
 use super::de::DeserializeV2;
 
@@ -33,7 +33,7 @@ impl<R: io::Read> Reader<R> {
     #[inline]
     pub fn read_tag(&mut self) -> io::Result<(u32, WireTypeV2)> {
         let value = u32::deserialize_v2(self)?;
-        wire_format::parse_tag(value)
+        wire_fmt::parse_tag(value)
     }
 
     pub fn skip_field(&mut self, wire_type: WireTypeV2) -> io::Result<()> {

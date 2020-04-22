@@ -3,7 +3,7 @@ use std::io::{self, Read};
 use crate::{
     de_v2::{DeserializeV2, Reader},
     ser_v2::SerializePrimitive,
-    wire_format::{HasWireType, WireTypeV2},
+    wire_fmt::{HasWireType, WireTypeV2},
 };
 
 macro_rules! impl_unsigned_varint {

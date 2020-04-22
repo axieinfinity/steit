@@ -5,7 +5,7 @@ pub mod rt;
 pub mod ser_v2;
 pub mod state_v2;
 pub mod types;
-pub mod wire_format;
+pub mod wire_fmt;
 pub mod wire_type;
 
 mod de;
@@ -14,7 +14,6 @@ mod ser;
 mod state;
 
 pub use de::*;
-pub use rt as runtime;
 pub use rt::*;
 pub use ser::*;
 pub use state::*;

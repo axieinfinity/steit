@@ -1,4 +1,4 @@
-use super::runtime::Runtime;
+use super::rt::Runtime;
 
 pub trait StateV2 {
     fn with_runtime(runtime: Runtime) -> Self;
