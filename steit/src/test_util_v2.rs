@@ -59,17 +59,17 @@ use super::{
 //     }
 // }
 
-pub fn assert_size<T: SerializeV2>(value: T, size: u32) {
+pub fn assert_size(value: impl SerializeV2, size: u32) {
     assert_eq!(value.compute_size(), size);
 }
 
-pub fn serialize<T: SerializeV2>(value: T) -> Vec<u8> {
+pub fn serialize(value: impl SerializeV2) -> Vec<u8> {
     let mut bytes = Vec::new();
     value.serialize(&mut bytes).unwrap();
     bytes
 }
 
-pub fn assert_serialize<T: SerializeV2>(value: T, bytes: &[u8]) {
+pub fn assert_serialize(value: impl SerializeV2, bytes: &[u8]) {
     assert_eq!(&*serialize(value), bytes);
 }
 
