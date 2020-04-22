@@ -14,7 +14,6 @@ pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct DeriveSetting {
     serialize: bool,
-    merge: bool,
     deserialize: bool,
     state: bool,
 
@@ -45,13 +44,11 @@ impl DeriveSetting {
         // Arguments
 
         let mut serialize = Attr::new(context, "Serialize");
-        let mut merge = Attr::new(context, "Merge");
         let mut deserialize = Attr::new(context, "Deserialize");
         let mut state = Attr::new(context, "State");
 
         let derives = args.parse(context, false, |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
-            syn::Meta::Path(path) if merge.parse_path(path) => true,
             syn::Meta::Path(path) if deserialize.parse_path(path) => true,
             syn::Meta::Path(path) if state.parse_path(path) => true,
             _ => false,
@@ -60,7 +57,6 @@ impl DeriveSetting {
         let state = state.get().unwrap_or_default();
         let serialize = state || serialize.get().unwrap_or_default();
         let deserialize = state || deserialize.get().unwrap_or_default();
-        let merge = deserialize || merge.get().unwrap_or_default();
 
         // Attributes
 
@@ -87,7 +83,6 @@ impl DeriveSetting {
         (
             Self {
                 serialize,
-                merge,
                 deserialize,
                 state,
 
@@ -120,11 +115,11 @@ impl DeriveSetting {
         }
     }
 
-    getter!(impl_serialize -> bool = _.serialize);
-    getter!(impl_merge -> bool = _.merge);
-    getter!(impl_state -> bool = _.state);
-
     getter!(impl_default -> bool = _.deserialize);
+
+    getter!(impl_serialize -> bool = _.serialize);
+    getter!(impl_deserialize -> bool = _.deserialize);
+    getter!(impl_state -> bool = _.state);
 
     pub fn has_size_cache(&self) -> bool {
         self.serialize && !self.no_size_cache
@@ -202,7 +197,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
             use std::io::{self, Read};
 
             use #krate::{
-                de_v2::{DeserializeV2, MergeV2, Reader},
+                de_v2::{DeserializeV2, Reader},
                 runtime::{Runtime, SizeCache},
                 ser_v2::SerializeV2,
                 state_v2::StateV2,

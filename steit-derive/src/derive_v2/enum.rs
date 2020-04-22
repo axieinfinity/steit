@@ -206,7 +206,7 @@ impl<'a> Enum<'a> {
         )
     }
 
-    fn impl_merge(&self) -> TokenStream {
+    fn impl_deserialize(&self) -> TokenStream {
         let name = self.impler.name();
 
         let mergers = self.variants.iter().map(|r#struct| {
@@ -239,8 +239,8 @@ impl<'a> Enum<'a> {
         });
 
         self.impler.impl_for_with(
-            "MergeV2",
-            self.trait_bounds(&["Default", "MergeV2"]),
+            "DeserializeV2",
+            self.trait_bounds(&["DeserializeV2"]),
             quote! {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     let tag = u32::deserialize_v2(reader)?;
@@ -403,8 +403,8 @@ impl<'a> ToTokens for Enum<'a> {
             tokens.extend(self.impl_serialize());
         }
 
-        if self.setting.impl_merge() {
-            tokens.extend(self.impl_merge());
+        if self.setting.impl_deserialize() {
+            tokens.extend(self.impl_deserialize());
         }
 
         if self.setting.impl_state() {

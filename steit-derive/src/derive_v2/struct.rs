@@ -292,11 +292,11 @@ impl<'a> Struct<'a> {
         }
     }
 
-    fn impl_merge(&self) -> TokenStream {
+    fn impl_deserialize(&self) -> TokenStream {
         let merger = self.merger();
 
         self.impler.impl_for(
-            "MergeV2",
+            "DeserializeV2",
             quote! {
                 fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     #merger
@@ -422,8 +422,8 @@ impl<'a> ToTokens for Struct<'a> {
             tokens.extend(self.impl_serialize());
         }
 
-        if self.setting.impl_merge() {
-            tokens.extend(self.impl_merge());
+        if self.setting.impl_deserialize() {
+            tokens.extend(self.impl_deserialize());
         }
 
         if self.setting.impl_state() {

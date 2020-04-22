@@ -1,7 +1,7 @@
 use std::io::{self, Read};
 
 use crate::{
-    de_v2::{MergeV2, Reader},
+    de_v2::{DeserializeV2, Reader},
     ser_v2::SerializePrimitive,
     wire_format::{HasWireType, WireTypeV2},
 };
@@ -22,7 +22,7 @@ impl SerializePrimitive for bool {
     }
 }
 
-impl MergeV2 for bool {
+impl DeserializeV2 for bool {
     #[inline]
     fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         let mut value = false;

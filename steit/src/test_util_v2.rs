@@ -1,7 +1,7 @@
 use std::fmt;
 
 use super::{
-    de_v2::{DeserializeV2, MergeV2, Reader},
+    de_v2::{DeserializeV2, Reader},
     ser_v2::SerializeV2,
 };
 
@@ -84,12 +84,12 @@ pub fn assert_serialize_nested(value: impl SerializeV2, tag: impl Into<Option<u3
     assert_eq!(&*serialize_nested(value, tag), bytes);
 }
 
-pub fn merge<T: MergeV2>(mut value: T, bytes: &[u8]) -> T {
+pub fn merge<T: DeserializeV2>(mut value: T, bytes: &[u8]) -> T {
     value.merge_v2(&mut Reader::new(bytes)).unwrap();
     value
 }
 
-pub fn assert_merge<T: PartialEq + fmt::Debug + MergeV2>(
+pub fn assert_merge<T: PartialEq + fmt::Debug + DeserializeV2>(
     value: T,
     bytes: &[u8],
     expected_value: T,

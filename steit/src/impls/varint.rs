@@ -1,7 +1,7 @@
 use std::io::{self, Read};
 
 use crate::{
-    de_v2::{DeserializeV2, MergeV2, Reader},
+    de_v2::{DeserializeV2, Reader},
     ser_v2::SerializePrimitive,
     wire_format::{HasWireType, WireTypeV2},
 };
@@ -35,7 +35,7 @@ macro_rules! impl_unsigned_varint {
             }
         }
 
-        impl MergeV2 for $t {
+        impl DeserializeV2 for $t {
             fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                 let mut value = 0;
 
@@ -81,7 +81,7 @@ macro_rules! impl_signed_varint {
             }
         }
 
-        impl MergeV2 for $t {
+        impl DeserializeV2 for $t {
             #[inline]
             fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                 let encoded = <$ut>::deserialize_v2(reader)? as $t;
