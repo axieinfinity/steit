@@ -1,7 +1,4 @@
-use std::{
-    io::{self, Read},
-    ops::{Deref, DerefMut},
-};
+use std::io::{self, Read};
 
 use iowrap::Eof;
 
@@ -66,22 +63,6 @@ impl<R: io::Read> io::Read for Reader<R> {
     #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
-    }
-}
-
-impl<R: io::Read> Deref for Reader<R> {
-    type Target = R;
-
-    #[inline]
-    fn deref(&self) -> &Self::Target {
-        self.inner.get_ref()
-    }
-}
-
-impl<R: io::Read> DerefMut for Reader<R> {
-    #[inline]
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.inner.get_mut()
     }
 }
 
