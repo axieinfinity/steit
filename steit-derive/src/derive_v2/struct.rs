@@ -4,9 +4,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse, VecAttr},
-    context::Context,
-    impler::Impler,
+    attr::{Attribute, AttributeParse, VecAttribute},
+    ctx::Context,
+    r#impl::Implementer,
 };
 
 use super::{
@@ -25,15 +25,15 @@ struct StructAttrs {
 }
 
 impl StructAttrs {
-    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
-        let mut no_size_cache = Attr::new(context, "no_size_cache");
+    pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
+        let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
 
-        let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
-        let mut runtime_renamed = Attr::new(context, "runtime_renamed");
+        let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
+        let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
 
-        let mut reserved = VecAttr::new(context, "reserved");
+        let mut reserved = VecAttribute::new(ctx, "reserved");
 
-        attrs.parse(context, true, |meta| match meta {
+        attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
@@ -57,7 +57,7 @@ impl StructAttrs {
 }
 
 pub struct Struct<'a> {
-    impler: &'a Impler<'a>,
+    impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
     fields: Vec<DeriveField<'a>>,
     size_cache: Option<Field>,
@@ -73,15 +73,15 @@ macro_rules! map_fields {
 
 impl<'a> Struct<'a> {
     pub fn parse(
-        context: &'a Context,
-        impler: &'a Impler,
+        ctx: &'a Context,
+        impler: &'a Implementer,
         setting: &'a DeriveSetting,
-        attrs: impl AttrParse,
+        attrs: impl AttributeParse,
         fields: &mut syn::Fields,
         variant: Option<Variant>,
     ) -> derive::Result<Self> {
-        let attrs = StructAttrs::parse(context, attrs);
-        let parsed_fields = parse_fields(context, setting, &attrs, fields)?;
+        let attrs = StructAttrs::parse(ctx, attrs);
+        let parsed_fields = parse_fields(ctx, setting, &attrs, fields)?;
 
         let krate = setting.krate();
         let mut field_index = parsed_fields.len();
@@ -351,7 +351,7 @@ impl<'a> Struct<'a> {
 }
 
 fn parse_fields<'a>(
-    context: &Context,
+    ctx: &Context,
     setting: &'a DeriveSetting,
     attrs: &StructAttrs,
     fields: &mut syn::Fields,
@@ -363,15 +363,15 @@ fn parse_fields<'a>(
     let mut unique_tags = true;
 
     for (index, field) in fields.iter_mut().enumerate() {
-        if let Ok(parsed_field) = DeriveField::parse(setting, context, field, index) {
+        if let Ok(parsed_field) = DeriveField::parse(setting, ctx, field, index) {
             let (tag, tag_tokens) = parsed_field.tag_with_tokens();
 
             if reserved_tags.contains(&tag) {
-                context.error(tag_tokens, format!("tag {} has been reserved", tag));
+                ctx.error(tag_tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
-                context.error(tag_tokens, format!("duplicate tag {}", tag));
+                ctx.error(tag_tokens, format!("duplicate tag {}", tag));
                 unique_tags = false;
             }
 

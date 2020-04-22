@@ -1,5 +1,5 @@
 pub mod generators;
-pub mod string_util;
+pub mod str_util;
 
 mod gen_meta;
 mod gen_util;

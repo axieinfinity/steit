@@ -2,10 +2,10 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
-    impler::Impler,
-    string_util,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
+    r#impl::Implementer,
+    str_util,
 };
 
 use super::{r#enum::Enum, r#struct::Struct};
@@ -37,17 +37,17 @@ macro_rules! getter {
 
 impl DeriveSetting {
     pub fn parse(
-        context: &Context,
+        ctx: &Context,
         args: syn::AttributeArgs,
         attrs: &mut Vec<syn::Attribute>,
     ) -> (Self, syn::AttributeArgs) {
         // Arguments
 
-        let mut serialize = Attr::new(context, "Serialize");
-        let mut deserialize = Attr::new(context, "Deserialize");
-        let mut state = Attr::new(context, "State");
+        let mut serialize = Attribute::new(ctx, "Serialize");
+        let mut deserialize = Attribute::new(ctx, "Deserialize");
+        let mut state = Attribute::new(ctx, "State");
 
-        let derives = args.parse(context, false, |meta| match meta {
+        let derives = args.parse(ctx, false, |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
             syn::Meta::Path(path) if deserialize.parse_path(path) => true,
             syn::Meta::Path(path) if state.parse_path(path) => true,
@@ -60,14 +60,14 @@ impl DeriveSetting {
 
         // Attributes
 
-        let mut steit_owned = Attr::new(context, "steit_owned");
+        let mut steit_owned = Attribute::new(ctx, "steit_owned");
 
-        let mut no_size_cache = Attr::new(context, "no_size_cache");
+        let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
 
-        let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
-        let mut runtime_renamed = Attr::new(context, "runtime_renamed");
+        let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
+        let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
 
-        let unknown_attrs = attrs.parse(context, false, |meta| match meta {
+        let unknown_attrs = attrs.parse(ctx, false, |meta| match meta {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
 
@@ -129,13 +129,13 @@ impl DeriveSetting {
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
-    let context = Context::new();
-    let impler = Impler::new(&input.ident, &input.generics);
-    let (setting, unknown_attrs) = DeriveSetting::parse(&context, args, &mut input.attrs);
+    let ctx = Context::new();
+    let impler = Implementer::new(&input.ident, &input.generics);
+    let (setting, unknown_attrs) = DeriveSetting::parse(&ctx, args, &mut input.attrs);
 
     let output = match &mut input.data {
         syn::Data::Struct(data) => Struct::parse(
-            &context,
+            &ctx,
             &impler,
             &setting,
             unknown_attrs,
@@ -145,25 +145,21 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
         .ok()
         .into_token_stream(),
 
-        syn::Data::Enum(data) => Enum::parse(
-            &context,
-            &impler,
-            &setting,
-            unknown_attrs,
-            &mut data.variants,
-        )
-        .ok()
-        .into_token_stream(),
+        syn::Data::Enum(data) => {
+            Enum::parse(&ctx, &impler, &setting, unknown_attrs, &mut data.variants)
+                .ok()
+                .into_token_stream()
+        }
 
         syn::Data::Union(data) => {
-            context.error(data.union_token, "union is not supported");
+            ctx.error(data.union_token, "union is not supported");
             quote!()
         }
     };
 
     let output = wrap_in_const(&setting, &input.ident, output);
     let derives = setting.derives;
-    let errors = context.check().err().map(to_compile_errors);
+    let errors = ctx.check().err().map(to_compile_errors);
 
     let derived = quote! {
         #[derive(#(#derives)*)]
@@ -184,7 +180,7 @@ fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {
 fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream) -> TokenStream {
     let dummy_const = format_ident!(
         "_IMPL_STEIT_FOR_{}",
-        string_util::to_snake_case(name.to_string()).to_uppercase(),
+        str_util::to_snake_case(name.to_string()).to_uppercase(),
     );
 
     let extern_crate = setting.extern_crate();

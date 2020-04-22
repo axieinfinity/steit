@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
-    string_util,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
+    str_util,
 };
 
 use super::{derive, tag};
@@ -16,13 +16,13 @@ struct VariantAttrs {
 
 impl VariantAttrs {
     pub fn parse(
-        context: &Context,
+        ctx: &Context,
         variant: &mut syn::Variant,
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
-        let mut tag = Attr::new(context, "tag");
-        let mut default = Attr::new(context, "default");
+        let mut tag = Attribute::new(ctx, "tag");
+        let mut default = Attribute::new(ctx, "default");
 
-        let unknown_attrs = (&mut variant.attrs).parse(context, false, |meta| match meta {
+        let unknown_attrs = (&mut variant.attrs).parse(ctx, false, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
             syn::Meta::Path(path) if default.parse_path(path) => true,
@@ -33,10 +33,10 @@ impl VariantAttrs {
 
         let (tag, tag_tokens) = tag
             .get_with_tokens()
-            .ok_or_else(|| context.error(variant, "expected a valid tag #[steit(tag = …)]"))?;
+            .ok_or_else(|| ctx.error(variant, "expected a valid tag #[steit(tag = …)]"))?;
 
         tag::validate(tag).map_err(|message| {
-            context.error(&tag_tokens, message);
+            ctx.error(&tag_tokens, message);
             ()
         })?;
 
@@ -58,10 +58,10 @@ pub struct Variant {
 
 impl Variant {
     pub fn parse(
-        context: &Context,
+        ctx: &Context,
         variant: &mut syn::Variant,
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
-        let (attrs, unknown_attrs) = VariantAttrs::parse(context, variant)?;
+        let (attrs, unknown_attrs) = VariantAttrs::parse(ctx, variant)?;
 
         Ok((
             Self {
@@ -88,7 +88,7 @@ impl Variant {
     }
 
     pub fn snake_case_name(&self) -> String {
-        string_util::to_snake_case(self.name.to_string())
+        str_util::to_snake_case(self.name.to_string())
     }
 
     pub fn qual(&self) -> TokenStream {

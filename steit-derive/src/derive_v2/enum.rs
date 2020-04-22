@@ -4,9 +4,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{AttrParse, VecAttr},
-    context::Context,
-    impler::Impler,
+    attr::{AttributeParse, VecAttribute},
+    ctx::Context,
+    r#impl::Implementer,
 };
 
 use super::{
@@ -20,10 +20,10 @@ struct EnumAttrs {
 }
 
 impl EnumAttrs {
-    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
-        let mut reserved = VecAttr::new(context, "reserved");
+    pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
+        let mut reserved = VecAttribute::new(ctx, "reserved");
 
-        attrs.parse(context, true, |meta| match meta {
+        attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
             _ => false,
         });
@@ -35,7 +35,7 @@ impl EnumAttrs {
 }
 
 pub struct Enum<'a> {
-    impler: &'a Impler<'a>,
+    impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
     variants: Vec<Struct<'a>>,
     default_variant_index: Option<usize>,
@@ -43,21 +43,21 @@ pub struct Enum<'a> {
 
 impl<'a> Enum<'a> {
     pub fn parse(
-        context: &'a Context,
-        impler: &'a Impler,
+        ctx: &'a Context,
+        impler: &'a Implementer,
         setting: &'a DeriveSetting,
-        attrs: impl AttrParse,
+        attrs: impl AttributeParse,
         variants: &mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Self> {
         if variants.is_empty() {
-            context.error(variants, "cannot derive for enums with zero variants");
+            ctx.error(variants, "cannot derive for enums with zero variants");
             return Err(());
         }
 
-        let attrs = EnumAttrs::parse(context, attrs);
+        let attrs = EnumAttrs::parse(ctx, attrs);
 
         let (variants, default_variant_index) =
-            parse_variants(context, impler, setting, &attrs, variants)?;
+            parse_variants(ctx, impler, setting, &attrs, variants)?;
 
         Ok(Self {
             impler,
@@ -316,8 +316,8 @@ impl<'a> Enum<'a> {
 }
 
 fn parse_variants<'a>(
-    context: &'a Context,
-    impler: &'a Impler,
+    ctx: &'a Context,
+    impler: &'a Implementer,
     setting: &'a DeriveSetting,
     attrs: &EnumAttrs,
     variants: &mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
@@ -332,20 +332,20 @@ fn parse_variants<'a>(
 
     for variant in variants.iter_mut() {
         if variant.discriminant.is_some() {
-            context.error(variant, "discriminant is not supported yet");
+            ctx.error(variant, "discriminant is not supported yet");
             continue;
         }
 
-        if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(context, variant) {
+        if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(ctx, variant) {
             let (tag, tag_tokens) = parsed_variant.tag_with_tokens();
             let (default, default_tokens) = parsed_variant.default_with_tokens();
 
             if reserved_tags.contains(&tag) {
-                context.error(tag_tokens, format!("tag {} has been reserved", tag));
+                ctx.error(tag_tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
-                context.error(tag_tokens, format!("duplicate tag {}", tag));
+                ctx.error(tag_tokens, format!("duplicate tag {}", tag));
                 unique_tags = false;
             }
 
@@ -355,7 +355,7 @@ fn parse_variants<'a>(
                     // We accept that, so we don't miss any multiple-default-variants error.
                     default_variant_index = Some(parsed_variants.len());
                 } else {
-                    context.error(
+                    ctx.error(
                         default_tokens.unwrap(),
                         "unexpected multiple default variants",
                     );
@@ -363,7 +363,7 @@ fn parse_variants<'a>(
             }
 
             if let Ok(r#struct) = Struct::parse(
-                context,
+                ctx,
                 impler,
                 setting,
                 unknown_attrs,
@@ -376,7 +376,7 @@ fn parse_variants<'a>(
     }
 
     if default_variant_index.is_none() {
-        context.error(
+        ctx.error(
             impler.name(),
             "expected a default variant #[steit(tag = …, default)]",
         );

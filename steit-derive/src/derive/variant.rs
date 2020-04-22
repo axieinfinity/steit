@@ -1,9 +1,9 @@
 use proc_macro2::TokenStream;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
-    string_util,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
+    str_util,
 };
 
 use super::derive;
@@ -15,12 +15,12 @@ struct VariantAttrs {
 
 impl VariantAttrs {
     pub fn parse(
-        context: &Context,
+        ctx: &Context,
         variant: &mut syn::Variant,
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
-        let mut tag = Attr::new(context, "tag");
+        let mut tag = Attribute::new(ctx, "tag");
 
-        let unknown_attrs = (&mut variant.attrs).parse(context, false, |meta| match meta {
+        let unknown_attrs = (&mut variant.attrs).parse(ctx, false, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
             _ => false,
         });
@@ -28,7 +28,7 @@ impl VariantAttrs {
         if let Some((tag, tag_tokens)) = tag.get_with_tokens() {
             Ok((Self { tag, tag_tokens }, unknown_attrs))
         } else {
-            context.error(variant, "expected a valid tag #[steit(tag = ...)]");
+            ctx.error(variant, "expected a valid tag #[steit(tag = ...)]");
             Err(())
         }
     }
@@ -41,10 +41,10 @@ pub struct Variant {
 
 impl Variant {
     pub fn parse(
-        context: &Context,
+        ctx: &Context,
         variant: &mut syn::Variant,
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
-        VariantAttrs::parse(context, variant).map(|(attrs, unknown_attrs)| {
+        VariantAttrs::parse(ctx, variant).map(|(attrs, unknown_attrs)| {
             (
                 Self {
                     name: variant.ident.clone(),
@@ -68,7 +68,7 @@ impl Variant {
     }
 
     pub fn snake_case_name(&self) -> String {
-        string_util::to_snake_case(&self.name.to_string())
+        str_util::to_snake_case(self.name.to_string())
     }
 
     pub fn qual(&self) -> TokenStream {

@@ -15,7 +15,7 @@ impl CSharpGenerator {
 }
 
 impl CSharpGenerator {
-    pub fn generate_file_opening(&self, writer: &mut Writer) {
+    pub fn gen_file_opening(&self, writer: &mut Writer) {
         writer
             .writeln("using System;")
             .writeln("using System.Collections.Generic;")
@@ -30,7 +30,7 @@ impl CSharpGenerator {
             .indent();
     }
 
-    pub fn generate_file_closing(&self, writer: &mut Writer) {
+    pub fn gen_file_closing(&self, writer: &mut Writer) {
         writer.outdent_writeln("}");
     }
 }
@@ -44,9 +44,9 @@ impl Generator for CSharpGenerator {
         4
     }
 
-    fn generate_struct(&self, r#struct: &Struct, is_variant: bool, writer: &mut Writer) {
+    fn gen_struct(&self, r#struct: &Struct, is_variant: bool, writer: &mut Writer) {
         let name = r#struct.name;
-        let var_name = string_util::uncap_first_char(name);
+        let var_name = str_util::uncap_first_char(name);
 
         let fields: Vec<_> = r#struct
             .fields
@@ -57,7 +57,7 @@ impl Generator for CSharpGenerator {
         let variant_accessibility = if is_variant { "internal" } else { "public" };
 
         if !is_variant {
-            self.generate_file_opening(writer);
+            self.gen_file_opening(writer);
         }
 
         writer
@@ -275,13 +275,13 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}");
 
         if !is_variant {
-            self.generate_file_closing(writer);
+            self.gen_file_closing(writer);
         }
     }
 
-    fn generate_enum(&self, r#enum: &Enum, writer: &mut Writer) {
+    fn gen_enum(&self, r#enum: &Enum, writer: &mut Writer) {
         let name = r#enum.name;
-        let var_name = string_util::uncap_first_char(name);
+        let var_name = str_util::uncap_first_char(name);
 
         let variants: Vec<_> = r#enum
             .variants
@@ -294,7 +294,7 @@ impl Generator for CSharpGenerator {
             .find(|variant| variant.raw.is_default())
             .unwrap_or_else(|| panic!("expect a default variant for enum {}", name));
 
-        self.generate_file_opening(writer);
+        self.gen_file_opening(writer);
 
         writer
             .writeln(format!("public sealed class {} : IEnumState {{", name))
@@ -414,12 +414,12 @@ impl Generator for CSharpGenerator {
 
         for variant in r#enum.variants {
             writer.newline();
-            self.generate_struct(variant.ty, true, writer);
+            self.gen_struct(variant.ty, true, writer);
         }
 
         writer.outdent_writeln("}");
 
-        self.generate_file_closing(writer);
+        self.gen_file_closing(writer);
     }
 }
 
@@ -433,7 +433,7 @@ impl CSharpVariant {
     pub fn with_variant(variant: &'static Variant) -> Self {
         Self {
             raw: variant,
-            screaming_snake_case_name: string_util::to_snake_case(variant.ty.name).to_uppercase(),
+            screaming_snake_case_name: str_util::to_snake_case(variant.ty.name).to_uppercase(),
         }
     }
 }
@@ -451,8 +451,8 @@ impl CSharpField {
     pub fn with_field(field: &'static Field) -> Self {
         Self {
             raw: field,
-            upper_camel_case_name: string_util::to_camel_case(field.name, true),
-            lower_camel_case_name: string_util::to_camel_case(field.name, false),
+            upper_camel_case_name: str_util::to_camel_case(field.name, true),
+            lower_camel_case_name: str_util::to_camel_case(field.name, false),
             ty: get_type(field.ty),
         }
     }

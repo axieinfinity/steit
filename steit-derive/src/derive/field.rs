@@ -2,8 +2,8 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
 };
 
 use super::{
@@ -19,12 +19,12 @@ struct FieldAttrs {
 }
 
 impl FieldAttrs {
-    pub fn parse(context: &Context, field: &mut syn::Field) -> derive::Result<Self> {
-        let mut tag = Attr::new(context, "tag");
-        let mut skip_state = Attr::new(context, "skip_state");
-        let mut meta_name = Attr::new(context, "meta_name");
+    pub fn parse(ctx: &Context, field: &mut syn::Field) -> derive::Result<Self> {
+        let mut tag = Attribute::new(ctx, "tag");
+        let mut skip_state = Attribute::new(ctx, "skip_state");
+        let mut meta_name = Attribute::new(ctx, "meta_name");
 
-        (&mut field.attrs).parse(context, true, |meta| match meta {
+        (&mut field.attrs).parse(ctx, true, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
             syn::Meta::Path(path) if skip_state.parse_path(path) => true,
@@ -43,7 +43,7 @@ impl FieldAttrs {
                 meta_name: meta_name.get(),
             })
         } else {
-            context.error(field, "expected a valid tag #[steit(tag = ...)]");
+            ctx.error(field, "expected a valid tag #[steit(tag = ...)]");
             Err(())
         }
     }
@@ -60,11 +60,11 @@ pub struct Field<'a> {
 impl<'a> Field<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
-        context: &Context,
+        ctx: &Context,
         field: &mut syn::Field,
         index: usize,
     ) -> derive::Result<Self> {
-        FieldAttrs::parse(context, field).map(|attrs| Self {
+        FieldAttrs::parse(ctx, field).map(|attrs| Self {
             setting,
             name: field.ident.clone(),
             ty: field.ty.clone(),

@@ -2,10 +2,10 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
-    impler::Impler,
-    string_util,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
+    r#impl::Implementer,
+    str_util,
 };
 
 use super::{r#enum::Enum, r#struct::Struct, union::Union};
@@ -31,19 +31,19 @@ pub struct DeriveSetting {
 }
 
 impl DeriveSetting {
-    pub fn parse(context: &Context, args: syn::AttributeArgs) -> Self {
-        let mut serialize = Attr::new(context, "Serialize");
-        let mut merge = Attr::new(context, "Merge");
-        let mut deserialize = Attr::new(context, "Deserialize");
-        let mut state = Attr::new(context, "State");
+    pub fn parse(ctx: &Context, args: syn::AttributeArgs) -> Self {
+        let mut serialize = Attribute::new(ctx, "Serialize");
+        let mut merge = Attribute::new(ctx, "Merge");
+        let mut deserialize = Attribute::new(ctx, "Deserialize");
+        let mut state = Attribute::new(ctx, "State");
 
-        let mut own_crate = Attr::new(context, "own_crate");
-        let mut no_ctors = Attr::new(context, "no_ctors");
-        let mut no_setters = Attr::new(context, "no_setters");
-        let mut no_size_cache = Attr::new(context, "no_size_cache");
-        let mut no_meta = Attr::new(context, "no_meta");
+        let mut own_crate = Attribute::new(ctx, "own_crate");
+        let mut no_ctors = Attribute::new(ctx, "no_ctors");
+        let mut no_setters = Attribute::new(ctx, "no_setters");
+        let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
+        let mut no_meta = Attribute::new(ctx, "no_meta");
 
-        args.parse(context, true, |meta| match meta {
+        args.parse(ctx, true, |meta| match meta {
             syn::Meta::Path(path) if serialize.parse_path(path) => true,
             syn::Meta::Path(path) if merge.parse_path(path) => true,
             syn::Meta::Path(path) if deserialize.parse_path(path) => true,
@@ -117,7 +117,7 @@ impl DeriveSetting {
         }
     }
 
-    pub fn ctors(&self, context: &Context, is_enum: bool) -> bool {
+    pub fn ctors(&self, ctx: &Context, is_enum: bool) -> bool {
         let force_ctors = if is_enum {
             self.merge
         } else {
@@ -125,7 +125,7 @@ impl DeriveSetting {
         };
 
         if force_ctors && self.no_ctors {
-            context.error(
+            ctx.error(
                 self.no_ctors_tokens.as_ref().unwrap(),
                 "constructors are required",
             );
@@ -133,8 +133,8 @@ impl DeriveSetting {
             return true;
         }
 
-        if is_enum && self.setters(context) && self.no_ctors {
-            context.error(
+        if is_enum && self.setters(ctx) && self.no_ctors {
+            ctx.error(
                 self.no_ctors_tokens.as_ref().unwrap(),
                 "enum constructors are required to generate setters",
             );
@@ -145,11 +145,11 @@ impl DeriveSetting {
         !self.no_ctors
     }
 
-    pub fn setters(&self, context: &Context) -> bool {
+    pub fn setters(&self, ctx: &Context) -> bool {
         let force_setters = self.state;
 
         if force_setters && self.no_setters {
-            context.error(
+            ctx.error(
                 self.no_setters_tokens.as_ref().unwrap(),
                 "setters are required",
             );
@@ -177,18 +177,18 @@ impl DeriveSetting {
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {
-    let context = Context::new();
-    let setting = DeriveSetting::parse(&context, args);
-    let impler = Impler::new(&input.ident, &input.generics);
+    let ctx = Context::new();
+    let setting = DeriveSetting::parse(&ctx, args);
+    let impler = Implementer::new(&input.ident, &input.generics);
 
     let output = match &mut input.data {
-        syn::Data::Enum(data) => Enum::parse(&setting, &context, &impler, &mut input.attrs, data)
+        syn::Data::Enum(data) => Enum::parse(&setting, &ctx, &impler, &mut input.attrs, data)
             .ok()
             .into_token_stream(),
 
         syn::Data::Struct(data) => Struct::parse(
             &setting,
-            &context,
+            &ctx,
             &impler,
             &mut input.attrs,
             &mut data.fields,
@@ -198,13 +198,13 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
         .ok()
         .into_token_stream(),
 
-        syn::Data::Union(data) => Union::parse(&setting, &context, &impler, data)
+        syn::Data::Union(data) => Union::parse(&setting, &ctx, &impler, data)
             .ok()
             .into_token_stream(),
     };
 
     let output = wrap_in_const(&setting, &input.ident, output);
-    let errors = context.check().err().map(to_compile_errors);
+    let errors = ctx.check().err().map(to_compile_errors);
 
     /* let derived = */
     quote! {
@@ -225,7 +225,7 @@ fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {
 fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream) -> TokenStream {
     let dummy_const = format_ident!(
         "_IMPL_STEIT_FOR_{}",
-        string_util::to_snake_case(&name.to_string()).to_uppercase()
+        str_util::to_snake_case(name.to_string()).to_uppercase()
     );
 
     let extern_crate = setting.extern_crate();

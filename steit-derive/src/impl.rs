@@ -1,11 +1,11 @@
 use proc_macro2::TokenStream;
 
-pub struct Impler<'a> {
+pub struct Implementer<'a> {
     name: &'a syn::Ident,
     generics: &'a syn::Generics,
 }
 
-impl<'a> Impler<'a> {
+impl<'a> Implementer<'a> {
     pub fn new(name: &'a syn::Ident, generics: &'a syn::Generics) -> Self {
         Self { name, generics }
     }

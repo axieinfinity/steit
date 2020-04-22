@@ -5,11 +5,11 @@ extern crate quote;
 use proc_macro::TokenStream;
 
 mod attr;
-mod context;
+mod ctx;
 mod derive;
 mod derive_v2;
-mod impler;
-mod string_util;
+mod r#impl;
+mod str_util;
 
 #[proc_macro_attribute]
 pub fn steitize(args: TokenStream, input: TokenStream) -> TokenStream {

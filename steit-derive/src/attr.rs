@@ -3,19 +3,19 @@ use std::{fmt, str::FromStr};
 use proc_macro2::TokenStream;
 use quote::ToTokens;
 
-use super::context::Context;
+use super::ctx::Context;
 
-pub struct Attr<'a, T> {
-    context: &'a Context,
+pub struct Attribute<'a, T> {
+    ctx: &'a Context,
     name: &'static str,
     tokens: TokenStream,
     value: Option<T>,
 }
 
-impl<'a, T> Attr<'a, T> {
-    pub fn new(context: &'a Context, name: &'static str) -> Self {
+impl<'a, T> Attribute<'a, T> {
+    pub fn new(ctx: &'a Context, name: &'static str) -> Self {
         Self {
-            context,
+            ctx,
             name,
             tokens: TokenStream::new(),
             value: None,
@@ -24,7 +24,7 @@ impl<'a, T> Attr<'a, T> {
 
     pub fn set(&mut self, tokens: impl ToTokens, value: T) {
         if self.value.is_some() {
-            self.context
+            self.ctx
                 .error(tokens, format!("duplicate steit attribute `{}`", self.name));
         } else {
             self.tokens = tokens.to_token_stream();
@@ -51,7 +51,7 @@ impl<'a, T> Attr<'a, T> {
         if meta.path.is_ident(self.name) {
             match parse_literal(&meta.lit) {
                 Ok(value) => self.set(meta, value),
-                Err(ty) => self.context.error(
+                Err(ty) => self.ctx.error(
                     &meta.lit,
                     format!("expected `{}` attribute to be {}", self.name, ty),
                 ),
@@ -64,7 +64,7 @@ impl<'a, T> Attr<'a, T> {
     }
 }
 
-impl Attr<'_, bool> {
+impl Attribute<'_, bool> {
     pub fn parse_path(&mut self, path: &syn::Path) -> bool {
         if path.is_ident(self.name) {
             self.set(path, true);
@@ -82,7 +82,7 @@ impl Attr<'_, bool> {
     }
 }
 
-impl<T, E> Attr<'_, T>
+impl<T, E> Attribute<'_, T>
 where
     T: FromStr<Err = E>,
     E: fmt::Display,
@@ -95,7 +95,7 @@ where
     }
 }
 
-impl Attr<'_, String> {
+impl Attribute<'_, String> {
     pub fn parse_str(&mut self, meta: &syn::MetaNameValue) -> bool {
         self.parse_name_value(meta, |lit| match lit {
             syn::Lit::Str(lit) => Ok(lit.value()),
@@ -104,16 +104,16 @@ impl Attr<'_, String> {
     }
 }
 
-pub struct VecAttr<'a, T> {
-    context: &'a Context,
+pub struct VecAttribute<'a, T> {
+    ctx: &'a Context,
     name: &'static str,
     values: Vec<T>,
 }
 
-impl<'a, T> VecAttr<'a, T> {
-    pub fn new(context: &'a Context, name: &'static str) -> Self {
+impl<'a, T> VecAttribute<'a, T> {
+    pub fn new(ctx: &'a Context, name: &'static str) -> Self {
         Self {
-            context,
+            ctx,
             name,
             values: Vec::new(),
         }
@@ -137,13 +137,13 @@ impl<'a, T> VecAttr<'a, T> {
                 match meta {
                     syn::NestedMeta::Lit(lit) => match parse_literal(lit) {
                         Ok(value) => self.insert(value),
-                        Err(ty) => self.context.error(
+                        Err(ty) => self.ctx.error(
                             lit,
                             format!("expected `{}` attribute to be a list of {}", self.name, ty),
                         ),
                     },
 
-                    _ => self.context.error(
+                    _ => self.ctx.error(
                         meta,
                         format!("expected `{}` attribute to be a literal", self.name),
                     ),
@@ -157,7 +157,7 @@ impl<'a, T> VecAttr<'a, T> {
     }
 }
 
-impl<T, E> VecAttr<'_, T>
+impl<T, E> VecAttribute<'_, T>
 where
     T: FromStr<Err = E>,
     E: fmt::Display,
@@ -170,63 +170,53 @@ where
     }
 }
 
-pub trait AttrParse {
+pub trait AttributeParse {
     fn parse(
         self,
-        context: &Context,
+        ctx: &Context,
         error_on_unknown: bool,
         should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs;
 }
 
-impl AttrParse for syn::AttributeArgs {
+impl AttributeParse for syn::AttributeArgs {
     fn parse(
         self,
-        context: &Context,
+        ctx: &Context,
         error_on_unknown: bool,
         mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
         let mut unknown = Vec::new();
 
         for meta in self {
-            unknown.extend(parse_meta(
-                meta,
-                context,
-                error_on_unknown,
-                &mut should_accept,
-            ));
+            unknown.extend(parse_meta(meta, ctx, error_on_unknown, &mut should_accept));
         }
 
         unknown
     }
 }
 
-impl AttrParse for syn::punctuated::Punctuated<syn::NestedMeta, syn::Token![,]> {
+impl AttributeParse for syn::punctuated::Punctuated<syn::NestedMeta, syn::Token![,]> {
     fn parse(
         self,
-        context: &Context,
+        ctx: &Context,
         error_on_unknown: bool,
         mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
         let mut unknown = Vec::new();
 
         for meta in self {
-            unknown.extend(parse_meta(
-                meta,
-                context,
-                error_on_unknown,
-                &mut should_accept,
-            ));
+            unknown.extend(parse_meta(meta, ctx, error_on_unknown, &mut should_accept));
         }
 
         unknown
     }
 }
 
-impl AttrParse for &mut Vec<syn::Attribute> {
+impl AttributeParse for &mut Vec<syn::Attribute> {
     fn parse(
         self,
-        context: &Context,
+        ctx: &Context,
         error_on_unknown: bool,
         mut should_accept: impl FnMut(&syn::Meta) -> bool,
     ) -> syn::AttributeArgs {
@@ -240,13 +230,13 @@ impl AttrParse for &mut Vec<syn::Attribute> {
 
             match attr.parse_meta() {
                 Ok(syn::Meta::List(meta)) => unknown.extend(meta.nested.parse(
-                    context,
+                    ctx,
                     error_on_unknown,
                     |meta| should_accept(meta),
                 )),
 
-                Ok(other) => context.error(other, "expected #[steit(...)]"),
-                Err(error) => context.syn_error(error),
+                Ok(other) => ctx.error(other, "expected #[steit(...)]"),
+                Err(error) => ctx.syn_error(error),
             };
 
             false
@@ -258,7 +248,7 @@ impl AttrParse for &mut Vec<syn::Attribute> {
 
 fn parse_meta(
     meta: syn::NestedMeta,
-    context: &Context,
+    ctx: &Context,
     error_on_unknown: bool,
     should_accept: &mut impl FnMut(&syn::Meta) -> bool,
 ) -> Option<syn::NestedMeta> {
@@ -268,13 +258,13 @@ fn parse_meta(
         syn::NestedMeta::Meta(item) => {
             if error_on_unknown {
                 let path = item.path().to_token_stream().to_string().replace(' ', "");
-                context.error(item.path(), format!("unknown steit attribute `{}`", path));
+                ctx.error(item.path(), format!("unknown steit attribute `{}`", path));
             }
         }
 
         syn::NestedMeta::Lit(lit) => {
             if error_on_unknown {
-                context.error(&lit, "unexpected literal in steit attributes");
+                ctx.error(&lit, "unexpected literal in steit attributes");
             }
         }
     }

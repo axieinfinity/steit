@@ -4,8 +4,8 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse},
-    context::Context,
+    attr::{Attribute, AttributeParse},
+    ctx::Context,
 };
 
 use super::{
@@ -21,12 +21,12 @@ struct FieldAttrs {
 }
 
 impl FieldAttrs {
-    pub fn parse(context: &Context, field: &mut syn::Field) -> derive::Result<Self> {
-        let mut tag = Attr::new(context, "tag");
-        let mut no_state = Attr::new(context, "no_state");
-        let mut csharp_name = Attr::new(context, "csharp_name");
+    pub fn parse(ctx: &Context, field: &mut syn::Field) -> derive::Result<Self> {
+        let mut tag = Attribute::new(ctx, "tag");
+        let mut no_state = Attribute::new(ctx, "no_state");
+        let mut csharp_name = Attribute::new(ctx, "csharp_name");
 
-        (&mut field.attrs).parse(context, true, |meta| match meta {
+        (&mut field.attrs).parse(ctx, true, |meta| match meta {
             syn::Meta::NameValue(meta) if tag.parse_int(meta) => true,
 
             syn::Meta::Path(path) if no_state.parse_path(path) => true,
@@ -39,10 +39,10 @@ impl FieldAttrs {
 
         let (tag, tag_tokens) = tag
             .get_with_tokens()
-            .ok_or_else(|| context.error(field, "expected a valid tag #[steit(tag = …)]"))?;
+            .ok_or_else(|| ctx.error(field, "expected a valid tag #[steit(tag = …)]"))?;
 
         tag::validate(tag).map_err(|message| {
-            context.error(&tag_tokens, message);
+            ctx.error(&tag_tokens, message);
             ()
         })?;
 
@@ -145,11 +145,11 @@ impl<'a> Deref for DeriveField<'a> {
 impl<'a> DeriveField<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
-        context: &Context,
+        ctx: &Context,
         field: &mut syn::Field,
         index: usize,
     ) -> derive::Result<Self> {
-        let attrs = FieldAttrs::parse(context, field)?;
+        let attrs = FieldAttrs::parse(ctx, field)?;
         let field = Field::from_field(field, index);
 
         Ok(Self {

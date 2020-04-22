@@ -4,9 +4,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{Attr, AttrParse, VecAttr},
-    context::Context,
-    impler::Impler,
+    attr::{Attribute, AttributeParse, VecAttribute},
+    ctx::Context,
+    r#impl::Implementer,
 };
 
 use super::{
@@ -22,12 +22,12 @@ struct StructAttrs {
 }
 
 impl StructAttrs {
-    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
-        let mut size_cache_renamed = Attr::new(context, "size_cache_renamed");
-        let mut runtime_renamed = Attr::new(context, "runtime_renamed");
-        let mut reserved = VecAttr::new(context, "reserved");
+    pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
+        let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
+        let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
+        let mut reserved = VecAttribute::new(ctx, "reserved");
 
-        attrs.parse(context, true, |meta| match meta {
+        attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
@@ -54,8 +54,8 @@ macro_rules! map_fields {
 
 pub struct Struct<'a> {
     setting: &'a DeriveSetting,
-    context: &'a Context,
-    impler: &'a Impler<'a>,
+    ctx: &'a Context,
+    impler: &'a Implementer<'a>,
     fields: Vec<Field<'a>>,
     size_cache: Option<ExtraField>,
     runtime: Option<ExtraField>,
@@ -65,23 +65,23 @@ pub struct Struct<'a> {
 impl<'a> Struct<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
-        context: &'a Context,
-        impler: &'a Impler<'a>,
-        attrs: impl AttrParse,
+        ctx: &'a Context,
+        impler: &'a Implementer<'a>,
+        attrs: impl AttributeParse,
         fields: &'a mut syn::Fields,
         named_hint: Option<bool>,
         variant: impl Into<Option<Variant>>,
     ) -> derive::Result<Self> {
-        let attrs = StructAttrs::parse(context, attrs);
+        let attrs = StructAttrs::parse(ctx, attrs);
 
-        Self::parse_fields(setting, context, &attrs, fields).and_then(|parsed| {
+        Self::parse_fields(setting, ctx, &attrs, fields).and_then(|parsed| {
             let mut index = parsed.len();
 
             let size_cache = if setting.size_cache() {
                 let krate = setting.krate();
 
                 Some(Self::add_field(
-                    context,
+                    ctx,
                     fields,
                     named_hint,
                     attrs.size_cache_renamed,
@@ -94,7 +94,7 @@ impl<'a> Struct<'a> {
                 ))
             } else {
                 if let Some((_, tokens)) = &attrs.runtime_renamed {
-                    context.error(
+                    ctx.error(
                         tokens,
                         "this has no effect because #[steit(no_size_cache)] was set",
                     );
@@ -107,7 +107,7 @@ impl<'a> Struct<'a> {
                 let krate = setting.krate();
 
                 Some(Self::add_field(
-                    context,
+                    ctx,
                     fields,
                     named_hint,
                     attrs.runtime_renamed,
@@ -120,7 +120,7 @@ impl<'a> Struct<'a> {
                 ))
             } else {
                 if let Some((_, tokens)) = &attrs.runtime_renamed {
-                    context.error(
+                    ctx.error(
                         tokens,
                         "this has no effect because the current object is not a `State`",
                     );
@@ -131,7 +131,7 @@ impl<'a> Struct<'a> {
 
             Ok(Self {
                 setting,
-                context,
+                ctx,
                 impler,
                 fields: parsed,
                 size_cache,
@@ -143,7 +143,7 @@ impl<'a> Struct<'a> {
 
     fn parse_fields(
         setting: &'a DeriveSetting,
-        context: &Context,
+        ctx: &Context,
         attrs: &StructAttrs,
         fields: &mut syn::Fields,
     ) -> derive::Result<Vec<Field<'a>>> {
@@ -151,7 +151,7 @@ impl<'a> Struct<'a> {
         let mut parsed = Vec::with_capacity(len);
 
         for (index, field) in fields.iter_mut().enumerate() {
-            if let Ok(field) = Field::parse(setting, context, field, index) {
+            if let Ok(field) = Field::parse(setting, ctx, field, index) {
                 parsed.push(field);
             }
         }
@@ -168,11 +168,11 @@ impl<'a> Struct<'a> {
             let (tag, tokens) = field.tag_with_tokens();
 
             if reserved.contains(&tag) {
-                context.error(tokens, format!("tag {} has been reserved", tag));
+                ctx.error(tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
-                context.error(tokens, "duplicate tag");
+                ctx.error(tokens, "duplicate tag");
                 unique = false;
             }
         }
@@ -185,7 +185,7 @@ impl<'a> Struct<'a> {
     }
 
     fn add_field(
-        context: &Context,
+        ctx: &Context,
         fields: &mut syn::Fields,
         named_hint: Option<bool>,
         renamed: Option<(String, TokenStream)>,
@@ -216,7 +216,7 @@ impl<'a> Struct<'a> {
 
             syn::Fields::Unnamed(fields) => {
                 if let Some((name, _)) = renamed {
-                    context.error(
+                    ctx.error(
                         &fields,
                         format!(
                             "unexpected {} on unnamed fields",
@@ -567,11 +567,11 @@ impl<'a> ToTokens for Struct<'a> {
             panic!("unexpected variant");
         }
 
-        if self.setting.ctors(self.context, false) {
+        if self.setting.ctors(self.ctx, false) {
             tokens.extend(self.impl_ctor());
         }
 
-        if self.setting.setters(self.context) {
+        if self.setting.setters(self.ctx) {
             tokens.extend(self.impl_setters());
         }
 

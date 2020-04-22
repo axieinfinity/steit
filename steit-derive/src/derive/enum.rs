@@ -4,9 +4,9 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{AttrParse, VecAttr},
-    context::Context,
-    impler::Impler,
+    attr::{AttributeParse, VecAttribute},
+    ctx::Context,
+    r#impl::Implementer,
 };
 
 use super::{
@@ -20,10 +20,10 @@ struct EnumAttrs {
 }
 
 impl EnumAttrs {
-    pub fn parse(context: &Context, attrs: impl AttrParse) -> Self {
-        let mut reserved = VecAttr::new(context, "reserved");
+    pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
+        let mut reserved = VecAttribute::new(ctx, "reserved");
 
-        attrs.parse(context, true, |meta| match meta {
+        attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
             _ => false,
         });
@@ -36,39 +36,37 @@ impl EnumAttrs {
 
 pub struct Enum<'a> {
     setting: &'a DeriveSetting,
-    context: &'a Context,
-    impler: &'a Impler<'a>,
+    ctx: &'a Context,
+    impler: &'a Implementer<'a>,
     variants: Vec<Struct<'a>>,
 }
 
 impl<'a> Enum<'a> {
     pub fn parse(
         setting: &'a DeriveSetting,
-        context: &'a Context,
-        impler: &'a Impler,
-        attrs: impl AttrParse,
+        ctx: &'a Context,
+        impler: &'a Implementer,
+        attrs: impl AttributeParse,
         data: &'a mut syn::DataEnum,
     ) -> derive::Result<Self> {
         if data.variants.is_empty() {
-            context.error(&data.variants, "cannot derive for enums with zero variants");
+            ctx.error(&data.variants, "cannot derive for enums with zero variants");
             return Err(());
         }
 
-        Self::parse_variants(setting, context, impler, attrs, &mut data.variants).map(|variants| {
-            Self {
-                setting,
-                context,
-                impler,
-                variants,
-            }
+        Self::parse_variants(setting, ctx, impler, attrs, &mut data.variants).map(|variants| Self {
+            setting,
+            ctx,
+            impler,
+            variants,
         })
     }
 
     fn parse_variants(
         setting: &'a DeriveSetting,
-        context: &'a Context,
-        impler: &'a Impler,
-        attrs: impl AttrParse,
+        ctx: &'a Context,
+        impler: &'a Implementer,
+        attrs: impl AttributeParse,
         variants: &'a mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Vec<Struct<'a>>> {
         let len = variants.iter().len();
@@ -76,15 +74,15 @@ impl<'a> Enum<'a> {
 
         for variant in variants.iter() {
             if variant.discriminant.is_some() {
-                context.error(&variants, "cannot derive for enums with discriminants");
+                ctx.error(&variants, "cannot derive for enums with discriminants");
                 return Err(());
             }
         }
 
-        let attrs = EnumAttrs::parse(context, attrs);
+        let attrs = EnumAttrs::parse(ctx, attrs);
 
         for variant in variants.iter_mut() {
-            if let Ok((parsed, unknown_attrs)) = Variant::parse(context, variant) {
+            if let Ok((parsed, unknown_attrs)) = Variant::parse(ctx, variant) {
                 parsed_data.push((parsed, unknown_attrs, &mut variant.fields));
             }
         }
@@ -102,11 +100,11 @@ impl<'a> Enum<'a> {
             let (tag, tokens) = variant.tag_with_tokens();
 
             if reserved.contains(&tag) {
-                context.error(tokens, format!("tag {} has been reserved", tag));
+                ctx.error(tokens, format!("tag {} has been reserved", tag));
             }
 
             if !tags.insert(tag) {
-                context.error(tokens, "duplicate tag");
+                ctx.error(tokens, "duplicate tag");
                 unique = false;
             }
 
@@ -130,7 +128,7 @@ impl<'a> Enum<'a> {
         for (variant, unknown_attrs, fields) in parsed_data {
             if let Ok(r#struct) = Struct::parse(
                 setting,
-                context,
+                ctx,
                 impler,
                 unknown_attrs,
                 fields,
@@ -194,7 +192,7 @@ impl<'a> Enum<'a> {
                 }
             } else {
                 if self.setting.default() {
-                    self.context.error(
+                    self.ctx.error(
                         self.impler.name(),
                         "expected a variant with tag 0 as the default variant of this enum",
                     );
@@ -569,11 +567,11 @@ impl<'a> Enum<'a> {
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        if self.setting.ctors(self.context, true) {
+        if self.setting.ctors(self.ctx, true) {
             tokens.extend(self.impl_ctors());
         }
 
-        if self.setting.setters(self.context) {
+        if self.setting.setters(self.ctx) {
             tokens.extend(self.impl_setters());
         }
 
