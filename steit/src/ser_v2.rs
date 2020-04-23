@@ -91,6 +91,12 @@ pub trait SerializeV2: HasWireType {
 
         self.serialize_cached(writer)
     }
+
+    fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+        self.serialize(&mut bytes).unwrap();
+        bytes
+    }
 }
 
 pub trait SerializePrimitive: PartialEq + Default + HasWireType {
