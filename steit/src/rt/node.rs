@@ -151,7 +151,7 @@ mod tests {
     }
 
     #[test]
-    fn size_cache() {
+    fn cached_size() {
         let node = node(vec![0, 1337, 0, 1]);
         assert_eq!(node.cached_size(), 0);
         assert_eq!(node.compute_size(), 5);

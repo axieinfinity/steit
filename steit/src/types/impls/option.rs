@@ -53,7 +53,7 @@ mod tests {
     };
 
     #[test]
-    fn size_cache() {
+    fn cached_size() {
         let value = Some(Foo::with(-1, 0));
         assert_eq!(value.as_ref().unwrap().cached_size(), 0);
         assert_eq!(value.cached_size(), 3);
