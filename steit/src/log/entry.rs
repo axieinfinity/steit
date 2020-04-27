@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::{node::Node, types::Bytes, Serialize, SizeCache};
+use crate::{types::Bytes, Node, Serialize, SizeCache};
 
 // `path` is put in each variant and `Entry` is flattened to save some serialization size.
 #[crate::steitize(Serialize, own_crate, no_ctors, no_setters)]
