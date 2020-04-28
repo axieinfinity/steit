@@ -216,7 +216,7 @@ impl<'a> DeriveField<'a> {
     pub fn init_default(&self) -> TokenStream {
         self.init(if self.is_state() {
             let tag = self.tag();
-            quote!(State::with_runtime(runtime.nested(#tag as u16)))
+            quote!(StateV2::with_runtime_v2(runtime.nested(#tag)))
         } else {
             quote!(Default::default())
         })
@@ -268,7 +268,7 @@ impl<'a> DeriveField<'a> {
         if self.is_state() {
             let tag = self.tag();
             let field = self.field(is_variant);
-            Some(quote! { #field.set_runtime(runtime.nested(#tag as u16)); })
+            Some(quote! { #field.set_runtime_v2(runtime.nested(#tag)); })
         } else {
             None
         }

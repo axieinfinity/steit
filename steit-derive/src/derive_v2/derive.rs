@@ -195,7 +195,7 @@ fn wrap_in_const(setting: &DeriveSetting, name: &syn::Ident, tokens: TokenStream
 
             use #krate::{
                 de_v2::{DeserializeV2, Reader},
-                rt::{Runtime, SizeCache},
+                rt::{RuntimeV2, SizeCache},
                 ser_v2::SerializeV2,
                 state_v2::StateV2,
                 wire_fmt::{HasWireType, WireTypeV2},

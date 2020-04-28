@@ -2,23 +2,24 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
+    impl_state_primitive,
     ser_v2::SerializePrimitive,
     wire_fmt::{HasWireType, WireTypeV2},
 };
 
 macro_rules! impl_unsigned_varint {
     (u64) => (impl_unsigned_varint!(@impl u64, size_64, i64););
-    ($t:ty) => (impl_unsigned_varint!(@impl $t, size_32, i32););
+    ($type:ty) => (impl_unsigned_varint!(@impl $type, size_32, i32););
 
-    (@impl $t:ty, $size_fn:ident, $size_t:ty) => {
-        impl HasWireType for $t {
+    (@impl $type:ty, $size_fn:ident, $size_type:ty) => {
+        impl HasWireType for $type {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
 
-        impl SerializePrimitive for $t {
+        impl SerializePrimitive for $type {
             #[inline]
             fn compute_size(&self) -> u32 {
-                $size_fn(*self as $size_t)
+                $size_fn(*self as $size_type)
             }
 
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
@@ -35,7 +36,7 @@ macro_rules! impl_unsigned_varint {
             }
         }
 
-        impl DeserializeV2 for $t {
+        impl DeserializeV2 for $type {
             fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                 let mut value = 0;
 
@@ -44,7 +45,7 @@ macro_rules! impl_unsigned_varint {
 
                 loop {
                     reader.read_exact(&mut buf)?;
-                    value |= (buf[0] & 0x7f) as $t << offset;
+                    value |= (buf[0] & 0x7f) as $type << offset;
 
                     if buf[0] & 0x80 == 0 {
                         *self = value;
@@ -55,6 +56,8 @@ macro_rules! impl_unsigned_varint {
                 }
             }
         }
+
+        impl_state_primitive!($type);
     };
 }
 
@@ -64,38 +67,40 @@ impl_unsigned_varint!(u32);
 impl_unsigned_varint!(u64);
 
 macro_rules! impl_signed_varint {
-    ($t:ty, $ut:ty) => {
-        impl HasWireType for $t {
+    ($type:ty, $unsigned_type:ty) => {
+        impl HasWireType for $type {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
 
-        impl SerializePrimitive for $t {
+        impl SerializePrimitive for $type {
             #[inline]
             fn compute_size(&self) -> u32 {
-                (impl_signed_varint!(@encode self, $t) as $ut).compute_size()
+                (impl_signed_varint!(@encode self, $type) as $unsigned_type).compute_size()
             }
 
             #[inline]
             fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                (impl_signed_varint!(@encode self, $t) as $ut).serialize(writer)
+                (impl_signed_varint!(@encode self, $type) as $unsigned_type).serialize(writer)
             }
         }
 
-        impl DeserializeV2 for $t {
+        impl DeserializeV2 for $type {
             #[inline]
             fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
-                let encoded = <$ut>::deserialize_v2(reader)? as $t;
+                let encoded = <$unsigned_type>::deserialize_v2(reader)? as $type;
                 *self = impl_signed_varint!(@decode encoded);
                 Ok(())
             }
         }
+
+        impl_state_primitive!($type);
     };
 
     // More about Zigzag encoding can be found at:
     // https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
 
-    (@encode $value:ident, $t:ty) => {
-        ($value << 1) ^ ($value >> ((std::mem::size_of::<$t>() << 3) - 1))
+    (@encode $value:ident, $type:ty) => {
+        ($value << 1) ^ ($value >> ((std::mem::size_of::<$type>() << 3) - 1))
     };
 
     (@decode $value:ident) => {

@@ -110,7 +110,7 @@ impl<'a> Struct<'a> {
                     .runtime_renamed
                     .or(setting.runtime_renamed.clone())
                     .map_or("runtime".to_owned(), |(name, _)| name),
-                syn::parse_quote!(#krate::rt::Runtime),
+                syn::parse_quote!(#krate::rt::RuntimeV2),
                 {
                     field_index += 1;
                     field_index - 1
@@ -182,10 +182,10 @@ impl<'a> Struct<'a> {
             inits.push(runtime.init(quote!(runtime)));
 
             (
-                Some(quote!(runtime: Runtime)),
+                Some(quote!(runtime: RuntimeV2)),
                 self.variant().map(|variant| {
                     let tag = variant.tag();
-                    quote! { let runtime = runtime.nested(#tag as u16); }
+                    quote! { let runtime = runtime.nested(#tag); }
                 }),
             )
         } else {
@@ -235,7 +235,7 @@ impl<'a> Struct<'a> {
 
     fn impl_default(&self) -> TokenStream {
         let args = if self.setting.impl_state() {
-            Some(quote!(Runtime::default()))
+            Some(quote!(RuntimeV2::default()))
         } else {
             None
         };
@@ -383,16 +383,16 @@ impl<'a> Struct<'a> {
             "StateV2",
             quote! {
                 #[inline]
-                fn with_runtime(runtime: Runtime) -> Self {
+                fn with_runtime_v2(runtime: RuntimeV2) -> Self {
                     Self::new(runtime)
                 }
 
                 #[inline]
-                fn runtime(&self) -> &Runtime {
+                fn runtime_v2(&self) -> &RuntimeV2 {
                     &#runtime
                 }
 
-                fn set_runtime(&mut self, runtime: Runtime) {
+                fn set_runtime_v2(&mut self, runtime: RuntimeV2) {
                     #runtime_setter
                 }
             },

@@ -2,6 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
+    impl_state_primitive,
     ser_v2::SerializePrimitive,
     wire_fmt::{HasWireType, WireTypeV2},
 };
@@ -39,6 +40,8 @@ impl DeserializeV2 for bool {
         }
     }
 }
+
+impl_state_primitive!(bool);
 
 #[cfg(test)]
 mod tests {

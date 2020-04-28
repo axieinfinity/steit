@@ -84,7 +84,7 @@ impl<'a> Enum<'a> {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
         let (default_ctor_params, default_ctor_args) = if self.setting.impl_state() {
-            (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
+            (Some(quote!(runtime: RuntimeV2)), Some(quote!(runtime)))
         } else {
             Default::default()
         };
@@ -147,7 +147,7 @@ impl<'a> Enum<'a> {
 
     fn impl_default(&self) -> TokenStream {
         let args = if self.setting.impl_state() {
-            Some(quote!(Runtime::default()))
+            Some(quote!(RuntimeV2::default()))
         } else {
             None
         };
@@ -281,7 +281,7 @@ impl<'a> Enum<'a> {
             let ctor_name = variant.ctor_name();
 
             let args = if self.setting.impl_state() {
-                Some(quote!(self.runtime().parent()))
+                Some(quote!(self.runtime_v2().parent()))
             } else {
                 None
             };
@@ -354,7 +354,7 @@ impl<'a> Enum<'a> {
 
             quote! {
                 #name #qual { #destructure #runtime_destructure, .. } => {
-                    let runtime = runtime.nested(#tag as u16);
+                    let runtime = runtime.nested(#tag);
                     #runtime_setter
                 }
             }
@@ -364,15 +364,15 @@ impl<'a> Enum<'a> {
             "StateV2",
             quote! {
                 #[inline]
-                fn with_runtime(runtime: Runtime) -> Self {
+                fn with_runtime_v2(runtime: RuntimeV2) -> Self {
                     Self::empty(runtime)
                 }
 
-                fn runtime(&self) -> &Runtime {
+                fn runtime_v2(&self) -> &RuntimeV2 {
                     match self { #(#runtimes,)* }
                 }
 
-                fn set_runtime(&mut self, runtime: Runtime) {
+                fn set_runtime_v2(&mut self, runtime: RuntimeV2) {
                     match self { #(#runtime_setters)* }
                 }
             },
