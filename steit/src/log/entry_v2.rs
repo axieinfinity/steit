@@ -9,39 +9,39 @@ use crate::{
 #[steit_derive(Debug, Serialize, Deserialize)]
 #[steit(steit_owned)]
 pub enum LogEntryV2 {
-    #[steit(tag = 1, default)]
+    #[steit(tag = 0, default)]
     Update {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         path: Vec<u32>,
-        #[steit(tag = 2)]
+        #[steit(tag = 1)]
         value: BytesV2,
     },
     #[steit(tag = 8)]
     ListPush {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         path: Vec<u32>,
-        #[steit(tag = 2)]
+        #[steit(tag = 1)]
         item: BytesV2,
     },
     #[steit(tag = 9)]
     ListPop {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         path: Vec<u32>,
     },
     #[steit(tag = 12)]
     MapInsert {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         path: Vec<u32>,
-        #[steit(tag = 2)]
+        #[steit(tag = 1)]
         key: BytesV2,
-        #[steit(tag = 3)]
+        #[steit(tag = 2)]
         value: BytesV2,
     },
     #[steit(tag = 13)]
     MapRemove {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         path: Vec<u32>,
-        #[steit(tag = 2)]
+        #[steit(tag = 1)]
         key: BytesV2,
     },
 }

@@ -253,33 +253,33 @@ mod tests {
 
     #[steit_derive(State, Debug)]
     enum Foo {
-        #[steit(tag = 1, default)]
+        #[steit(tag = 0, default)]
         FirstCase {
-            #[steit(tag = 1)]
+            #[steit(tag = 0)]
             counter: i32,
-            #[steit(tag = 2)]
+            #[steit(tag = 1)]
+            enabled: bool,
+        },
+        #[steit(tag = 1)]
+        SecondCase {
+            #[steit(tag = 0)]
+            counter: i32,
+            #[steit(tag = 1)]
             enabled: bool,
         },
         #[steit(tag = 2)]
-        SecondCase {
-            #[steit(tag = 1)]
-            counter: i32,
-            #[steit(tag = 2)]
-            enabled: bool,
-        },
-        #[steit(tag = 3)]
         ThirdCase {},
-        #[steit(tag = 4)]
+        #[steit(tag = 3)]
         FourthCase(),
-        #[steit(tag = 5)]
+        #[steit(tag = 4)]
         FifthCase,
     }
 
     #[steit_derive(Debug)]
     struct Bar {
-        #[steit(tag = 1)]
+        #[steit(tag = 0)]
         counter: i32,
-        #[steit(tag = 2)]
+        #[steit(tag = 1)]
         enabled: bool,
     }
 }

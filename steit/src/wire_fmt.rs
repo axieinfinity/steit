@@ -53,13 +53,6 @@ pub trait HasWireType {
 }
 
 fn validate_field_number(field_number: u32) -> io::Result<()> {
-    if field_number == 0 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "field number must not be 0",
-        ));
-    }
-
     if field_number > FIELD_NUMBER_MAX {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
