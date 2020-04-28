@@ -144,7 +144,7 @@ impl<'a> Struct<'a> {
 
     fn trait_bounds(&self, fallback: &'static [&str]) -> &[&str] {
         if self.setting.impl_state() {
-            &["State"]
+            &["StateV2"]
         } else {
             fallback
         }
@@ -204,6 +204,23 @@ impl<'a> Struct<'a> {
     fn impl_ctor(&self) -> TokenStream {
         self.impler
             .impl_with(self.trait_bounds(&["Default"]), self.ctor())
+    }
+
+    pub fn setters(&self) -> TokenStream {
+        let name = self.impler.name();
+        let setters = map_fields!(self, _.setter(name, self.variant()));
+        quote!(#(#setters)*)
+    }
+
+    fn impl_setters(&self) -> TokenStream {
+        self.impler.impl_with(
+            self.trait_bounds(if self.variant.is_some() {
+                &["Default"]
+            } else {
+                &[]
+            }),
+            self.setters(),
+        )
     }
 
     pub fn eq(&self) -> TokenStream {
@@ -461,6 +478,7 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctor());
+        tokens.extend(self.impl_setters());
         tokens.extend(self.impl_eq());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_hash());

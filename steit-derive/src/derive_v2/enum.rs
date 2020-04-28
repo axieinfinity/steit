@@ -74,7 +74,7 @@ impl<'a> Enum<'a> {
 
     fn trait_bounds(&self, fallback: &'static [&str]) -> &[&str] {
         if self.setting.impl_state() {
-            &["State"]
+            &["StateV2"]
         } else {
             fallback
         }
@@ -107,6 +107,13 @@ impl<'a> Enum<'a> {
                 #(#ctors)*
             },
         )
+    }
+
+    fn impl_setters(&self) -> TokenStream {
+        let setters = self.variants.iter().map(|r#struct| r#struct.setters());
+
+        self.impler
+            .impl_with(self.trait_bounds(&["Default"]), quote!(#(#setters)*))
     }
 
     fn impl_eq(&self) -> TokenStream {
@@ -457,6 +464,7 @@ fn parse_variants<'a>(
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctors());
+        tokens.extend(self.impl_setters());
         tokens.extend(self.impl_eq());
         tokens.extend(self.impl_default());
         tokens.extend(self.impl_hash());

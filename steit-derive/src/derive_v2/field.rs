@@ -11,6 +11,7 @@ use crate::{
 use super::{
     derive::{self, DeriveSetting},
     tag,
+    variant::Variant,
 };
 
 struct FieldAttrs {
@@ -220,6 +221,99 @@ impl<'a> DeriveField<'a> {
         } else {
             quote!(Default::default())
         })
+    }
+
+    pub fn setter(&self, struct_name: &syn::Ident, variant: Option<&Variant>) -> TokenStream {
+        let setter_name = self.alias_prefixed(match variant {
+            Some(variant) => format_ident!("set_{}", variant.snake_case_name()),
+            None => format_ident!("set"),
+        });
+
+        let setter_with_name = format_ident!("{}_with", setter_name);
+
+        let ty = &self.ty;
+        let tag = self.tag();
+
+        let (reset_variant, set_value) = if let Some(variant) = variant {
+            let qual = variant.qual();
+            let ctor_name = variant.ctor_name();
+
+            let destructure = self.destructure(format_ident!("self_value"));
+
+            let new_variant = if self.setting.impl_state() {
+                quote! {{
+                    let runtime = self.runtime_v2().parent();
+                    let value = Self::#ctor_name(runtime.clone());
+                    runtime.log_update(&value).unwrap();
+                    value
+                }}
+            } else {
+                quote!(Self::#ctor_name())
+            };
+
+            (
+                Some(quote! {
+                    if let #struct_name #qual { .. } = self {
+                    } else {
+                        *self = #new_variant;
+                    }
+                }),
+                quote! {
+                    if let #struct_name #qual { #destructure, .. } = self {
+                        *self_value = value;
+                    }
+                },
+            )
+        } else {
+            let field = self.field(false);
+            (None, quote! { #field = value; })
+        };
+
+        let (setter, setter_with) = if self.is_state() {
+            let declare_runtime = quote! { let runtime = self.runtime_v2(); };
+            let log_update = quote! { runtime.log_update_child(#tag, &value).unwrap(); };
+
+            (
+                quote! {
+                    pub fn #setter_name(&mut self, mut value: #ty) -> &mut Self {
+                        #reset_variant
+                        #declare_runtime
+                        value.set_runtime_v2(runtime.nested(#tag));
+                        #log_update
+                        #set_value
+                        self
+                    }
+                },
+                Some(quote! {
+                    pub fn #setter_with_name(&mut self, get_value: impl FnOnce(RuntimeV2) -> #ty) -> &mut Self {
+                        #reset_variant
+                        #declare_runtime
+                        runtime.pause_logger();
+                        let value = get_value(runtime.nested(#tag));
+                        runtime.unpause_logger();
+                        #log_update
+                        #set_value
+                        self
+                    }
+                }),
+            )
+        } else {
+            (
+                quote! {
+                    pub fn #setter_name(&mut self, value: #ty) -> &mut Self {
+                        #reset_variant
+                        #set_value
+                        self
+                    }
+                },
+                None,
+            )
+        };
+
+        quote! {
+            #setter
+            #setter_with
+        }
     }
 
     pub fn eq(&self, is_variant: bool) -> Option<TokenStream> {
