@@ -16,7 +16,7 @@ macro_rules! tuple_impls {
         }
 
         impl<$($name: SerializeV2),+> SerializeV2 for ($($name),+) {
-            fn compute_size(&self) -> u32 {
+            fn compute_size_v2(&self) -> u32 {
                 let ($($name),+) = self;
                 let mut size = 0;
                 $(size += $name.compute_size_nested_v2(None, false).unwrap();)+

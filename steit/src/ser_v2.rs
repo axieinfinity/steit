@@ -6,14 +6,14 @@ use super::{
 };
 
 pub trait SerializeV2: HasWireType {
-    fn compute_size(&self) -> u32;
+    fn compute_size_v2(&self) -> u32;
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()>;
 
     fn size_cache(&self) -> Option<&SizeCache>;
 
     #[inline]
     fn cache_size(&self) -> u32 {
-        let size = self.compute_size();
+        let size = self.compute_size_v2();
 
         if let Some(size_cache) = self.size_cache() {
             size_cache.set(size);
@@ -26,19 +26,19 @@ pub trait SerializeV2: HasWireType {
     fn cached_size(&self) -> u32 {
         match self.size_cache() {
             Some(size_cache) => size_cache.get(),
-            None => self.compute_size(),
+            None => self.compute_size_v2(),
         }
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_v2(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.cache_size();
         self.serialize_cached(writer)
     }
 
     #[inline]
     fn is_omissible(&self) -> bool {
-        self.compute_size() == 0
+        self.compute_size_v2() == 0
     }
 
     #[inline]
@@ -94,7 +94,7 @@ pub trait SerializeV2: HasWireType {
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        self.serialize(&mut bytes).unwrap();
+        self.serialize_v2(&mut bytes).unwrap();
         bytes
     }
 }
@@ -106,7 +106,7 @@ pub trait SerializePrimitive: PartialEq + Default + HasWireType {
 
 impl<T: SerializePrimitive> SerializeV2 for T {
     #[inline]
-    fn compute_size(&self) -> u32 {
+    fn compute_size_v2(&self) -> u32 {
         SerializePrimitive::compute_size(self)
     }
 
@@ -131,7 +131,7 @@ impl<T: SerializePrimitive> SerializeV2 for T {
     }
 
     #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn serialize_v2(&self, writer: &mut impl io::Write) -> io::Result<()> {
         SerializePrimitive::serialize(self, writer)
     }
 

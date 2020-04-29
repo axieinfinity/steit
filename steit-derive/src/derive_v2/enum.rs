@@ -260,7 +260,7 @@ impl<'a> Enum<'a> {
         self.impler.impl_for(
             "SerializeV2",
             quote! {
-                fn compute_size(&self) -> u32 {
+                fn compute_size_v2(&self) -> u32 {
                     let mut size = 0;
                     match self { #(#sizers)* }
                     size

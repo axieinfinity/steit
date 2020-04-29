@@ -324,7 +324,7 @@ impl<'a> Struct<'a> {
         self.impler.impl_for(
             "SerializeV2",
             quote! {
-                fn compute_size(&self) -> u32 {
+                fn compute_size_v2(&self) -> u32 {
                     let mut size = 0;
                     #sizer
                     size
@@ -401,7 +401,7 @@ impl<'a> Struct<'a> {
             quote! {
                 #[inline]
                 fn with_runtime_v2(runtime: RuntimeV2) -> Self {
-                    Self::new(runtime)
+                    Self::empty(runtime)
                 }
 
                 #[inline]

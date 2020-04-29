@@ -22,7 +22,7 @@ impl BytesV2 {
     #[inline]
     pub fn from_value(value: &impl SerializeV2) -> Self {
         let mut bytes = Vec::new();
-        value.serialize(&mut bytes).unwrap();
+        value.serialize_v2(&mut bytes).unwrap();
         Self(bytes)
     }
 
@@ -45,7 +45,7 @@ impl HasWireType for BytesV2 {
 
 impl SerializeV2 for BytesV2 {
     #[inline]
-    fn compute_size(&self) -> u32 {
+    fn compute_size_v2(&self) -> u32 {
         self.0.len() as u32
     }
 

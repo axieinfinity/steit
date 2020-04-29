@@ -12,7 +12,7 @@ impl<K, V> HasWireType for HashMap<K, V> {
 }
 
 impl<K: SerializeV2, V: SerializeV2> SerializeV2 for HashMap<K, V> {
-    fn compute_size(&self) -> u32 {
+    fn compute_size_v2(&self) -> u32 {
         let mut size = 0;
 
         for (key, value) in self {

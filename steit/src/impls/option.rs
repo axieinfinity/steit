@@ -12,7 +12,7 @@ impl<T> HasWireType for Option<T> {
 }
 
 impl<T: SerializeV2> SerializeV2 for Option<T> {
-    fn compute_size(&self) -> u32 {
+    fn compute_size_v2(&self) -> u32 {
         match self {
             Some(value) => value.compute_size_nested_v2(None, false).unwrap(),
             None => 0,
