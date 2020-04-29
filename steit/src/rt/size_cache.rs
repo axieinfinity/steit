@@ -72,9 +72,7 @@ impl Eq for SizeCache {}
 
 impl Hash for SizeCache {
     #[inline]
-    fn hash<H: Hasher>(&self, _state: &mut H) {
-        // Ignore cached size in hash computation
-    }
+    fn hash<H: Hasher>(&self, _state: &mut H) {}
 }
 
 #[cfg(test)]

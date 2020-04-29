@@ -1,15 +1,19 @@
 use std::{
-    fmt, io,
+    fmt,
+    hash::{Hash, Hasher},
+    io,
     sync::{Arc, Mutex},
 };
 
 use crate::{
     log::{loggers::WriterLogger, LogEntryV2, LoggerV2},
     ser_v2::SerializeV2,
-    PausableLoggerV2,
 };
 
-use super::{logger_v2::RuntimeLoggerV2, node::Node};
+use super::{
+    logger_v2::{LoggerHandleV2, PausableLoggerV2, RuntimeLoggerV2},
+    node::Node,
+};
 
 #[derive(Clone)]
 pub struct RuntimeV2 {
@@ -42,9 +46,7 @@ impl RuntimeV2 {
     }
 
     #[inline]
-    pub fn with_logger_returned<T: LoggerV2 + 'static>(
-        logger: T,
-    ) -> (Self, Arc<Mutex<RuntimeLoggerV2<T>>>) {
+    pub fn with_logger_returned<T: LoggerV2 + 'static>(logger: T) -> (Self, LoggerHandleV2<T>) {
         let logger = Arc::new(Mutex::new(RuntimeLoggerV2::new(logger)));
 
         (
@@ -163,6 +165,10 @@ impl Default for RuntimeV2 {
     fn default() -> Self {
         Self::new()
     }
+}
+
+impl Hash for RuntimeV2 {
+    fn hash<H: Hasher>(&self, _state: &mut H) {}
 }
 
 impl fmt::Debug for RuntimeV2 {

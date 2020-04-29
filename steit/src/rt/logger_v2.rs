@@ -1,9 +1,12 @@
 use std::{
     io,
     ops::{Deref, DerefMut},
+    sync::{Arc, Mutex},
 };
 
 use crate::log::{LogEntryV2, LoggerV2};
+
+pub type LoggerHandleV2<T> = Arc<Mutex<RuntimeLoggerV2<T>>>;
 
 pub trait PausableLoggerV2: LoggerV2 {
     fn pause(&mut self) -> u32;
