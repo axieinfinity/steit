@@ -39,7 +39,7 @@ impl LoggerV2 for WriterLogger {
     #[inline]
     fn log(&mut self, entry: LogEntryV2) -> io::Result<()> {
         let mut bytes = Vec::new();
-        entry.compute_size();
+        entry.cache_size();
         entry.serialize_nested(None, false, &mut bytes)?;
         writeln!(self.writer, "{:#?} => {:?}", entry, &bytes)
     }
