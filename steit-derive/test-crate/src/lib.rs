@@ -3,8 +3,10 @@ mod tests {
     use steit::{
         gen::{generators::CSharpGenerator, *},
         log::loggers::PrintLogger,
+        rt::RuntimeV2,
+        ser_v2::SerializeV2,
         steit_derive, steitize,
-        types::{List, Map},
+        types::{List, ListV2, Map},
         Runtime, Serialize, State,
     };
 
@@ -52,6 +54,14 @@ mod tests {
         #[steit(tag = 0)]
         numbers: List<i32>,
         #[steit(tag = 1, skip_state)]
+        others: Vec<i32>,
+    }
+
+    #[steit_derive(State)]
+    struct HelloV2 {
+        #[steit(tag = 0)]
+        numbers: ListV2<i32>,
+        #[steit(tag = 1, no_state)]
         others: Vec<i32>,
     }
 
@@ -116,6 +126,23 @@ mod tests {
 
         let mut bytes = Vec::new();
         hello.serialize(&mut bytes).unwrap();
+        println!("serialized: {:?}", bytes);
+
+        let runtime = RuntimeV2::new();
+        let mut hello = HelloV2::empty(runtime);
+
+        hello
+            .set_numbers_with(|runtime| {
+                let mut list = ListV2::new(runtime);
+                list.push(1);
+                list.push(2);
+                list.push(1337);
+                list
+            })
+            .set_others(vec![-1, -2, 1337]);
+
+        let mut bytes = Vec::new();
+        hello.serialize_v2(&mut bytes).unwrap();
         println!("serialized: {:?}", bytes);
 
         println!("\nOUTER");
