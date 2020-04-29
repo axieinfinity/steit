@@ -385,6 +385,51 @@ impl<'a> Enum<'a> {
             },
         )
     }
+
+    fn impl_meta(&self) -> TokenStream {
+        let name = self.impler.name().to_string();
+        let builtin = self.setting.steit_owned;
+
+        let variants = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let tag = variant.tag();
+            let default = variant.default();
+
+            let meta = r#struct.meta();
+
+            quote! {
+                VariantV2 {
+                    ty: #meta,
+                    tag: #tag,
+                    default: #default,
+                }
+            }
+        });
+
+        self.impler.impl_for_with(
+            "HasMetaV2",
+            &["IsFieldTypeV2"],
+            quote! {
+                const META: &'static MetaV2 = &MetaV2::Enum(&EnumV2 {
+                    name: #name,
+                    variants: &[#(#variants,)*],
+                    builtin: #builtin,
+                });
+
+                const META_NAME: &'static str = #name;
+            },
+        )
+    }
+
+    fn impl_field_type(&self) -> TokenStream {
+        self.impler.impl_for(
+            "IsFieldTypeV2",
+            quote! {
+                const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::Meta(Self::META);
+                const FIELD_TYPE_REF: &'static FieldTypeV2 = &FieldTypeV2::MetaRef(Self::META_NAME);
+            },
+        )
+    }
 }
 
 fn parse_variants<'a>(
@@ -481,5 +526,8 @@ impl<'a> ToTokens for Enum<'a> {
         if self.setting.impl_state() {
             tokens.extend(self.impl_state());
         }
+
+        tokens.extend(self.impl_meta());
+        tokens.extend(self.impl_field_type());
     }
 }

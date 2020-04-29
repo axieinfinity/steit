@@ -415,6 +415,49 @@ impl<'a> Struct<'a> {
             },
         )
     }
+
+    pub fn meta(&self) -> TokenStream {
+        let name = match &self.variant {
+            Some(variant) => variant.name(),
+            None => self.impler.name(),
+        };
+
+        let name = name.to_string();
+        let fields = map_fields!(self, _.meta());
+        let builtin = self.setting.steit_owned;
+
+        quote! {
+            &StructV2 {
+                name: #name,
+                fields: &[#(#fields,)*],
+                builtin: #builtin,
+            }
+        }
+    }
+
+    fn impl_meta(&self) -> TokenStream {
+        let meta = self.meta();
+        let name = self.impler.name().to_string();
+
+        self.impler.impl_for_with(
+            "HasMetaV2",
+            &["IsFieldTypeV2"],
+            quote! {
+                const META: &'static MetaV2 = &MetaV2::Struct(#meta);
+                const META_NAME: &'static str = #name;
+            },
+        )
+    }
+
+    fn impl_field_type(&self) -> TokenStream {
+        self.impler.impl_for(
+            "IsFieldTypeV2",
+            quote! {
+                const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::Meta(Self::META);
+                const FIELD_TYPE_REF: &'static FieldTypeV2 = &FieldTypeV2::MetaRef(Self::META_NAME);
+            },
+        )
+    }
 }
 
 fn parse_fields<'a>(
@@ -495,5 +538,8 @@ impl<'a> ToTokens for Struct<'a> {
         if self.setting.impl_state() {
             tokens.extend(self.impl_state());
         }
+
+        tokens.extend(self.impl_meta());
+        tokens.extend(self.impl_field_type());
     }
 }

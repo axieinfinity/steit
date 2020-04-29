@@ -367,4 +367,34 @@ impl<'a> DeriveField<'a> {
             None
         }
     }
+
+    pub fn meta(&self) -> TokenStream {
+        let name = self.alias().to_string();
+        let tag = self.tag();
+
+        let csharp_name = match &self.attrs.csharp_name {
+            Some(csharp_name) => quote!(Some(#csharp_name)),
+            None => quote!(None),
+        };
+
+        let ty = &self.ty;
+        let type_name = &*quote!(#ty).to_string();
+
+        let ty = match type_name {
+            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
+                quote!(&FieldTypeV2::Primitive(#type_name))
+            }
+
+            _ => quote!(<#ty as IsFieldTypeV2>::FIELD_TYPE),
+        };
+
+        quote! {
+            FieldV2 {
+                name: #name,
+                ty: #ty,
+                tag: #tag,
+                csharp_name: #csharp_name,
+            }
+        }
+    }
 }

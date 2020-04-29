@@ -2,6 +2,7 @@ use std::{error::Error, io, ops::Deref, slice};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
+    gen::{FieldTypeV2, IsFieldTypeV2},
     rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
     state_v2::StateV2,
@@ -156,6 +157,10 @@ impl<T: StateV2> StateV2 for ListV2<T> {
 
         self.runtime = runtime;
     }
+}
+
+impl<T: StateV2 + IsFieldTypeV2> IsFieldTypeV2 for ListV2<T> {
+    const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::List(T::FIELD_TYPE);
 }
 
 #[cfg(test)]

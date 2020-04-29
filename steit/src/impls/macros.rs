@@ -1,4 +1,3 @@
-#[doc(hidden)]
 #[macro_export]
 macro_rules! impl_state_primitive {
     ($type:ty) => {

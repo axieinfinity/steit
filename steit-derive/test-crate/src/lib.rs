@@ -278,7 +278,7 @@ mod tests {
         assert_eq!(b1, b2);
     }
 
-    #[steit_derive(State, Debug)]
+    #[steit_derive(Debug, State)]
     enum Foo {
         #[steit(tag = 0, default)]
         FirstCase {
@@ -302,7 +302,7 @@ mod tests {
         FifthCase,
     }
 
-    #[steit_derive(Debug)]
+    #[steit_derive(Debug, Serialize, Deserialize)]
     struct Bar {
         #[steit(tag = 0)]
         counter: i32,

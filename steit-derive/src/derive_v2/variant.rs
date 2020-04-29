@@ -72,12 +72,23 @@ impl Variant {
         ))
     }
 
+    pub fn name(&self) -> &syn::Ident {
+        &self.name
+    }
+
     pub fn tag(&self) -> u32 {
         self.attrs.tag
     }
 
     pub fn tag_with_tokens(&self) -> (u32, &TokenStream) {
         (self.attrs.tag, &self.attrs.tag_tokens)
+    }
+
+    pub fn default(&self) -> bool {
+        match &self.attrs.default {
+            Some((default, _)) => *default,
+            None => false,
+        }
     }
 
     pub fn default_with_tokens(&self) -> (bool, Option<&TokenStream>) {
