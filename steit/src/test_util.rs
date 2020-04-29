@@ -2,20 +2,6 @@ use std::fmt;
 
 use super::{steitize, Deserialize, Eof, Merge, Runtime, Serialize, State};
 
-#[macro_export]
-macro_rules! test_case {
-    ($name:ident : $assert:expr ; $($args:expr),+) => {
-        #[test]
-        fn $name() {
-            $assert($($args),+);
-        }
-    };
-
-    ($name:ident : $assert:expr ; $($input:expr),+ => $($output:expr),+) => {
-        test_case!($name : $assert ; $($input),+, $($output),+);
-    };
-}
-
 #[steitize(Serialize, Deserialize, own_crate)]
 #[derive(PartialEq, Debug)]
 pub struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);

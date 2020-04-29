@@ -2,70 +2,71 @@ use std::fmt;
 
 use super::{
     de_v2::{DeserializeV2, Reader},
+    rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
+    steit_derive,
 };
 
-// #[macro_export]
-// macro_rules! test_case {
-//     ($name:ident : $assert:expr ; $($args:expr),+) => {
-//         #[test]
-//         fn $name() {
-//             $assert($($args),+);
-//         }
-//     };
-//
-//     ($name:ident : $assert:expr ; $($input:expr),+ => $($output:expr),+) => {
-//         test_case!($name : $assert ; $($input),+, $($output),+);
-//     };
-// }
-//
-// #[steitize(Serialize, Deserialize, own_crate)]
-// #[derive(PartialEq, Debug)]
-// pub struct Foo(#[steit(tag = 0)] i32, #[steit(tag = 1)] i32);
-//
-// impl Foo {
-//     pub fn with(f0: i32, f1: i32) -> Self {
-//         Self {
-//             0: f0,
-//             1: f1,
-//             ..Foo::new()
-//         }
-//     }
-// }
-//
-// #[steitize(State, own_crate)]
-// #[derive(PartialEq, Debug)]
-// pub struct Point {
-//     #[steit(tag = 0)]
-//     x: i32,
-//     #[steit(tag = 1)]
-//     y: i32,
-//     #[steit(tag = 2)]
-//     z: i32,
-// }
-//
-// impl Point {
-//     pub fn with(runtime: Runtime, x: i32, y: i32, z: i32) -> Self {
-//         Self {
-//             x,
-//             y,
-//             z,
-//             ..Point::new(runtime)
-//         }
-//     }
-//
-//     pub fn x(&self) -> i32 {
-//         self.x
-//     }
-// }
+#[macro_export]
+macro_rules! test_case {
+    ($name:ident : $assert:expr ; $($args:expr),+) => {
+        #[test]
+        fn $name() {
+            $assert($($args),+);
+        }
+    };
+
+    ($name:ident : $assert:expr ; $($input:expr),+ => $($output:expr),+) => {
+        test_case!($name : $assert ; $($input),+, $($output),+);
+    };
+}
+
+#[steit_derive(Debug, Serialize, Deserialize)]
+#[steit(steit_owned)]
+pub struct Foo(#[steit(tag = 0)] pub i32, #[steit(tag = 1)] pub i32);
+
+impl Foo {
+    #[inline]
+    pub fn new(f0: i32, f1: i32) -> Self {
+        Self {
+            0: f0,
+            1: f1,
+            2: SizeCache::new(),
+        }
+    }
+}
+
+#[steit_derive(Debug, State)]
+#[steit(steit_owned)]
+pub struct Point {
+    #[steit(tag = 0)]
+    pub x: i32,
+    #[steit(tag = 1)]
+    pub y: i32,
+    #[steit(tag = 2)]
+    pub z: i32,
+}
+
+impl Point {
+    #[inline]
+    pub fn new(runtime: RuntimeV2, x: i32, y: i32, z: i32) -> Self {
+        Self {
+            x,
+            y,
+            z,
+            size_cache: SizeCache::new(),
+            runtime,
+        }
+    }
+}
 
 pub fn assert_size(value: impl SerializeV2, size: u32) {
-    assert_eq!(value.compute_size(), size);
+    assert_eq!(value.compute_size_v2(), size);
 }
 
 pub fn serialize(value: impl SerializeV2) -> Vec<u8> {
     let mut bytes = Vec::new();
-    value.serialize(&mut bytes).unwrap();
+    value.serialize_v2(&mut bytes).unwrap();
     bytes
 }
 
