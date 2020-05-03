@@ -428,7 +428,7 @@ impl<'a> Struct<'a> {
 
         quote! {
             &StructMeta {
-                name: #name,
+                name: &NameMeta::new(#name),
                 fields: &[#(#fields,)*],
                 builtin: #builtin,
             }
@@ -443,7 +443,7 @@ impl<'a> Struct<'a> {
             "HasMessageMeta",
             &["HasTypeMeta"],
             quote! {
-                const MESSAGE_NAME: &'static str = #name;
+                const MESSAGE_NAME: &'static NameMeta = &NameMeta::new(#name);
                 const MESSAGE_META: &'static MessageMeta = &MessageMeta::Struct(#meta);
             },
         );
@@ -451,8 +451,9 @@ impl<'a> Struct<'a> {
         tokens.extend(self.impler.impl_for(
             "HasTypeMeta",
             quote! {
+                const TYPE_NAME: &'static NameMeta = Self::MESSAGE_NAME;
                 const TYPE_META: &'static TypeMeta = &TypeMeta::Message(Self::MESSAGE_META);
-                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::MESSAGE_NAME);
+                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::TYPE_NAME);
             },
         ));
 

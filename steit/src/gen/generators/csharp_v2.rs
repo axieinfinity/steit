@@ -49,7 +49,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         setting: &Self::Setting,
         writer: &mut Writer,
     ) {
-        let name = r#struct.name;
+        let name = r#struct.name.rust;
         let var_name = str_util::uncap_first_char(name);
 
         let fields: Vec<_> = r#struct.fields.iter().map(CSharpField::from_meta).collect();
@@ -252,7 +252,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
                     "case {0}: this.{1} = this.Notify({2}.Deserialize(reader.Nested(), this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
                     field.meta.tag,
                     field.upper_camel_case_name,
-                    get_type(field.meta.ty),
+                    field.type_name,
                     field.lower_camel_case_name,
                 ));
             }
@@ -280,7 +280,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
     }
 
     fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer) {
-        let name = r#enum.name;
+        let name = r#enum.name.rust;
         let var_name = str_util::uncap_first_char(name);
 
         let variants: Vec<_> = r#enum
@@ -322,7 +322,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         for variant in r#enum.variants {
             writer.writeln(format!(
                 "public {0} {0}Value {{ get {{ return this.Variant == {1} ? ({0}) this.Value : null; }} }}",
-                variant.ty.name, variant.tag,
+                variant.ty.name.rust, variant.tag,
             ));
         }
 
@@ -332,7 +332,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .indent_writeln("this.Path = path != null ? path : Path.Root;")
             .writeln(format!(
                 "this.Value = new {}(this.Path.Nested({}));",
-                default_variant.meta.ty.name, default_variant.meta.tag,
+                default_variant.meta.ty.name.rust, default_variant.meta.tag,
             ))
             .outdent_writeln("}")
             .newline()
@@ -392,7 +392,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         for variant in r#enum.variants {
             writer.writeln(format!(
                 "case {0}: this.NotifyAndUpdate({0}, {1}.Deserialize(reader, this.Path.Nested({0})), shouldNotify); break;",
-                variant.tag, variant.ty.name,
+                variant.tag, variant.ty.name.rust,
             ));
         }
 
@@ -434,7 +434,7 @@ impl CSharpVariant {
     pub fn from_meta(variant: &'static VariantMeta) -> Self {
         Self {
             meta: variant,
-            screaming_snake_case_name: str_util::to_snake_case(variant.ty.name).to_uppercase(),
+            screaming_snake_case_name: str_util::to_snake_case(variant.ty.name.rust).to_uppercase(),
         }
     }
 }
@@ -453,8 +453,8 @@ impl CSharpField {
     pub fn from_meta(field: &'static FieldMeta) -> Self {
         Self {
             meta: field,
-            upper_camel_case_name: str_util::to_camel_case(field.name, true),
-            lower_camel_case_name: str_util::to_camel_case(field.name, false),
+            upper_camel_case_name: str_util::to_camel_case(field.name.rust, true),
+            lower_camel_case_name: str_util::to_camel_case(field.name.rust, false),
             type_name: get_type(field.ty),
         }
     }
@@ -462,25 +462,17 @@ impl CSharpField {
 
 fn get_type(ty: &'static TypeMeta) -> String {
     match *ty {
-        TypeMeta::Primitive(name) => match name {
-            "u8" => "Byte".to_owned(),
-            "u16" => "UInt16".to_owned(),
-            "u32" => "UInt32".to_owned(),
-            "u64" => "UInt64".to_owned(),
-            "i8" => "SByte".to_owned(),
-            "i16" => "Int16".to_owned(),
-            "i32" => "Int32".to_owned(),
-            "i64" => "Int64".to_owned(),
-            "bool" => "Boolean".to_owned(),
-            _ => name.to_owned(),
-        },
+        TypeMeta::Primitive(name) => name
+            .csharp
+            .expect("expected a C# name for every primitive type")
+            .to_owned(),
 
         TypeMeta::Message(meta) => match meta {
-            MessageMeta::Struct(&StructMeta { name, .. }) => name.to_owned(),
-            MessageMeta::Enum(&EnumMeta { name, .. }) => name.to_owned(),
+            MessageMeta::Struct(&StructMeta { name, .. }) => name.rust.to_owned(),
+            MessageMeta::Enum(&EnumMeta { name, .. }) => name.rust.to_owned(),
         },
 
-        TypeMeta::MessageRef(name) => name.to_owned(),
+        TypeMeta::MessageRef(name) => name.rust.to_owned(),
 
         TypeMeta::Vec(field_type) => format!("SVector<{}>", get_type(field_type)),
         TypeMeta::List(field_type) => format!("SList<{}>", get_type(field_type)),

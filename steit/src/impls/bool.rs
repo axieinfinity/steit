@@ -42,7 +42,7 @@ impl DeserializeV2 for bool {
 }
 
 impl_state_primitive!(bool);
-impl_meta_primitive!(bool);
+impl_meta_primitive!(bool, "Boolean");
 
 #[cfg(test)]
 mod tests {

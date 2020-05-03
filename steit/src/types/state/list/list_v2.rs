@@ -2,7 +2,7 @@ use std::{error::Error, io, ops::Deref, slice};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    meta::{HasTypeMeta, TypeMeta},
+    meta::{HasTypeMeta, NameMeta, TypeMeta},
     rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
     state_v2::StateV2,
@@ -160,6 +160,11 @@ impl<T: StateV2> StateV2 for ListV2<T> {
 }
 
 impl<T: StateV2 + HasTypeMeta> HasTypeMeta for ListV2<T> {
+    const TYPE_NAME: &'static NameMeta = &NameMeta {
+        rust: "List",
+        csharp: Some("StateList"),
+    };
+
     const TYPE_META: &'static TypeMeta = &TypeMeta::List(T::TYPE_META);
 }
 

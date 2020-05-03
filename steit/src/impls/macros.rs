@@ -20,10 +20,15 @@ macro_rules! impl_state_primitive {
 
 #[macro_export]
 macro_rules! impl_meta_primitive {
-    ($type:ty) => {
+    ($type:ty, $csharp_name:literal) => {
         impl $crate::meta::HasTypeMeta for $type {
+            const TYPE_NAME: &'static $crate::meta::NameMeta = &$crate::meta::NameMeta {
+                rust: stringify!($type),
+                csharp: Some($csharp_name),
+            };
+
             const TYPE_META: &'static $crate::meta::TypeMeta =
-                &$crate::meta::TypeMeta::Primitive(stringify!($type));
+                &$crate::meta::TypeMeta::Primitive(Self::TYPE_NAME);
         }
     };
 }

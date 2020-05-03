@@ -47,7 +47,7 @@ pub fn collect_meta_v2(
 ) {
     match *root {
         MessageMeta::Struct(r#struct) => {
-            all_meta.insert(r#struct.name, MessageMeta::Struct(r#struct));
+            all_meta.insert(r#struct.name.rust, MessageMeta::Struct(r#struct));
 
             for field in r#struct.fields {
                 collect_meta_from_field_v2(field.ty, all_meta);
@@ -55,7 +55,7 @@ pub fn collect_meta_v2(
         }
 
         MessageMeta::Enum(r#enum) => {
-            all_meta.insert(r#enum.name, MessageMeta::Enum(r#enum));
+            all_meta.insert(r#enum.name.rust, MessageMeta::Enum(r#enum));
 
             for variant in r#enum.variants {
                 for field in variant.ty.fields {

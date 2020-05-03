@@ -1,4 +1,4 @@
-use super::r#type::TypeMeta;
+use super::{name::NameMeta, r#type::TypeMeta};
 
 #[derive(Debug)]
 pub enum MessageMeta {
@@ -18,14 +18,14 @@ impl MessageMeta {
 
 #[derive(Debug)]
 pub struct StructMeta {
-    pub name: &'static str,
+    pub name: &'static NameMeta,
     pub fields: &'static [FieldMeta],
     pub builtin: bool,
 }
 
 #[derive(Debug)]
 pub struct EnumMeta {
-    pub name: &'static str,
+    pub name: &'static NameMeta,
     pub variants: &'static [VariantMeta],
     pub builtin: bool,
 }
@@ -39,13 +39,12 @@ pub struct VariantMeta {
 
 #[derive(Debug)]
 pub struct FieldMeta {
-    pub name: &'static str,
+    pub name: &'static NameMeta,
     pub ty: &'static TypeMeta,
     pub tag: u32,
-    pub csharp_name: Option<&'static str>,
 }
 
 pub trait HasMessageMeta {
-    const MESSAGE_NAME: &'static str;
+    const MESSAGE_NAME: &'static NameMeta;
     const MESSAGE_META: &'static MessageMeta;
 }

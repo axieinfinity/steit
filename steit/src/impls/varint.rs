@@ -8,10 +8,15 @@ use crate::{
 };
 
 macro_rules! impl_unsigned_varint {
-    (u64) => (impl_unsigned_varint!(@impl u64, size_64, i64););
-    ($type:ty) => (impl_unsigned_varint!(@impl $type, size_32, i32););
+    (u64, "UInt64") => {
+        impl_unsigned_varint!(@impl u64, size_64, i64, "UInt64");
+    };
 
-    (@impl $type:ty, $size_fn:ident, $size_type:ty) => {
+    ($type:ty, $csharp_name:literal) => {
+        impl_unsigned_varint!(@impl $type, size_32, i32, $csharp_name);
+    };
+
+    (@impl $type:ty, $size_fn:ident, $size_type:ty, $csharp_name:literal) => {
         impl HasWireType for $type {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
@@ -58,17 +63,17 @@ macro_rules! impl_unsigned_varint {
         }
 
         impl_state_primitive!($type);
-        impl_meta_primitive!($type);
+        impl_meta_primitive!($type, $csharp_name);
     };
 }
 
-impl_unsigned_varint!(u8);
-impl_unsigned_varint!(u16);
-impl_unsigned_varint!(u32);
-impl_unsigned_varint!(u64);
+impl_unsigned_varint!(u8, "Byte");
+impl_unsigned_varint!(u16, "UInt16");
+impl_unsigned_varint!(u32, "UInt32");
+impl_unsigned_varint!(u64, "UInt64");
 
 macro_rules! impl_signed_varint {
-    ($type:ty, $unsigned_type:ty) => {
+    ($type:ty, $unsigned_type:ty, $csharp_name:literal) => {
         impl HasWireType for $type {
             const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
         }
@@ -95,7 +100,7 @@ macro_rules! impl_signed_varint {
         }
 
         impl_state_primitive!($type);
-        impl_meta_primitive!($type);
+        impl_meta_primitive!($type, $csharp_name);
     };
 
     // More about Zigzag encoding can be found at:
@@ -110,10 +115,10 @@ macro_rules! impl_signed_varint {
     };
 }
 
-impl_signed_varint!(i8, u8);
-impl_signed_varint!(i16, u16);
-impl_signed_varint!(i32, u32);
-impl_signed_varint!(i64, u64);
+impl_signed_varint!(i8, u8, "SByte");
+impl_signed_varint!(i16, u16, "Int16");
+impl_signed_varint!(i32, u32, "Int32");
+impl_signed_varint!(i64, u64, "Int64");
 
 /// Gets varint size in bytes of a 32-bit integer.
 ///

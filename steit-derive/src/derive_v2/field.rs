@@ -369,8 +369,7 @@ impl<'a> DeriveField<'a> {
     }
 
     pub fn meta(&self) -> TokenStream {
-        let name = self.alias().to_string();
-        let tag = self.tag();
+        let rust_name = self.alias().to_string();
 
         let csharp_name = match &self.attrs.csharp_name {
             Some(csharp_name) => quote!(Some(#csharp_name)),
@@ -378,22 +377,16 @@ impl<'a> DeriveField<'a> {
         };
 
         let ty = &self.ty;
-        let type_name = &*quote!(#ty).to_string();
-
-        let ty = match type_name {
-            "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
-                quote!(&TypeMeta::Primitive(#type_name))
-            }
-
-            _ => quote!(<#ty as HasTypeMeta>::TYPE_META),
-        };
+        let tag = self.tag();
 
         quote! {
             FieldMeta {
-                name: #name,
-                ty: #ty,
+                name: &NameMeta {
+                    rust: #rust_name,
+                    csharp: #csharp_name,
+                },
+                ty: <#ty as HasTypeMeta>::TYPE_META,
                 tag: #tag,
-                csharp_name: #csharp_name,
             }
         }
     }
