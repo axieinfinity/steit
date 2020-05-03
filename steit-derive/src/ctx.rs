@@ -18,19 +18,11 @@ impl Context {
     }
 
     pub fn syn_error(&self, error: syn::Error) {
-        self.errors
-            .borrow_mut()
-            .as_mut()
-            .unwrap_or_else(|| unreachable!("expected the list of errors to be defined"))
-            .push(error);
+        self.errors.borrow_mut().as_mut().unwrap().push(error);
     }
 
     pub fn check(self) -> Result<(), Vec<syn::Error>> {
-        let errors = self
-            .errors
-            .borrow_mut()
-            .take()
-            .unwrap_or_else(|| unreachable!("expected the list of errors to be defined"));
+        let errors = self.errors.borrow_mut().take().unwrap();
 
         match errors.len() {
             0 => Ok(()),
@@ -42,7 +34,7 @@ impl Context {
 impl Drop for Context {
     fn drop(&mut self) {
         if !thread::panicking() && self.errors.borrow().is_some() {
-            panic!("forgot to check for errors");
+            panic!("forgot to check for errors?");
         }
     }
 }
