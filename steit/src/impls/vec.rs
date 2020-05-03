@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    gen::{FieldTypeV2, IsFieldTypeV2},
+    meta::{HasTypeMeta, TypeMeta},
     rt::SizeCache,
     ser_v2::SerializeV2,
     wire_fmt::{HasWireType, WireTypeV2},
@@ -48,8 +48,8 @@ impl<T: DeserializeV2> DeserializeV2 for Vec<T> {
     }
 }
 
-impl<T: IsFieldTypeV2> IsFieldTypeV2 for Vec<T> {
-    const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::Vec(T::FIELD_TYPE_REF);
+impl<T: HasTypeMeta> HasTypeMeta for Vec<T> {
+    const TYPE_META: &'static TypeMeta = &TypeMeta::Vec(T::TYPE_REF_META);
 }
 
 #[cfg(test)]

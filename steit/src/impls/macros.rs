@@ -17,3 +17,13 @@ macro_rules! impl_state_primitive {
         }
     };
 }
+
+#[macro_export]
+macro_rules! impl_meta_primitive {
+    ($type:ty) => {
+        impl $crate::meta::HasTypeMeta for $type {
+            const TYPE_META: &'static $crate::meta::TypeMeta =
+                &$crate::meta::TypeMeta::Primitive(stringify!($type));
+        }
+    };
+}

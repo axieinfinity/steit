@@ -382,14 +382,14 @@ impl<'a> DeriveField<'a> {
 
         let ty = match type_name {
             "u8" | "u16" | "u32" | "u64" | "i8" | "i16" | "i32" | "i64" | "bool" => {
-                quote!(&FieldTypeV2::Primitive(#type_name))
+                quote!(&TypeMeta::Primitive(#type_name))
             }
 
-            _ => quote!(<#ty as IsFieldTypeV2>::FIELD_TYPE),
+            _ => quote!(<#ty as HasTypeMeta>::TYPE_META),
         };
 
         quote! {
-            FieldV2 {
+            FieldMeta {
                 name: #name,
                 ty: #ty,
                 tag: #tag,

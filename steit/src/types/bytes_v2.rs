@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    gen::{FieldTypeV2, IsFieldTypeV2},
+    meta::{HasTypeMeta, TypeMeta},
     rt::SizeCache,
     ser_v2::SerializeV2,
     wire_fmt::{HasWireType, WireTypeV2},
@@ -69,8 +69,8 @@ impl DeserializeV2 for BytesV2 {
     }
 }
 
-impl IsFieldTypeV2 for BytesV2 {
-    const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::MetaRef("Bytes");
+impl HasTypeMeta for BytesV2 {
+    const TYPE_META: &'static TypeMeta = &TypeMeta::MessageRef("Bytes");
 }
 
 #[cfg(test)]

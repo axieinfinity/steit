@@ -398,7 +398,7 @@ impl<'a> Enum<'a> {
             let meta = r#struct.meta();
 
             quote! {
-                VariantV2 {
+                VariantMeta {
                     ty: #meta,
                     tag: #tag,
                     default: #default,
@@ -406,29 +406,28 @@ impl<'a> Enum<'a> {
             }
         });
 
-        self.impler.impl_for_with(
-            "HasMetaV2",
-            &["IsFieldTypeV2"],
+        let mut tokens = self.impler.impl_for_with(
+            "HasMessageMeta",
+            &["HasTypeMeta"],
             quote! {
-                const META: &'static MetaV2 = &MetaV2::Enum(&EnumV2 {
+                const MESSAGE_NAME: &'static str = #name;
+                const MESSAGE_META: &'static MessageMeta = &MessageMeta::Enum(&EnumMeta {
                     name: #name,
                     variants: &[#(#variants,)*],
                     builtin: #builtin,
                 });
-
-                const META_NAME: &'static str = #name;
             },
-        )
-    }
+        );
 
-    fn impl_field_type(&self) -> TokenStream {
-        self.impler.impl_for(
-            "IsFieldTypeV2",
+        tokens.extend(self.impler.impl_for(
+            "HasTypeMeta",
             quote! {
-                const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::Meta(Self::META);
-                const FIELD_TYPE_REF: &'static FieldTypeV2 = &FieldTypeV2::MetaRef(Self::META_NAME);
+                const TYPE_META: &'static TypeMeta = &TypeMeta::Message(Self::MESSAGE_META);
+                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::MESSAGE_NAME);
             },
-        )
+        ));
+
+        tokens
     }
 }
 
@@ -528,6 +527,5 @@ impl<'a> ToTokens for Enum<'a> {
         }
 
         tokens.extend(self.impl_meta());
-        tokens.extend(self.impl_field_type());
     }
 }

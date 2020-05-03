@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    impl_field_type_primitive, impl_state_primitive,
+    impl_meta_primitive, impl_state_primitive,
     ser_v2::SerializePrimitive,
     wire_fmt::{HasWireType, WireTypeV2},
 };
@@ -58,7 +58,7 @@ macro_rules! impl_unsigned_varint {
         }
 
         impl_state_primitive!($type);
-        impl_field_type_primitive!($type);
+        impl_meta_primitive!($type);
     };
 }
 
@@ -95,7 +95,7 @@ macro_rules! impl_signed_varint {
         }
 
         impl_state_primitive!($type);
-        impl_field_type_primitive!($type);
+        impl_meta_primitive!($type);
     };
 
     // More about Zigzag encoding can be found at:

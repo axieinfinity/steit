@@ -1,4 +1,7 @@
-use crate::gen::*;
+use crate::{
+    gen::{str_util, GeneratorV2, Writer},
+    meta::*,
+};
 
 pub struct CSharpSetting {
     namespace: String,
@@ -41,7 +44,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
     fn gen_struct(
         &self,
-        r#struct: &StructV2,
+        r#struct: &StructMeta,
         is_variant: bool,
         setting: &Self::Setting,
         writer: &mut Writer,
@@ -92,7 +95,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         // Initiate nested states
         for field in &fields {
-            if let FieldTypeV2::Primitive(_) = field.meta.ty {
+            if let TypeMeta::Primitive(_) = field.meta.ty {
             } else {
                 writer.writeln(format!(
                     "this.{} = new {}(this.Path.Nested({}));",
@@ -186,7 +189,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         // Return wire types
         for field in r#struct.fields {
-            if let FieldTypeV2::Primitive(_) = field.ty {
+            if let TypeMeta::Primitive(_) = field.ty {
                 writer.writeln(format!(
                     "case {}: return (Int16) Steit.Encoding.WireType.Varint;",
                     field.tag,
@@ -210,7 +213,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         // Return nested states
         for field in &fields {
-            if let FieldTypeV2::Primitive(_) = field.meta.ty {
+            if let TypeMeta::Primitive(_) = field.meta.ty {
             } else {
                 writer.writeln(format!(
                     "case {}: return this.{};",
@@ -236,7 +239,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         // Replace fields and notify listeners
         for field in &fields {
-            if let FieldTypeV2::Primitive(_) = field.meta.ty {
+            if let TypeMeta::Primitive(_) = field.meta.ty {
                 writer.writeln(format!(
                     "case {0}: this.{1} = this.Notify(reader.Read{3}(), this.{1}, shouldNotify, {2}Listeners); break;",
                     field.meta.tag,
@@ -276,7 +279,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         }
     }
 
-    fn gen_enum(&self, r#enum: &EnumV2, setting: &Self::Setting, writer: &mut Writer) {
+    fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer) {
         let name = r#enum.name;
         let var_name = str_util::uncap_first_char(name);
 
@@ -421,14 +424,14 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 }
 
 struct CSharpVariant {
-    meta: &'static VariantV2,
+    meta: &'static VariantMeta,
     // SCREAMING_SNAKE_CASE
     screaming_snake_case_name: String,
 }
 
 impl CSharpVariant {
     #[inline]
-    pub fn from_meta(variant: &'static VariantV2) -> Self {
+    pub fn from_meta(variant: &'static VariantMeta) -> Self {
         Self {
             meta: variant,
             screaming_snake_case_name: str_util::to_snake_case(variant.ty.name).to_uppercase(),
@@ -437,7 +440,7 @@ impl CSharpVariant {
 }
 
 struct CSharpField {
-    meta: &'static FieldV2,
+    meta: &'static FieldMeta,
     // UpperCamelCase
     upper_camel_case_name: String,
     // lowerCamelCase
@@ -447,7 +450,7 @@ struct CSharpField {
 
 impl CSharpField {
     #[inline]
-    pub fn from_meta(field: &'static FieldV2) -> Self {
+    pub fn from_meta(field: &'static FieldMeta) -> Self {
         Self {
             meta: field,
             upper_camel_case_name: str_util::to_camel_case(field.name, true),
@@ -457,9 +460,9 @@ impl CSharpField {
     }
 }
 
-fn get_type(ty: &'static FieldTypeV2) -> String {
+fn get_type(ty: &'static TypeMeta) -> String {
     match *ty {
-        FieldTypeV2::Primitive(name) => match name {
+        TypeMeta::Primitive(name) => match name {
             "u8" => "Byte".to_owned(),
             "u16" => "UInt16".to_owned(),
             "u32" => "UInt32".to_owned(),
@@ -472,15 +475,15 @@ fn get_type(ty: &'static FieldTypeV2) -> String {
             _ => name.to_owned(),
         },
 
-        FieldTypeV2::Meta(meta) => match meta {
-            MetaV2::Struct(&StructV2 { name, .. }) => name.to_owned(),
-            MetaV2::Enum(&EnumV2 { name, .. }) => name.to_owned(),
+        TypeMeta::Message(meta) => match meta {
+            MessageMeta::Struct(&StructMeta { name, .. }) => name.to_owned(),
+            MessageMeta::Enum(&EnumMeta { name, .. }) => name.to_owned(),
         },
 
-        FieldTypeV2::MetaRef(name) => name.to_owned(),
+        TypeMeta::MessageRef(name) => name.to_owned(),
 
-        FieldTypeV2::Vec(field_type) => format!("SVector<{}>", get_type(field_type)),
-        FieldTypeV2::List(field_type) => format!("SList<{}>", get_type(field_type)),
-        FieldTypeV2::Map(field_type) => format!("SDictionary<{}>", get_type(field_type)),
+        TypeMeta::Vec(field_type) => format!("SVector<{}>", get_type(field_type)),
+        TypeMeta::List(field_type) => format!("SList<{}>", get_type(field_type)),
+        TypeMeta::Map(field_type) => format!("SDictionary<{}>", get_type(field_type)),
     }
 }

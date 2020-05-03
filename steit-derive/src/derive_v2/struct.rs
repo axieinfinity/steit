@@ -427,7 +427,7 @@ impl<'a> Struct<'a> {
         let builtin = self.setting.steit_owned;
 
         quote! {
-            &StructV2 {
+            &StructMeta {
                 name: #name,
                 fields: &[#(#fields,)*],
                 builtin: #builtin,
@@ -439,24 +439,24 @@ impl<'a> Struct<'a> {
         let meta = self.meta();
         let name = self.impler.name().to_string();
 
-        self.impler.impl_for_with(
-            "HasMetaV2",
-            &["IsFieldTypeV2"],
+        let mut tokens = self.impler.impl_for_with(
+            "HasMessageMeta",
+            &["HasTypeMeta"],
             quote! {
-                const META: &'static MetaV2 = &MetaV2::Struct(#meta);
-                const META_NAME: &'static str = #name;
+                const MESSAGE_NAME: &'static str = #name;
+                const MESSAGE_META: &'static MessageMeta = &MessageMeta::Struct(#meta);
             },
-        )
-    }
+        );
 
-    fn impl_field_type(&self) -> TokenStream {
-        self.impler.impl_for(
-            "IsFieldTypeV2",
+        tokens.extend(self.impler.impl_for(
+            "HasTypeMeta",
             quote! {
-                const FIELD_TYPE: &'static FieldTypeV2 = &FieldTypeV2::Meta(Self::META);
-                const FIELD_TYPE_REF: &'static FieldTypeV2 = &FieldTypeV2::MetaRef(Self::META_NAME);
+                const TYPE_META: &'static TypeMeta = &TypeMeta::Message(Self::MESSAGE_META);
+                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::MESSAGE_NAME);
             },
-        )
+        ));
+
+        tokens
     }
 }
 
@@ -540,6 +540,5 @@ impl<'a> ToTokens for Struct<'a> {
         }
 
         tokens.extend(self.impl_meta());
-        tokens.extend(self.impl_field_type());
     }
 }
