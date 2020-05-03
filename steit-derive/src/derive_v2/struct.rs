@@ -240,7 +240,7 @@ impl<'a> Struct<'a> {
         let mut r#impl = self.impler.impl_for(
             "PartialEq",
             quote! {
-                fn eq(&self, other: &#name) -> bool {
+                fn eq(&self, other: &Self) -> bool {
                     #eq
                 }
             },

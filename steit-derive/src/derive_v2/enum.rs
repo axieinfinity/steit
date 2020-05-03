@@ -142,7 +142,7 @@ impl<'a> Enum<'a> {
             "PartialEq",
             quote! {
                 #[inline]
-                fn eq(&self, other: &#name) -> bool {
+                fn eq(&self, other: &Self) -> bool {
                     match self { #(#eqs,)* }
                 }
             },
