@@ -391,3 +391,100 @@ impl<'a> DeriveField<'a> {
         }
     }
 }
+
+fn field_type_meta(
+    ctx: &Context,
+    ty: &syn::Type,
+    type_params: &[&syn::TypeParam],
+) -> derive::Result<TokenStream> {
+    let type_not_supported = || {
+        ctx.error(
+            ty,
+            concat!(
+                "this type is not supported, ",
+                "expected either paren `(T)`; ",
+                "reference `&'a T`, `&'a mut T`; ",
+                "or path type `a::b::T`",
+            ),
+        );
+
+        Err(())
+    };
+
+    let is_type_param = |type_name: &String| {
+        for type_param in type_params {
+            if *type_name == type_param.ident.to_string() {
+                return true;
+            }
+        }
+
+        false
+    };
+
+    match ty {
+        syn::Type::Paren(syn::TypeParen { elem, .. })
+        | syn::Type::Reference(syn::TypeReference { elem, .. }) => {
+            field_type_meta(&ctx, &*elem, type_params)
+        }
+
+        syn::Type::Path(syn::TypePath { qself, path }) => {
+            if qself.is_some() {
+                ctx.error(ty, "fully-qualified types are not supported");
+                return Err(());
+            }
+
+            match &path.segments.last().unwrap().arguments {
+                syn::PathArguments::None => {
+                    if let Some(type_name) = path.get_ident() {
+                        let type_name = type_name.to_string();
+
+                        if is_type_param(&type_name) {
+                            return Ok(quote!(FieldTypeMeta::TypeParam(#type_name)));
+                        }
+                    }
+
+                    // This has primitive types covered.
+                    Ok(quote!(FieldTypeMeta::Type(<#path as HasMeta>::TYPE)))
+                }
+
+                syn::PathArguments::AngleBracketed(args) => {
+                    let mut arg_meta_list = Vec::new();
+
+                    for arg in &args.args {
+                        match arg {
+                            syn::GenericArgument::Lifetime(_) => (),
+
+                            syn::GenericArgument::Type(ty) => {
+                                let type_name = ty.to_token_stream().to_string();
+
+                                let arg_meta = if is_type_param(&type_name) {
+                                    quote!(FieldTypeMeta::TypeParam(#type_name))
+                                } else {
+                                    field_type_meta(ctx, ty, type_params)?
+                                };
+
+                                arg_meta_list.push(arg_meta);
+                            }
+
+                            syn::GenericArgument::Binding(_)
+                            | syn::GenericArgument::Constraint(_)
+                            | syn::GenericArgument::Const(_) => {
+                                ctx.error(arg, "this kind of type argument is not supported");
+                                return Err(());
+                            }
+                        }
+                    }
+
+                    Ok(quote!(FieldTypeMeta::Type(&TypeMeta::Ref(
+                        <#path as HasMeta>::NAME,
+                        &[#(#arg_meta_list,)*],
+                    ))))
+                }
+
+                syn::PathArguments::Parenthesized(_) => type_not_supported(),
+            }
+        }
+
+        _ => type_not_supported(),
+    }
+}
