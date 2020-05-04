@@ -276,7 +276,7 @@ impl<'a> Field<'a> {
 
     pub fn meta(&self) -> TokenStream {
         let name = match self.attrs.meta_name {
-            Some(ref name) => name.to_owned(),
+            Some(ref name) => name.to_string(),
             None => self.alias().to_string(),
         };
 

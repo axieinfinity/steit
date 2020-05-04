@@ -461,26 +461,26 @@ impl CSharpField {
 fn get_type(ty: &'static FieldType) -> String {
     match *ty {
         FieldType::Primitive(name) => match name {
-            "u8" => "Byte".to_owned(),
-            "u16" => "UInt16".to_owned(),
-            "u32" => "UInt32".to_owned(),
-            "u64" => "UInt64".to_owned(),
-            "i8" => "SByte".to_owned(),
-            "i16" => "Int16".to_owned(),
-            "i32" => "Int32".to_owned(),
-            "i64" => "Int64".to_owned(),
-            "bool" => "Boolean".to_owned(),
+            "u8" => "Byte".to_string(),
+            "u16" => "UInt16".to_string(),
+            "u32" => "UInt32".to_string(),
+            "u64" => "UInt64".to_string(),
+            "i8" => "SByte".to_string(),
+            "i16" => "Int16".to_string(),
+            "i32" => "Int32".to_string(),
+            "i64" => "Int64".to_string(),
+            "bool" => "Boolean".to_string(),
             _ => name.to_string(),
         },
 
         FieldType::Meta(meta) => match meta {
-            Meta::Struct(&Struct { name, .. }) => name.to_owned(),
-            Meta::Enum(&Enum { name, .. }) => name.to_owned(),
+            Meta::Struct(&Struct { name, .. }) => name.to_string(),
+            Meta::Enum(&Enum { name, .. }) => name.to_string(),
         },
 
-        FieldType::MetaRef(name) => name.to_owned(),
+        FieldType::MetaRef(name) => name.to_string(),
 
-        FieldType::Bytes => "ByteArray".to_owned(),
+        FieldType::Bytes => "ByteArray".to_string(),
         FieldType::List(field_type) => format!("StateList<{}>", get_type(field_type)),
         FieldType::Map(field_type) => format!("StateDictionary<{}>", get_type(field_type)),
         FieldType::Vec(field_type) => format!("FixedList<{}>", get_type(field_type)),

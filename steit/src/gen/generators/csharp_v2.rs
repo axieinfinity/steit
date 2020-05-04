@@ -465,14 +465,14 @@ fn get_type(ty: &'static TypeMeta) -> String {
         TypeMeta::Primitive(name) => name
             .csharp
             .expect("expected a C# name for every primitive type")
-            .to_owned(),
+            .to_string(),
 
         TypeMeta::Message(meta) => match meta {
-            MessageMeta::Struct(&StructMeta { name, .. }) => name.rust.to_owned(),
-            MessageMeta::Enum(&EnumMeta { name, .. }) => name.rust.to_owned(),
+            MessageMeta::Struct(&StructMeta { name, .. }) => name.rust.to_string(),
+            MessageMeta::Enum(&EnumMeta { name, .. }) => name.rust.to_string(),
         },
 
-        TypeMeta::MessageRef(name) => name.rust.to_owned(),
+        TypeMeta::MessageRef(name) => name.rust.to_string(),
 
         TypeMeta::Vec(field_type) => format!("SVector<{}>", get_type(field_type)),
         TypeMeta::List(field_type) => format!("SList<{}>", get_type(field_type)),

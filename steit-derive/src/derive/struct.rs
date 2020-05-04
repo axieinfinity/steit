@@ -204,7 +204,7 @@ impl<'a> Struct<'a> {
             syn::Fields::Named(fields) => {
                 let name = match renamed {
                     Some((name, _)) => name,
-                    None => default_name.to_owned(),
+                    None => default_name.to_string(),
                 };
 
                 let name = format_ident!("{}", name);

@@ -94,7 +94,7 @@ impl<'a> Struct<'a> {
                 attrs
                     .size_cache_renamed
                     .or(setting.size_cache_renamed.clone())
-                    .map_or("size_cache".to_owned(), |(name, _)| name),
+                    .map_or("size_cache".to_string(), |(name, _)| name),
                 syn::parse_quote!(#krate::rt::SizeCache),
                 {
                     field_index += 1;
@@ -111,7 +111,7 @@ impl<'a> Struct<'a> {
                 attrs
                     .runtime_renamed
                     .or(setting.runtime_renamed.clone())
-                    .map_or("runtime".to_owned(), |(name, _)| name),
+                    .map_or("runtime".to_string(), |(name, _)| name),
                 syn::parse_quote!(#krate::rt::RuntimeV2),
                 {
                     field_index += 1;
