@@ -462,10 +462,9 @@ impl<'a> Struct<'a> {
             quote! {
                 const NAME: &'static NameMeta = &NameMeta::new(#name);
                 const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
-
                 const LINK: &'static MetaLink = &MetaLink{
-                    name: Self::NAME,
-                    message: Some(MessageMeta::Struct(#meta)),
+                    r#type: Self::TYPE,
+                    msg: Some(MessageMeta::Struct(#meta)),
                     links: || &[#links],
                 };
             },

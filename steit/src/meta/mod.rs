@@ -1,9 +1,9 @@
-mod message;
 mod meta;
+mod msg;
 mod name;
 mod r#type;
 
 pub use self::meta::*;
-pub use message::*;
+pub use msg::*;
 pub use name::*;
 pub use r#type::*;

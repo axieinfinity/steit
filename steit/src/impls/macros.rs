@@ -31,8 +31,8 @@ macro_rules! impl_meta_primitive {
                 &$crate::meta::TypeMeta::Primitive(Self::NAME);
 
             const LINK: &'static $crate::meta::MetaLink = &$crate::meta::MetaLink {
-                name: Self::NAME,
-                message: None,
+                r#type: Self::TYPE,
+                msg: None,
                 links: || &[],
             };
         }

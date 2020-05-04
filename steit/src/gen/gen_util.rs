@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
-use crate::meta::{MessageMeta, TypeMeta};
+use crate::meta::{HasMeta, MessageMeta, MetaLink, TypeMeta};
 
 use super::gen_meta::{FieldType, Meta};
 
@@ -41,43 +41,31 @@ fn collect_meta_from_field(
     }
 }
 
-/*
-pub fn collect_meta_v2(
-    root: &'static MessageMeta,
-    meta_map: &mut HashMap<&'static str, MessageMeta>,
+pub fn collect_meta_v2<T: HasMeta>() -> HashMap<&'static str, &'static MessageMeta> {
+    let mut visited_types = HashSet::new();
+    let mut collected_msgs = HashMap::new();
+    visit_link(T::LINK, &mut visited_types, &mut collected_msgs);
+    collected_msgs
+}
+
+fn visit_link(
+    entry: &'static MetaLink,
+    visited_types: &mut HashSet<&'static TypeMeta>,
+    collected_msgs: &mut HashMap<&'static str, &'static MessageMeta>,
 ) {
-    match *root {
-        MessageMeta::Struct(r#struct) => {
-            meta_map.insert(r#struct.name.rust, MessageMeta::Struct(r#struct));
+    if let Some(msg) = &entry.msg {
+        let rust_name = msg.rust_name();
 
-            for field in r#struct.fields {
-                collect_meta_from_field_v2(field.ty, meta_map);
-            }
+        if !collected_msgs.contains_key(rust_name) {
+            collected_msgs.insert(rust_name, msg);
         }
+    }
 
-        MessageMeta::Enum(r#enum) => {
-            meta_map.insert(r#enum.name.rust, MessageMeta::Enum(r#enum));
+    if !visited_types.contains(entry.r#type) {
+        visited_types.insert(entry.r#type);
 
-            for variant in r#enum.variants {
-                for field in variant.ty.fields {
-                    collect_meta_from_field_v2(field.ty, meta_map);
-                }
-            }
+        for &link in (entry.links)() {
+            visit_link(link, visited_types, collected_msgs);
         }
     }
 }
-
-fn collect_meta_from_field_v2(
-    field_type: &'static TypeMetaV2,
-    meta_map: &mut HashMap<&'static str, MessageMeta>,
-) {
-    match *field_type {
-        TypeMeta::Primitive(_) => (),
-        TypeMeta::Message(meta) => collect_meta_v2(meta, meta_map),
-        TypeMeta::MessageRef(_) => (),
-        TypeMeta::Vec(field_type) | TypeMeta::List(field_type) | TypeMeta::Map(field_type) => {
-            collect_meta_from_field_v2(field_type, meta_map)
-        }
-    }
-}
-*/

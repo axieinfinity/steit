@@ -1,8 +1,8 @@
-use super::{message::MessageMeta, name::NameMeta, r#type::TypeMeta};
+use super::{msg::MessageMeta, name::NameMeta, r#type::TypeMeta};
 
 pub struct MetaLink {
-    pub name: &'static NameMeta,
-    pub message: Option<MessageMeta>,
+    pub r#type: &'static TypeMeta,
+    pub msg: Option<MessageMeta>,
     pub links: fn() -> &'static [&'static MetaLink],
 }
 

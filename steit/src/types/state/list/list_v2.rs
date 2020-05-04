@@ -168,8 +168,8 @@ impl<T: StateV2 + HasMeta> HasMeta for ListV2<T> {
     const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[FieldTypeMeta::Type(T::TYPE)]);
 
     const LINK: &'static MetaLink = &MetaLink {
-        name: Self::NAME,
-        message: None,
+        r#type: Self::TYPE,
+        msg: None,
         links: || &[T::LINK],
     };
 }

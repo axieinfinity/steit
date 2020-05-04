@@ -421,10 +421,9 @@ impl<'a> Enum<'a> {
             quote! {
                 const NAME: &'static NameMeta = &NameMeta::new(#name);
                 const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
-
                 const LINK: &'static MetaLink = &MetaLink {
-                    name: Self::NAME,
-                    message: Some(MessageMeta::Enum(EnumMeta {
+                    r#type: Self::TYPE,
+                    msg: Some(MessageMeta::Enum(EnumMeta {
                         name: Self::NAME,
                         variants: &[#(#variants,)*],
                         builtin: #builtin,

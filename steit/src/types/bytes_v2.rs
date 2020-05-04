@@ -72,10 +72,9 @@ impl DeserializeV2 for BytesV2 {
 impl HasMeta for BytesV2 {
     const NAME: &'static NameMeta = &NameMeta::new("Bytes");
     const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[]);
-
     const LINK: &'static MetaLink = &MetaLink {
-        name: Self::NAME,
-        message: None,
+        r#type: Self::TYPE,
+        msg: None,
         links: || &[],
     };
 }
