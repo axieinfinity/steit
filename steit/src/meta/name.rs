@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(PartialEq, Debug)]
 pub struct NameMeta {
     pub rust: &'static str,
     pub csharp: Option<&'static str>,

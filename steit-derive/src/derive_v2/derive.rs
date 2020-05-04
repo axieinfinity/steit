@@ -21,6 +21,7 @@ pub struct DeriveSetting {
 
     pub steit_owned: bool,
 
+    no_meta: bool,
     no_size_cache: bool,
 
     pub size_cache_renamed: Option<(String, TokenStream)>,
@@ -62,6 +63,7 @@ impl DeriveSetting {
 
         let mut steit_owned = Attribute::new(ctx, "steit_owned");
 
+        let mut no_meta = Attribute::new(ctx, "no_meta");
         let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
 
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
@@ -70,6 +72,9 @@ impl DeriveSetting {
         let unknown_attrs = attrs.parse(ctx, false, |meta| match meta {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_meta.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
@@ -90,6 +95,7 @@ impl DeriveSetting {
 
                 steit_owned: steit_owned.get().unwrap_or_default(),
 
+                no_meta: no_meta.get().unwrap_or_default(),
                 no_size_cache: no_size_cache.get().unwrap_or_default(),
 
                 size_cache_renamed: size_cache_renamed.get_with_tokens(),
@@ -119,6 +125,10 @@ impl DeriveSetting {
     getter!(impl_deserialize -> bool = _.deserialize);
     getter!(impl_state -> bool = _.state);
 
+    pub fn has_meta(&self) -> bool {
+        self.deserialize && !self.no_meta
+    }
+
     pub fn has_size_cache(&self) -> bool {
         self.serialize && !self.no_size_cache
     }
@@ -130,6 +140,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
     let ctx = Context::new();
     let impler = Implementer::new(&input.ident, &input.generics);
     let (setting, unknown_attrs) = DeriveSetting::parse(&ctx, args, &mut input.attrs);
+    let type_params = parse_type_params(&ctx, &input.generics);
 
     let output = match &mut input.data {
         syn::Data::Struct(data) => Struct::parse(
@@ -137,20 +148,26 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
             &impler,
             &setting,
             unknown_attrs,
+            &type_params,
             &mut data.fields,
             None,
         )
         .ok()
         .into_token_stream(),
 
-        syn::Data::Enum(data) => {
-            Enum::parse(&ctx, &impler, &setting, unknown_attrs, &mut data.variants)
-                .ok()
-                .into_token_stream()
-        }
+        syn::Data::Enum(data) => Enum::parse(
+            &ctx,
+            &impler,
+            &setting,
+            unknown_attrs,
+            &type_params,
+            &mut data.variants,
+        )
+        .ok()
+        .into_token_stream(),
 
         syn::Data::Union(data) => {
-            ctx.error(data.union_token, "union is not supported");
+            ctx.error(data.union_token, "unions are not supported");
             quote!()
         }
     };
@@ -168,6 +185,22 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
 
     println!("{}", derived);
     derived
+}
+
+fn parse_type_params<'a>(ctx: &Context, generics: &'a syn::Generics) -> Vec<&'a syn::TypeParam> {
+    let mut type_params = Vec::new();
+
+    for generic in &generics.params {
+        match generic {
+            syn::GenericParam::Type(ty) => type_params.push(ty),
+            syn::GenericParam::Lifetime(_) => (),
+            syn::GenericParam::Const(r#const) => {
+                ctx.error(r#const, "const generics are not supported")
+            }
+        }
+    }
+
+    type_params
 }
 
 fn to_compile_errors(errors: Vec<syn::Error>) -> TokenStream {

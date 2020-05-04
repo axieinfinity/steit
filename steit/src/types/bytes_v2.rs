@@ -5,7 +5,7 @@ use std::{
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    meta::{HasTypeMeta, NameMeta, TypeMeta},
+    meta::{HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::SizeCache,
     ser_v2::SerializeV2,
     wire_fmt::{HasWireType, WireTypeV2},
@@ -69,9 +69,15 @@ impl DeserializeV2 for BytesV2 {
     }
 }
 
-impl HasTypeMeta for BytesV2 {
-    const TYPE_NAME: &'static NameMeta = &NameMeta::new("Bytes");
-    const TYPE_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::TYPE_NAME);
+impl HasMeta for BytesV2 {
+    const NAME: &'static NameMeta = &NameMeta::new("Bytes");
+    const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[]);
+
+    const LINK: &'static MetaLink = &MetaLink {
+        name: Self::NAME,
+        message: None,
+        links: || &[],
+    };
 }
 
 #[cfg(test)]

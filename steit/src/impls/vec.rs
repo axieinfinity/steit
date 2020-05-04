@@ -2,7 +2,7 @@ use std::io;
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    meta::{HasTypeMeta, NameMeta, TypeMeta},
+    meta::{FieldTypeMeta, HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::SizeCache,
     ser_v2::SerializeV2,
     wire_fmt::{HasWireType, WireTypeV2},
@@ -48,13 +48,19 @@ impl<T: DeserializeV2> DeserializeV2 for Vec<T> {
     }
 }
 
-impl<T: HasTypeMeta> HasTypeMeta for Vec<T> {
-    const TYPE_NAME: &'static NameMeta = &NameMeta {
+impl<T: HasMeta> HasMeta for Vec<T> {
+    const NAME: &'static NameMeta = &NameMeta {
         rust: "Vec",
         csharp: Some("Vector"),
     };
 
-    const TYPE_META: &'static TypeMeta = &TypeMeta::Vec(T::TYPE_REF_META);
+    const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[FieldTypeMeta::Type(T::TYPE)]);
+
+    const LINK: &'static MetaLink = &MetaLink {
+        name: Self::NAME,
+        message: None,
+        links: || &[T::LINK],
+    };
 }
 
 #[cfg(test)]

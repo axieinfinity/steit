@@ -93,6 +93,10 @@ impl Field {
         }
     }
 
+    pub fn ty(&self) -> &syn::Type {
+        &self.ty
+    }
+
     pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
         let ty = &self.ty;
 
@@ -173,8 +177,9 @@ impl Field {
 
 pub struct DeriveField<'a> {
     setting: &'a DeriveSetting,
-    field: Field,
     attrs: FieldAttrs,
+    field: Field,
+    type_meta: Option<TokenStream>,
 }
 
 impl<'a> Deref for DeriveField<'a> {
@@ -187,18 +192,26 @@ impl<'a> Deref for DeriveField<'a> {
 
 impl<'a> DeriveField<'a> {
     pub fn parse(
-        setting: &'a DeriveSetting,
         ctx: &Context,
+        setting: &'a DeriveSetting,
+        type_params: &'a [&'a syn::TypeParam],
         field: &mut syn::Field,
         index: usize,
     ) -> derive::Result<Self> {
         let attrs = FieldAttrs::parse(ctx, field)?;
         let field = Field::from_field(field, index);
 
+        let type_meta = if setting.has_meta() {
+            Some(field_type_meta(ctx, &field.ty, type_params)?)
+        } else {
+            None
+        };
+
         Ok(Self {
             setting,
-            field,
             attrs,
+            field,
+            type_meta,
         })
     }
 
@@ -370,13 +383,12 @@ impl<'a> DeriveField<'a> {
 
     pub fn meta(&self) -> TokenStream {
         let rust_name = self.alias().to_string();
-
         let csharp_name = match &self.attrs.csharp_name {
             Some(csharp_name) => quote!(Some(#csharp_name)),
             None => quote!(None),
         };
 
-        let ty = &self.ty;
+        let type_meta = self.type_meta.as_ref().unwrap();
         let tag = self.tag();
 
         quote! {
@@ -385,7 +397,7 @@ impl<'a> DeriveField<'a> {
                     rust: #rust_name,
                     csharp: #csharp_name,
                 },
-                ty: <#ty as HasTypeMeta>::TYPE_META,
+                ty: &#type_meta,
                 tag: #tag,
             }
         }

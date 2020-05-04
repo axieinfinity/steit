@@ -309,4 +309,29 @@ mod tests {
         #[steit(tag = 1)]
         enabled: bool,
     }
+
+    #[test]
+    fn this_is_the_only_test_to_run() {
+        #[steit_derive(Debug, State)]
+        enum Maybe<T> {
+            #[steit(tag = 0, default)]
+            None,
+            #[steit(tag = 1)]
+            Some(#[steit(tag = 0)] T),
+        }
+
+        #[steit_derive(Debug, State)]
+        enum Animal<A, B, C> {
+            #[steit(tag = 0, default)]
+            Alligator(#[steit(tag = 0)] Maybe<A>),
+            #[steit(tag = 1)]
+            Bear(#[steit(tag = 0)] i32, #[steit(tag = 1)] B),
+            #[steit(tag = 2)]
+            Cat(#[steit(tag = 0)] i32, #[steit(tag = 1)] Maybe<Maybe<C>>),
+            #[steit(tag = 3)]
+            Donkey(#[steit(tag = 0)] Maybe<u8>),
+            #[steit(tag = 4)]
+            Elephant,
+        }
+    }
 }

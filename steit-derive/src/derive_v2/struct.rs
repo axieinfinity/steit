@@ -59,6 +59,7 @@ impl StructAttrs {
 pub struct Struct<'a> {
     impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
+    type_params: &'a [&'a syn::TypeParam],
     fields: Vec<DeriveField<'a>>,
     size_cache: Option<Field>,
     runtime: Option<Field>,
@@ -77,11 +78,12 @@ impl<'a> Struct<'a> {
         impler: &'a Implementer,
         setting: &'a DeriveSetting,
         attrs: impl AttributeParse,
+        type_params: &'a [&'a syn::TypeParam],
         fields: &mut syn::Fields,
         variant: Option<Variant>,
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(ctx, attrs);
-        let parsed_fields = parse_fields(ctx, setting, &attrs, fields)?;
+        let parsed_fields = parse_fields(ctx, setting, &attrs, type_params, fields)?;
 
         let krate = setting.krate();
         let mut field_index = parsed_fields.len();
@@ -123,6 +125,7 @@ impl<'a> Struct<'a> {
         Ok(Self {
             impler,
             setting,
+            type_params,
             fields: parsed_fields,
             size_cache,
             runtime,
@@ -234,7 +237,6 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_eq(&self) -> TokenStream {
-        let name = self.impler.name();
         let eq = self.eq();
 
         let mut r#impl = self.impler.impl_for(
@@ -427,7 +429,7 @@ impl<'a> Struct<'a> {
         let builtin = self.setting.steit_owned;
 
         quote! {
-            &StructMeta {
+            StructMeta {
                 name: &NameMeta::new(#name),
                 fields: &[#(#fields,)*],
                 builtin: #builtin,
@@ -435,29 +437,39 @@ impl<'a> Struct<'a> {
         }
     }
 
+    pub fn meta_links(&self) -> TokenStream {
+        let links = self.fields.iter().map(|field| {
+            let ty = field.ty();
+            quote!(<#ty>::LINK)
+        });
+
+        quote!(#(#links,)*)
+    }
+
     fn impl_meta(&self) -> TokenStream {
         let meta = self.meta();
         let name = self.impler.name().to_string();
 
-        let mut tokens = self.impler.impl_for_with(
-            "HasMessageMeta",
-            &["HasTypeMeta"],
-            quote! {
-                const MESSAGE_NAME: &'static NameMeta = &NameMeta::new(#name);
-                const MESSAGE_META: &'static MessageMeta = &MessageMeta::Struct(#meta);
-            },
-        );
+        let param_meta_list = self.type_params.iter().map(|param| {
+            let name = &param.ident;
+            quote!(FieldTypeMeta::Type(#name::TYPE))
+        });
 
-        tokens.extend(self.impler.impl_for(
-            "HasTypeMeta",
-            quote! {
-                const TYPE_NAME: &'static NameMeta = Self::MESSAGE_NAME;
-                const TYPE_META: &'static TypeMeta = &TypeMeta::Message(Self::MESSAGE_META);
-                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::TYPE_NAME);
-            },
-        ));
+        let links = self.meta_links();
 
-        tokens
+        self.impler.impl_for(
+            "HasMeta",
+            quote! {
+                const NAME: &'static NameMeta = &NameMeta::new(#name);
+                const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
+
+                const LINK: &'static MetaLink = &MetaLink{
+                    name: Self::NAME,
+                    message: Some(MessageMeta::Struct(#meta)),
+                    links: || &[#links],
+                };
+            },
+        )
     }
 }
 
@@ -465,6 +477,7 @@ fn parse_fields<'a>(
     ctx: &Context,
     setting: &'a DeriveSetting,
     attrs: &StructAttrs,
+    type_params: &'a [&'a syn::TypeParam],
     fields: &mut syn::Fields,
 ) -> derive::Result<Vec<DeriveField<'a>>> {
     let mut parsed_fields = Vec::with_capacity(fields.iter().len());
@@ -474,7 +487,7 @@ fn parse_fields<'a>(
     let mut unique_tags = true;
 
     for (index, field) in fields.iter_mut().enumerate() {
-        if let Ok(parsed_field) = DeriveField::parse(setting, ctx, field, index) {
+        if let Ok(parsed_field) = DeriveField::parse(ctx, setting, type_params, field, index) {
             let (tag, tag_tokens) = parsed_field.tag_with_tokens();
 
             if reserved_tags.contains(&tag) {
@@ -540,6 +553,8 @@ impl<'a> ToTokens for Struct<'a> {
             tokens.extend(self.impl_state());
         }
 
-        tokens.extend(self.impl_meta());
+        if self.setting.has_meta() {
+            tokens.extend(self.impl_meta());
+        }
     }
 }

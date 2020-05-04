@@ -37,6 +37,7 @@ impl EnumAttrs {
 pub struct Enum<'a> {
     impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
+    type_params: &'a [&'a syn::TypeParam],
     variants: Vec<Struct<'a>>,
     default_variant_index: Option<usize>,
 }
@@ -47,6 +48,7 @@ impl<'a> Enum<'a> {
         impler: &'a Implementer,
         setting: &'a DeriveSetting,
         attrs: impl AttributeParse,
+        type_params: &'a [&'a syn::TypeParam],
         variants: &mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
     ) -> derive::Result<Self> {
         if variants.is_empty() {
@@ -57,11 +59,12 @@ impl<'a> Enum<'a> {
         let attrs = EnumAttrs::parse(ctx, attrs);
 
         let (variants, default_variant_index) =
-            parse_variants(ctx, impler, setting, &attrs, variants)?;
+            parse_variants(ctx, impler, setting, &attrs, type_params, variants)?;
 
         Ok(Self {
             impler,
             setting,
+            type_params,
             variants,
             default_variant_index,
         })
@@ -406,29 +409,30 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let mut tokens = self.impler.impl_for_with(
-            "HasMessageMeta",
-            &["HasTypeMeta"],
-            quote! {
-                const MESSAGE_NAME: &'static NameMeta = &NameMeta::new(#name);
-                const MESSAGE_META: &'static MessageMeta = &MessageMeta::Enum(&EnumMeta {
-                    name: Self::MESSAGE_NAME,
-                    variants: &[#(#variants,)*],
-                    builtin: #builtin,
-                });
-            },
-        );
+        let param_meta_list = self.type_params.iter().map(|param| {
+            let name = &param.ident;
+            quote!(FieldTypeMeta::Type(#name::TYPE))
+        });
 
-        tokens.extend(self.impler.impl_for(
-            "HasTypeMeta",
-            quote! {
-                const TYPE_NAME: &'static NameMeta = Self::MESSAGE_NAME;
-                const TYPE_META: &'static TypeMeta = &TypeMeta::Message(Self::MESSAGE_META);
-                const TYPE_REF_META: &'static TypeMeta = &TypeMeta::MessageRef(Self::TYPE_NAME);
-            },
-        ));
+        let links = self.variants.iter().map(|r#struct| r#struct.meta_links());
 
-        tokens
+        self.impler.impl_for(
+            "HasMeta",
+            quote! {
+                const NAME: &'static NameMeta = &NameMeta::new(#name);
+                const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
+
+                const LINK: &'static MetaLink = &MetaLink {
+                    name: Self::NAME,
+                    message: Some(MessageMeta::Enum(EnumMeta {
+                        name: Self::NAME,
+                        variants: &[#(#variants,)*],
+                        builtin: #builtin,
+                    })),
+                    links: || &[#(#links)*],
+                };
+            },
+        )
     }
 }
 
@@ -437,6 +441,7 @@ fn parse_variants<'a>(
     impler: &'a Implementer,
     setting: &'a DeriveSetting,
     attrs: &EnumAttrs,
+    type_params: &'a [&'a syn::TypeParam],
     variants: &mut syn::punctuated::Punctuated<syn::Variant, syn::Token![,]>,
 ) -> derive::Result<(Vec<Struct<'a>>, Option<usize>)> {
     let mut parsed_variants = Vec::with_capacity(variants.iter().len());
@@ -449,7 +454,7 @@ fn parse_variants<'a>(
 
     for variant in variants.iter_mut() {
         if variant.discriminant.is_some() {
-            ctx.error(variant, "discriminant is not supported yet");
+            ctx.error(variant, "discriminants are not supported yet");
             continue;
         }
 
@@ -484,6 +489,7 @@ fn parse_variants<'a>(
                 impler,
                 setting,
                 unknown_attrs,
+                type_params,
                 &mut variant.fields,
                 Some(parsed_variant),
             ) {
@@ -527,6 +533,8 @@ impl<'a> ToTokens for Enum<'a> {
             tokens.extend(self.impl_state());
         }
 
-        tokens.extend(self.impl_meta());
+        if self.setting.has_meta() {
+            tokens.extend(self.impl_meta());
+        }
     }
 }

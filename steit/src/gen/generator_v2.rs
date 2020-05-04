@@ -24,11 +24,11 @@ pub trait GeneratorV2 {
     fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer);
 
     fn generate<T: HasMessageMeta>(&self, setting: Setting<Self::Setting>) -> io::Result<()> {
-        let mut all_meta = HashMap::new();
+        let mut meta_map = HashMap::new();
 
-        gen_util::collect_meta_v2(T::MESSAGE_META, &mut all_meta);
+        gen_util::collect_meta_v2(T::MESSAGE_META, &mut meta_map);
 
-        for (name, meta) in all_meta {
+        for (name, meta) in meta_map {
             if meta.is_builtin() && setting.skip_builtins {
                 continue;
             }

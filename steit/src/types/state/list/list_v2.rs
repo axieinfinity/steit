@@ -2,7 +2,7 @@ use std::{error::Error, io, ops::Deref, slice};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    meta::{HasTypeMeta, NameMeta, TypeMeta},
+    meta::{FieldTypeMeta, HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
     state_v2::StateV2,
@@ -159,13 +159,19 @@ impl<T: StateV2> StateV2 for ListV2<T> {
     }
 }
 
-impl<T: StateV2 + HasTypeMeta> HasTypeMeta for ListV2<T> {
-    const TYPE_NAME: &'static NameMeta = &NameMeta {
+impl<T: StateV2 + HasMeta> HasMeta for ListV2<T> {
+    const NAME: &'static NameMeta = &NameMeta {
         rust: "List",
         csharp: Some("StateList"),
     };
 
-    const TYPE_META: &'static TypeMeta = &TypeMeta::List(T::TYPE_META);
+    const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[FieldTypeMeta::Type(T::TYPE)]);
+
+    const LINK: &'static MetaLink = &MetaLink {
+        name: Self::NAME,
+        message: None,
+        links: || &[T::LINK],
+    };
 }
 
 #[cfg(test)]
