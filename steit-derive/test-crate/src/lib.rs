@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod tests {
     use steit::{
-        gen::{generators::CSharpGenerator, *},
+        gen::{
+            generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
+            *,
+        },
         log::loggers::PrintLogger,
         rt::RuntimeV2,
         ser_v2::SerializeV2,
@@ -333,5 +336,105 @@ mod tests {
             #[steit(tag = 4)]
             Elephant,
         }
+    }
+
+    #[test]
+    fn hiho() {
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub struct Sure<T>(#[steit(tag = 0)] T);
+
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub enum ActionsOr<T> {
+            #[steit(tag = 0, default)]
+            Actions(#[steit(tag = 0)] Vec<Action>),
+            #[steit(tag = 1)]
+            Value(#[steit(tag = 0)] T),
+        }
+
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub enum Action {
+            #[steit(tag = 0, default)]
+            Raw {},
+            #[steit(tag = 1)]
+            CardDraw {
+                #[steit(tag = 0)]
+                player_index: u16,
+                #[steit(tag = 1)]
+                draw: Vec<Action>,
+                #[steit(tag = 2)]
+                post_draw: Vec<Action>,
+            },
+            #[steit(tag = 2)]
+            CardDiscard {},
+            #[steit(tag = 3)]
+            Attack {
+                #[steit(tag = 0)]
+                attacker_index: u16,
+                #[steit(tag = 1)]
+                card_id: u32, // TODO: Make this optional
+                #[steit(tag = 2)]
+                before_attacks: Vec<Action>,
+                #[steit(tag = 3)]
+                attacks: ActionsOr<Vec<ActionsOr<Attack>>>,
+                #[steit(tag = 4)]
+                after_attacks: Vec<Action>,
+            },
+            #[steit(tag = 4)]
+            Skill {
+                #[steit(tag = 0)]
+                caster_index: u16,
+                #[steit(tag = 1)]
+                card_id: u32,
+                #[steit(tag = 2)]
+                before_skills: Vec<Action>,
+                #[steit(tag = 3)]
+                skills: ActionsOr<Vec<ActionsOr<Skill>>>,
+                #[steit(tag = 4)]
+                after_skills: Vec<Action>,
+            },
+        }
+
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub struct Attack {
+            #[steit(tag = 0)]
+            pub target_index: u16,
+            #[steit(tag = 1)]
+            pub before_hits: Vec<Action>,
+            #[steit(tag = 2)]
+            pub hits: ActionsOr<Vec<ActionsOr<Hit>>>,
+            #[steit(tag = 3)]
+            pub after_hits: Vec<Action>,
+        }
+
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub struct Hit {
+            #[steit(tag = 0)]
+            pub is_miss: bool,
+            #[steit(tag = 1)]
+            pub pre_damage: Vec<Action>,
+            #[steit(tag = 2)]
+            pub damage: Vec<Action>,
+            #[steit(tag = 3)]
+            pub post_damage: Vec<Action>,
+        }
+
+        #[steit_derive(Debug, Serialize, Deserialize)]
+        pub struct Skill {
+            #[steit(tag = 0)]
+            pub target_index: u16,
+            #[steit(tag = 1)]
+            pub pre_cast: Vec<Action>,
+            #[steit(tag = 2)]
+            pub cast: Vec<Action>,
+            #[steit(tag = 3)]
+            pub post_cast: Vec<Sure<Action>>,
+        }
+
+        let setting = CSharpSetting::new("Just.To.Test");
+        let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), true, setting);
+
+        let generator = CSharpGeneratorV2;
+
+        generator.generate::<Action>(&setting).unwrap();
     }
 }

@@ -9,8 +9,10 @@ pub struct CSharpSetting {
 
 impl CSharpSetting {
     #[inline]
-    pub fn new(namespace: String) -> Self {
-        Self { namespace }
+    pub fn new(namespace: impl Into<String>) -> Self {
+        Self {
+            namespace: namespace.into(),
+        }
     }
 }
 
@@ -20,12 +22,10 @@ impl CSharpGeneratorV2 {
     pub fn gen_file_opening(&self, setting: &<Self as GeneratorV2>::Setting, writer: &mut Writer) {
         writer
             .writeln("using System;")
-            .writeln("using System.Collections.Generic;")
             .newline()
-            .writeln("using Steit;")
             .writeln("using Steit.Builtins;")
+            .writeln("using Steit.Codec;")
             .writeln("using Steit.Collections;")
-            .writeln("using Steit.Encoding;")
             .writeln("using Steit.State;")
             .newline()
             .writeln(format!("namespace {} {{", &setting.namespace))
@@ -49,33 +49,31 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         setting: &Self::Setting,
         writer: &mut Writer,
     ) {
-        let name = r#struct.name.rust;
-        let var_name = str_util::uncap_first_char(name);
+        let name = r#struct.name.csharp(String::from);
+        let var_name = str_util::uncap_first_char(&name);
 
-        let fields: Vec<_> = r#struct.fields.iter().map(CSharpField::from_meta).collect();
+        let type_name = if !is_variant {
+            format!("{}{}", &name, type_params(r#struct.type_params))
+        } else {
+            name.clone()
+        };
 
         let variant_accessibility = if is_variant { "internal" } else { "public" };
+        let fields: Vec<_> = r#struct.fields.iter().map(CSharpField::from_meta).collect();
 
         if !is_variant {
             self.gen_file_opening(setting, writer);
         }
 
         writer
-            .writeln(format!("public sealed class {} : IState {{", name))
+            .writeln(format!("public sealed class {} : IState {{", &type_name))
             .indent();
 
-        // Declare listener lists
-        for field in &fields {
-            writer.writeln(format!(
-                "private static IList<Listener<{0}>> {1}Listeners = new List<Listener<{0}>>();",
-                field.type_name, field.lower_camel_case_name,
-            ));
-        }
+        writer.writeln("public Path Path { get; }");
 
-        writer
-            .newline()
-            .writeln("public Path Path { get; private set; }")
-            .newline();
+        if fields.len() > 1 {
+            writer.newline();
+        }
 
         // Declare properties
         for field in &fields {
@@ -88,137 +86,166 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         writer
             .newline()
             .writeln(format!(
-                "{} {}(Path path = null) {{",
+                "{} {}(Path? path = null) {{",
                 variant_accessibility, name,
             ))
-            .indent_writeln("this.Path = path != null ? path : Path.Root;");
+            .indent();
+
+        for type_param in r#struct.type_params {
+            writer.writeln(format!(
+                "Typing.CheckPrimitiveOrStateType(typeof({}));",
+                type_param,
+            ));
+        }
+
+        if r#struct.type_params.len() > 1 && fields.len() > 1 {
+            writer.newline();
+        }
+
+        writer.writeln("this.Path = path ?? Path.Root;");
+
+        if r#struct.type_params.len() > 1 && fields.len() > 1 {
+            writer.newline();
+        }
 
         // Initiate nested states
         for field in &fields {
-            if let TypeMeta::Primitive(_) = field.meta.ty {
+            if let FieldTypeMeta::Type(TypeMeta::Primitive(_)) = field.meta.ty {
             } else {
                 writer.writeln(format!(
-                    "this.{} = new {}(this.Path.Nested({}));",
+                    "this.{} = Typing.New<{}>(this.Path, {});",
                     field.upper_camel_case_name, field.type_name, field.meta.tag,
                 ));
             }
         }
 
+        writer.outdent_writeln("}").newline();
+
+        // Declare events
+        for field in &fields {
+            writer.writeln(format!(
+                "public static event EventHandler<FieldUpdateEventArgs<{}, {}>>? On{}Update;",
+                field.type_name, type_name, field.upper_camel_case_name,
+            ));
+        }
+
+        if !fields.is_empty() {
+            writer.newline();
+        }
+
+        // Support clearing a field's updated events
+        for field in &fields {
+            writer.write_indentation().write(format!(
+                "public static void Clear{}UpdateHandlers() {{",
+                field.upper_camel_case_name,
+            ));
+
+            if fields.len() > 1 {
+                writer.write(" ");
+            } else {
+                writer.newline().indent().write_indentation();
+            }
+
+            writer.write(format!(
+                "{}.On{}Update = null;",
+                type_name, field.upper_camel_case_name,
+            ));
+
+            if fields.len() > 1 {
+                writer.write(" ");
+            } else {
+                writer.newline().outdent().write_indentation();
+            }
+
+            writer.write("}").newline();
+        }
+
+        if !fields.is_empty() {
+            writer.newline();
+        }
+
+        // Support clearing all fields' updated events
         writer
-            .outdent_writeln("}")
+            .write_indentation()
+            .write("public static void ClearUpdateHandlers() {");
+
+        if !fields.is_empty() {
+            writer.indent();
+        } else {
+            writer.write(" ");
+        }
+
+        for field in &fields {
+            if !fields.is_empty() {
+                writer.newline().write_indentation();
+            }
+
+            writer.write(format!(
+                "{}.On{}Update = null;",
+                type_name, field.upper_camel_case_name,
+            ));
+        }
+
+        if !fields.is_empty() {
+            writer.outdent().newline().write_indentation();
+        }
+
+        writer
+            .write("}")
+            .newline()
             .newline()
             .writeln(format!(
-                "public delegate void Listener<T>(T newValue, T oldValue, {} container);",
-                name,
+                "{} static {} Deserialize(IReader reader, Path? path = null) {{",
+                variant_accessibility, type_name,
             ))
-            .newline();
-
-        // Support adding listeners
-        for field in &fields {
-            writer.writeln(format!(
-                "public static int OnUpdate{}(Listener<{}> listener) {{ return Utilities.Add({}Listeners, listener); }}",
-                field.upper_camel_case_name, field.type_name, field.lower_camel_case_name,
-            ));
-        }
-
-        if !fields.is_empty() {
-            writer.newline();
-        }
-
-        // Support removing listeners
-        for field in &fields {
-            writer.writeln(format!(
-                "public static void Remove{}Listener(Listener<{}> listener) {{ {}Listeners.Remove(listener); }}",
-                field.upper_camel_case_name, field.type_name, field.lower_camel_case_name,
-            ));
-        }
-
-        if !fields.is_empty() {
-            writer.newline();
-        }
-
-        // Support removing listeners at specific indices
-        for field in &fields {
-            writer.writeln(format!(
-                "public static void Remove{}ListenerAt(int index) {{ {}Listeners.RemoveAt(index); }}",
-                field.upper_camel_case_name, field.lower_camel_case_name,
-            ));
-        }
-
-        if !fields.is_empty() {
-            writer.newline();
-        }
-
-        // Support clearing listener lists
-        for field in &fields {
-            writer.writeln(format!(
-                "public static void Clear{}Listeners() {{ {}Listeners.Clear(); }}",
-                field.upper_camel_case_name, field.lower_camel_case_name,
-            ));
-        }
-
-        if !fields.is_empty() {
-            writer.newline();
-        }
-
-        writer
-            .writeln("public static void ClearAllListeners() {")
-            .indent();
-
-        // Support clearing all listener lists
-        for field in &fields {
-            writer.writeln(format!("{}Listeners.Clear();", field.lower_camel_case_name));
-        }
-
-        writer
-            .outdent_writeln("}")
-            .newline()
-            .writeln(format!(
-                "{} static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
-                variant_accessibility,
-                name,
-            ))
-            .indent_writeln(format!("var {} = new {}(path);", var_name, name))
-            .writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name))
+            .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
+            .writeln(format!("{}.Replace(reader);", var_name))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
-            .writeln("public Int16 WireType(UInt16 tag) {")
+            .writeln("public WireType? GetWireType(UInt32 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
         // Return wire types
         for field in r#struct.fields {
-            if let TypeMeta::Primitive(_) = field.ty {
-                writer.writeln(format!(
-                    "case {}: return (Int16) Steit.Encoding.WireType.Varint;",
-                    field.tag,
-                ));
-            } else {
-                writer.writeln(format!(
-                    "case {}: return (Int16) Steit.Encoding.WireType.Sized;",
-                    field.tag,
-                ));
-            }
+            let wire_type = match field.ty {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => "WireType.Varint".to_string(),
+                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => "WireType.Sized".to_string(),
+                FieldTypeMeta::TypeParam(type_param) => format!(
+                    "Typing.IsStateType(typeof({})) ? WireType.Sized : WireType.Varint",
+                    type_param,
+                ),
+            };
+
+            writer.writeln(format!("case {}: return {};", field.tag, wire_type));
         }
 
         writer
-            .writeln("default: return -1;")
+            .writeln("default: return null;")
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public IState Nested(UInt16 tag) {")
+            .writeln("public IState? GetNested(UInt32 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
         // Return nested states
         for field in &fields {
-            if let TypeMeta::Primitive(_) = field.meta.ty {
-            } else {
-                writer.writeln(format!(
+            let nested = match field.meta.ty {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => None,
+                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => Some(format!(
                     "case {}: return this.{};",
                     field.meta.tag, field.upper_camel_case_name,
-                ));
+                )),
+                FieldTypeMeta::TypeParam(type_param) => Some(format!(
+                    "case {}: return Typing.IsStateType(typeof({})) ? this.{} as IState : null;",
+                    field.meta.tag, type_param, field.upper_camel_case_name,
+                )),
+            };
+
+            if let Some(nested) = nested {
+                writer.writeln(nested);
             }
         }
 
@@ -227,47 +254,68 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public bool IsAddSupported() { return false; }")
-            .writeln("public bool IsRemoveSupported() { return false; }")
-            .newline()
-            .writeln("public void ReplayAdd(Reader reader) { throw new Exception(\"Not supported\"); }")
-            .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
-            .newline()
-            .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
+            .writeln("public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
-        // Replace fields and notify listeners
+        // Replace fields and notify event handlers
         for field in &fields {
-            if let TypeMeta::Primitive(_) = field.meta.ty {
-                writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify(reader.Read{3}(), this.{1}, shouldNotify, {2}Listeners); break;",
-                    field.meta.tag,
-                    field.upper_camel_case_name,
-                    field.lower_camel_case_name,
-                    field.type_name,
-                ));
-            } else {
-                writer.writeln(format!(
-                    "case {0}: this.{1} = this.Notify({2}.Deserialize(reader.Nested(), this.Path.Nested({0})), this.{1}, shouldNotify, {3}Listeners); break;",
-                    field.meta.tag,
-                    field.upper_camel_case_name,
-                    field.type_name,
-                    field.lower_camel_case_name,
-                ));
-            }
+            match field.meta.ty {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => {
+                    writer.writeln(format!(
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.Read{2}(), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        field.meta.tag,
+                        field.upper_camel_case_name,
+                        field.type_name,
+                        type_name,
+                    ));
+                }
+
+                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => {
+                    writer.writeln(format!(
+                        "case {0}: this.{1} = this.MaybeNotify({0}, {2}.Deserialize(reader.GetNested(), this.Path.GetNested({0})), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        field.meta.tag,
+                        field.upper_camel_case_name,
+                        field.type_name,
+                        type_name,
+                    ));
+                }
+
+                FieldTypeMeta::TypeParam(type_param) => {
+                    writer.writeln(format!(
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.ReadValue<{2}>(this.Path, {0}), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        field.meta.tag,
+                        field.upper_camel_case_name,
+                        field.type_name,
+                        type_name,
+                    ));
+                }
+            };
         }
 
         writer
-            .writeln("default: reader.SkipWireTyped(wireType); break;")
+            .writeln("default: reader.SkipField(wireType); break;")
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("private T Notify<T>(T newValue, T oldValue, bool shouldNotify, IList<Listener<T>> listeners) {")
+            .writeln("public bool IsList() { return false; }")
+            .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
+            .newline()
+            .writeln("public bool IsMap() { return false; }")
+            .writeln("public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }")
+            .newline()
+            .writeln("private TValue MaybeNotify<TValue>(")
+            .indent_writeln("UInt32 tag,")
+            .writeln("TValue newValue,")
+            .writeln("TValue oldValue,")
+            .writeln(format!("EventHandler<FieldUpdateEventArgs<TValue, {}>>? handler,", type_name))
+            .writeln("bool shouldNotify")
+            .outdent_writeln(") {")
             .indent_writeln("if (shouldNotify) {")
-            .indent_writeln("foreach (var listener in listeners) {")
-            .indent_writeln("listener(newValue, oldValue, this);")
-            .outdent_writeln("}")
+            .indent_writeln(format!("var args = new FieldUpdateEventArgs<TValue, {}>(tag, newValue, oldValue, this);", type_name))
+            .writeln("handler?.Invoke(this, args);")
             .outdent_writeln("}")
             .newline()
             .writeln("return newValue;")
@@ -280,8 +328,9 @@ impl GeneratorV2 for CSharpGeneratorV2 {
     }
 
     fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer) {
-        let name = r#enum.name.rust;
-        let var_name = str_util::uncap_first_char(name);
+        let name = r#enum.name.csharp(String::from);
+        let var_name = str_util::uncap_first_char(&name);
+        let type_name = format!("{}{}", &name, type_params(r#enum.type_params));
 
         let variants: Vec<_> = r#enum
             .variants
@@ -292,129 +341,154 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         let default_variant = variants
             .iter()
             .find(|variant| variant.meta.default)
-            .expect(&format!("expect a default variant for enum {}", name));
+            .expect(&format!("expected a default variant for enum {}", name));
 
         self.gen_file_opening(setting, writer);
 
         writer
-            .writeln(format!("public sealed class {} : IEnumState {{", name))
+            .writeln(format!("public sealed class {} : IEnumState {{", type_name))
             .indent();
 
-        // Declare variant tag numbers
+        // Declare variant tag constants
         for variant in &variants {
             writer.writeln(format!(
-                "public static UInt16 {}_VARIANT = {};",
+                "public const UInt32 {}_TAG = {};",
                 variant.screaming_snake_case_name, variant.meta.tag,
             ));
         }
 
         writer
             .newline()
-            .writeln("private static IList<Listener> listeners = new List<Listener>();")
+            .writeln("public Path Path { get; }")
             .newline()
-            .writeln("public Path Path { get; private set; }")
-            .newline()
-            .writeln("public UInt16 Variant { get; private set; }")
-            .writeln("public IState Value { get; private set; }")
+            .writeln("public UInt32 VariantTag { get; private set; }")
+            .writeln("public IState Variant { get; private set; }")
             .newline();
 
         // Return variant values
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "public {0} {0}Value {{ get {{ return this.Variant == {1} ? ({0}) this.Value : null; }} }}",
-                variant.ty.name.rust, variant.tag,
+                "public {0}? {0}Variant {{ get {{ return this.VariantTag == {1} ? ({0}) this.Variant : null; }} }}",
+                variant.ty.name.csharp(String::from), variant.tag,
             ));
         }
 
         writer
             .newline()
-            .writeln(format!("public {}(Path path = null) {{", name))
-            .indent_writeln("this.Path = path != null ? path : Path.Root;")
+            .writeln(format!("public {}(Path? path = null) {{", name))
+            .indent();
+
+        for type_param in r#enum.type_params {
+            writer.writeln(format!(
+                "Typing.CheckPrimitiveOrStateType(typeof({}));",
+                type_param,
+            ));
+        }
+
+        if r#enum.type_params.len() > 1 {
+            writer.newline();
+        }
+
+        writer.writeln("this.Path = path ?? Path.Root;");
+
+        if r#enum.type_params.len() > 1 {
+            writer.newline();
+        }
+
+        writer
+            .writeln(format!("this.VariantTag = {};", default_variant.meta.tag))
             .writeln(format!(
-                "this.Value = new {}(this.Path.Nested({}));",
-                default_variant.meta.ty.name.rust, default_variant.meta.tag,
+                "this.Variant = new {}(this.Path.GetNested({}));",
+                default_variant.meta.ty.name.csharp(String::from),
+                default_variant.meta.tag,
             ))
             .outdent_writeln("}")
             .newline()
             .writeln(format!(
-                "public delegate void Listener(IState newValue, UInt16 newVariant, IState oldValue, UInt16 oldVariant, {} container);",
-                name,
+                "public static event EventHandler<VariantUpdateEventArgs<{}>>? OnUpdate;",
+                type_name,
             ))
             .newline()
-            .writeln("public static int OnUpdate(Listener listener) { return Utilities.Add(listeners, listener); }")
-            .writeln("public static void RemoveListener(Listener listener) { listeners.Remove(listener); }")
-            .writeln("public static void RemoveListenerAt(int index) { listeners.RemoveAt(index); }")
-            .writeln("public static void ClearListeners() { listeners.Clear(); }")
+            .writeln("public static void ClearUpdateHandlers() {")
+            .indent_writeln(format!("{}.OnUpdate = null;", type_name))
+            .outdent_writeln("}")
             .newline()
             .writeln(format!(
-                "public static {} Deserialize(Reader reader, Path path = null, bool shouldNotify = false) {{",
-                name,
+                "public static {} Deserialize(IReader reader, Path? path = null) {{",
+                type_name,
             ))
-            .indent_writeln(format!("var {} = new {}(path);", var_name, name))
-            .writeln(format!("{}.ReplaceAll(reader, shouldNotify);", var_name))
+            .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
+            .writeln(format!("{}.Replace(reader);", var_name))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
-            .writeln("public Int16 WireType(UInt16 tag) {")
+            .writeln("public WireType? GetWireType(UInt32 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
         // Return wire types
         for variant in r#enum.variants {
-            writer.writeln(format!(
-                "case {}: return (Int16) Steit.Encoding.WireType.Sized;",
-                variant.tag
-            ));
+            writer.writeln(format!("case {}: return WireType.Sized;", variant.tag));
         }
 
         writer
-            .writeln("default: return -1;")
+            .writeln("default: return null;")
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public IState Nested(UInt16 tag) {")
-            .indent_writeln("return tag == this.Variant ? this.Value : null;")
+            .writeln("public IState? GetNested(UInt32 tag) {")
+            .indent_writeln("return tag == this.VariantTag ? this.Variant : null;")
             .outdent_writeln("}")
             .newline()
-            .writeln("public bool IsAddSupported() { return false; }")
-            .writeln("public bool IsRemoveSupported() { return false; }")
-            .newline()
-            .writeln("public void ReplayAdd(Reader reader) { throw new Exception(\"Not supported\"); }")
-            .writeln("public void ReplayRemove(UInt16 tag) { throw new Exception(\"Not supported\"); }")
-            .newline()
-            .writeln("public void ReplaceAt(UInt16 tag, WireType wireType, Reader reader, bool shouldNotify) {")
-            .indent_writeln("reader = !reader.Eof() ? reader : new Reader(new byte[0]);")
-            .newline()
-            .writeln("switch (tag) {")
+            .writeln("public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {")
+            .indent_writeln("switch (tag) {")
             .indent();
 
-        // Replace fields and notify listeners
+        // Replace fields and notify event handlers
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "case {0}: this.NotifyAndUpdate({0}, {1}.Deserialize(reader, this.Path.Nested({0})), shouldNotify); break;",
-                variant.tag, variant.ty.name.rust,
+                "case {0}: this.NotifyAndUpdate({0}, {1}.Deserialize(reader, this.Path.GetNested({0})), shouldNotify); break;",
+                variant.tag, variant.ty.name.csharp(String::from),
             ));
         }
 
         writer
-            .writeln("default: reader.Exhaust(); break;")
+            .writeln("default: reader.SkipToEnd(); break;")
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("private void NotifyAndUpdate(UInt16 newVariant, IState newValue, bool shouldNotify) {")
+            .writeln("public bool IsList() { return false; }")
+            .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
+            .newline()
+            .writeln("public bool IsMap() { return false; }")
+            .writeln("public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }")
+            .newline()
+            .writeln("private void NotifyAndUpdate(UInt32 newVariantTag, IState newVariant, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")
-            .indent_writeln("foreach (var listener in listeners) {")
-            .indent_writeln("listener(newValue, newVariant, this.Value, this.Variant, this);")
-            .outdent_writeln("}")
+            .indent_writeln(format!(
+                "var args = new VariantUpdateEventArgs<{}>(newVariantTag, newVariant, this.VariantTag, this.Variant, this);",
+                type_name,
+            ))
+            .writeln(format!("{}.OnUpdate?.Invoke(this, args);", type_name))
             .outdent_writeln("}")
             .newline()
+            .writeln("this.VariantTag = newVariantTag;")
             .writeln("this.Variant = newVariant;")
-            .writeln("this.Value = newValue;")
             .outdent_writeln("}");
 
         for variant in r#enum.variants {
-            writer.newline();
-            self.gen_struct(variant.ty, true, setting, writer);
+            writer
+                .newline()
+                .writeln(format!(
+                    "// Variant ({}): {}",
+                    variant.tag,
+                    variant.ty.name.csharp(String::from),
+                ))
+                .newline();
+
+            self.gen_struct(&variant.ty, true, setting, writer);
         }
 
         writer.outdent_writeln("}");
@@ -434,7 +508,10 @@ impl CSharpVariant {
     pub fn from_meta(variant: &'static VariantMeta) -> Self {
         Self {
             meta: variant,
-            screaming_snake_case_name: str_util::to_snake_case(variant.ty.name.rust).to_uppercase(),
+            screaming_snake_case_name: variant
+                .ty
+                .name
+                .csharp(|name| str_util::to_snake_case(name).to_uppercase()),
         }
     }
 }
@@ -443,8 +520,6 @@ struct CSharpField {
     meta: &'static FieldMeta,
     // UpperCamelCase
     upper_camel_case_name: String,
-    // lowerCamelCase
-    lower_camel_case_name: String,
     type_name: String,
 }
 
@@ -453,29 +528,43 @@ impl CSharpField {
     pub fn from_meta(field: &'static FieldMeta) -> Self {
         Self {
             meta: field,
-            upper_camel_case_name: str_util::to_camel_case(field.name.rust, true),
-            lower_camel_case_name: str_util::to_camel_case(field.name.rust, false),
-            type_name: get_type(field.ty),
+            upper_camel_case_name: field
+                .name
+                .csharp(|name| str_util::to_camel_case(name, true)),
+            type_name: field_type(field.ty),
         }
     }
 }
 
-fn get_type(ty: &'static TypeMeta) -> String {
-    match *ty {
-        TypeMeta::Primitive(name) => name
-            .csharp
-            .expect("expected a C# name for every primitive type")
-            .to_string(),
+fn type_params(type_params: &'static [&'static str]) -> String {
+    if type_params.is_empty() {
+        return "".to_string();
+    }
 
-        TypeMeta::Message(meta) => match meta {
-            MessageMeta::Struct(&StructMeta { name, .. }) => name.rust.to_string(),
-            MessageMeta::Enum(&EnumMeta { name, .. }) => name.rust.to_string(),
+    format!("<{}>", type_params.join(", "))
+}
+
+fn field_type(ty: &'static FieldTypeMeta) -> String {
+    match *ty {
+        FieldTypeMeta::Type(ty) => match ty {
+            TypeMeta::Primitive(name) => name
+                .csharp
+                .expect("expected a C# name for every primitive type")
+                .to_string(),
+
+            TypeMeta::Ref(name, type_args) => {
+                let type_name = name.csharp(String::from);
+
+                if type_args.is_empty() {
+                    return type_name;
+                }
+
+                let type_args: Vec<_> = type_args.iter().map(field_type).collect();
+
+                format!("{}<{}>", type_name, type_args.join(", "))
+            }
         },
 
-        TypeMeta::MessageRef(name) => name.rust.to_string(),
-
-        TypeMeta::Vec(field_type) => format!("SVector<{}>", get_type(field_type)),
-        TypeMeta::List(field_type) => format!("SList<{}>", get_type(field_type)),
-        TypeMeta::Map(field_type) => format!("SDictionary<{}>", get_type(field_type)),
+        FieldTypeMeta::TypeParam(type_param) => type_param.to_string(),
     }
 }

@@ -428,9 +428,21 @@ impl<'a> Struct<'a> {
         let fields = map_fields!(self, _.meta());
         let builtin = self.setting.steit_owned;
 
+        let type_params = if self.variant.is_none() {
+            let type_params = self.type_params.iter().map(|type_param| {
+                let type_param = type_param.ident.to_string();
+                quote!(#type_param)
+            });
+
+            Some(quote!(#(#type_params,)*))
+        } else {
+            None
+        };
+
         quote! {
             StructMeta {
                 name: &NameMeta::new(#name),
+                type_params: &[#type_params],
                 fields: &[#(#fields,)*],
                 builtin: #builtin,
             }

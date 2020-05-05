@@ -414,6 +414,11 @@ impl<'a> Enum<'a> {
             quote!(FieldTypeMeta::Type(#name::TYPE))
         });
 
+        let type_params = self.type_params.iter().map(|type_param| {
+            let type_param = type_param.ident.to_string();
+            quote!(#type_param)
+        });
+
         let links = self.variants.iter().map(|r#struct| r#struct.meta_links());
 
         self.impler.impl_for(
@@ -425,6 +430,7 @@ impl<'a> Enum<'a> {
                     r#type: Self::TYPE,
                     msg: Some(MessageMeta::Enum(EnumMeta {
                         name: Self::NAME,
+                        type_params: &[#(#type_params,)*],
                         variants: &[#(#variants,)*],
                         builtin: #builtin,
                     })),

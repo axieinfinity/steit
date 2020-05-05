@@ -35,6 +35,17 @@ impl Writer {
     }
 
     #[inline]
+    pub fn write(&mut self, s: impl AsRef<str>) -> &mut Self {
+        self.out.push_str(s.as_ref());
+        self
+    }
+
+    #[inline]
+    pub fn write_indentation(&mut self) -> &mut Self {
+        self.write(" ".repeat(self.current_indent_level * self.indent_size))
+    }
+
+    #[inline]
     pub fn newline(&mut self) -> &mut Self {
         self.out.push('\n');
         self
@@ -42,7 +53,7 @@ impl Writer {
 
     #[inline]
     pub fn writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
-        self.write_indent().write(s).newline()
+        self.write_indentation().write(s).newline()
     }
 
     #[inline]
@@ -53,16 +64,5 @@ impl Writer {
     #[inline]
     pub fn outdent_writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.outdent().writeln(s)
-    }
-
-    #[inline]
-    fn write(&mut self, s: impl AsRef<str>) -> &mut Self {
-        self.out.push_str(s.as_ref());
-        self
-    }
-
-    #[inline]
-    fn write_indent(&mut self) -> &mut Self {
-        self.write(" ".repeat(self.current_indent_level * self.indent_size))
     }
 }

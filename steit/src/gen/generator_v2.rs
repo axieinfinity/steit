@@ -22,7 +22,7 @@ pub trait GeneratorV2 {
 
     fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer);
 
-    fn generate<T: HasMeta>(&self, setting: Setting<Self::Setting>) -> io::Result<()> {
+    fn generate<T: HasMeta>(&self, setting: &Setting<Self::Setting>) -> io::Result<()> {
         for (name, meta) in gen_util::collect_meta_v2::<T>() {
             if meta.is_builtin() && setting.skip_builtins {
                 continue;

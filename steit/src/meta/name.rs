@@ -12,4 +12,12 @@ impl NameMeta {
             csharp: None,
         }
     }
+
+    #[inline]
+    pub fn csharp(&self, transform: impl FnOnce(&'static str) -> String) -> String {
+        match self.csharp {
+            Some(csharp) => transform(csharp),
+            None => transform(self.rust),
+        }
+    }
 }

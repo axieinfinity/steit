@@ -27,6 +27,7 @@ impl MessageMeta {
 #[derive(Debug)]
 pub struct StructMeta {
     pub name: &'static NameMeta,
+    pub type_params: &'static [&'static str],
     pub fields: &'static [FieldMeta],
     pub builtin: bool,
 }
@@ -34,6 +35,7 @@ pub struct StructMeta {
 #[derive(Debug)]
 pub struct EnumMeta {
     pub name: &'static NameMeta,
+    pub type_params: &'static [&'static str],
     pub variants: &'static [VariantMeta],
     pub builtin: bool,
 }
