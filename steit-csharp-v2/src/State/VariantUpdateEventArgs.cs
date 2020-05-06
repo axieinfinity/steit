@@ -2,25 +2,25 @@ using System;
 
 namespace Steit.State {
     public sealed class VariantUpdateEventArgs<TContainer> : EventArgs where TContainer : IEnumState {
-        public UInt32 NewVariantTag { get; }
+        public UInt32 NewTag { get; }
         public IState NewVariant { get; }
 
-        public UInt32 OldVariantTag { get; }
+        public UInt32 OldTag { get; }
         public IState OldVariant { get; }
 
         public TContainer Container { get; }
 
         public VariantUpdateEventArgs(
-            UInt32 newVariantTag,
+            UInt32 newTag,
             IState newVariant,
-            UInt32 oldVariantTag,
+            UInt32 oldTag,
             IState oldVariant,
             TContainer container
         ) {
-            this.NewVariantTag = newVariantTag;
+            this.NewTag = newTag;
             this.NewVariant = newVariant;
 
-            this.OldVariantTag = oldVariantTag;
+            this.OldTag = oldTag;
             this.OldVariant = oldVariant;
 
             this.Container = container;

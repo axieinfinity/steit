@@ -17,17 +17,17 @@ namespace Steit.State {
             return new Path(this, tag);
         }
 
-        private void BuildString(StringBuilder builder) {
-            if (this.Parent != null) {
-                this.Parent.BuildString(builder);
-                builder.AppendFormat("/{0}", this.Tag);
-            }
-        }
-
         public override string ToString() {
             var builder = new StringBuilder();
-            this.BuildString(builder);
+            this.ToString(builder);
             return builder.ToString();
+        }
+
+        private void ToString(StringBuilder builder) {
+            if (this.Parent != null) {
+                this.Parent.ToString(builder);
+                builder.AppendFormat("/{0}", this.Tag);
+            }
         }
     }
 }

@@ -10,7 +10,7 @@ namespace Steit.Collections {
         public Path Path { get; }
 
         public Vector(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {
-            Typing.CheckPrimitiveOrStateType(typeof(T));
+            StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
         }
 

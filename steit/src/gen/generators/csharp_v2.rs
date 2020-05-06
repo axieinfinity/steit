@@ -93,7 +93,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         for type_param in r#struct.type_params {
             writer.writeln(format!(
-                "Typing.CheckPrimitiveOrStateType(typeof({}));",
+                "StateFactory.ValidateType(typeof({}));",
                 type_param,
             ));
         }
@@ -110,12 +110,20 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         // Initiate nested states
         for field in &fields {
-            if let FieldTypeMeta::Type(TypeMeta::Primitive(_)) = field.meta.ty {
-            } else {
-                writer.writeln(format!(
-                    "this.{} = Typing.New<{}>(this.Path, {});",
-                    field.upper_camel_case_name, field.type_name, field.meta.tag,
-                ));
+            let init = match field.meta.ty {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => None,
+                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => Some(format!(
+                    "new {}(this.Path.GetNested({}))",
+                    field.type_name, field.meta.tag,
+                )),
+                FieldTypeMeta::TypeParam(type_param) => Some(format!(
+                    "StateFactory.Construct<{}>(this.Path.GetNested({}))",
+                    type_param, field.meta.tag,
+                )),
+            };
+
+            if let Some(init) = init {
+                writer.writeln(format!("this.{} = {};", field.upper_camel_case_name, init));
             }
         }
 
@@ -146,10 +154,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
                 writer.newline().indent().write_indentation();
             }
 
-            writer.write(format!(
-                "{}.On{}Update = null;",
-                type_name, field.upper_camel_case_name,
-            ));
+            writer.write(format!("On{}Update = null;", field.upper_camel_case_name));
 
             if fields.len() > 1 {
                 writer.write(" ");
@@ -180,10 +185,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
                 writer.newline().write_indentation();
             }
 
-            writer.write(format!(
-                "{}.On{}Update = null;",
-                type_name, field.upper_camel_case_name,
-            ));
+            writer.write(format!("On{}Update = null;", field.upper_camel_case_name));
         }
 
         if !fields.is_empty() {
@@ -213,7 +215,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
                 FieldTypeMeta::Type(TypeMeta::Primitive(_)) => "WireType.Varint".to_string(),
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => "WireType.Sized".to_string(),
                 FieldTypeMeta::TypeParam(type_param) => format!(
-                    "Typing.IsStateType(typeof({})) ? WireType.Sized : WireType.Varint",
+                    "StateFactory.IsStateType(typeof({})) ? WireType.Sized : WireType.Varint",
                     type_param,
                 ),
             };
@@ -234,18 +236,16 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         for field in &fields {
             let nested = match field.meta.ty {
                 FieldTypeMeta::Type(TypeMeta::Primitive(_)) => None,
-                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => Some(format!(
-                    "case {}: return this.{};",
-                    field.meta.tag, field.upper_camel_case_name,
-                )),
-                FieldTypeMeta::TypeParam(type_param) => Some(format!(
-                    "case {}: return Typing.IsStateType(typeof({})) ? this.{} as IState : null;",
-                    field.meta.tag, type_param, field.upper_camel_case_name,
-                )),
+                FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => {
+                    Some(format!("this.{}", field.upper_camel_case_name))
+                }
+                FieldTypeMeta::TypeParam(_) => {
+                    Some(format!("this.{} as IState", field.upper_camel_case_name))
+                }
             };
 
             if let Some(nested) = nested {
-                writer.writeln(nested);
+                writer.writeln(format!("case {}: return {};", field.meta.tag, nested));
             }
         }
 
@@ -263,31 +263,28 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             match field.meta.ty {
                 FieldTypeMeta::Type(TypeMeta::Primitive(_)) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.Read{2}(), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.Read{2}(), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
-                        type_name,
                     ));
                 }
 
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, {2}.Deserialize(reader.GetNested(), this.Path.GetNested({0})), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, {2}.Deserialize(reader.GetNested(), this.Path.GetNested({0})), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
-                        type_name,
                     ));
                 }
 
-                FieldTypeMeta::TypeParam(type_param) => {
+                FieldTypeMeta::TypeParam(_) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.ReadValue<{2}>(this.Path, {0}), this.{1}, {3}.On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.ReadValue<{2}>(this.Path, {0}), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
-                        type_name,
                     ));
                 }
             };
@@ -352,8 +349,8 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         // Declare variant tag constants
         for variant in &variants {
             writer.writeln(format!(
-                "public const UInt32 {}_TAG = {};",
-                variant.screaming_snake_case_name, variant.meta.tag,
+                "public const UInt32 {}Tag = {};",
+                variant.upper_camel_case_name, variant.meta.tag,
             ));
         }
 
@@ -361,15 +358,15 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .newline()
             .writeln("public Path Path { get; }")
             .newline()
-            .writeln("public UInt32 VariantTag { get; private set; }")
+            .writeln("public UInt32 Tag { get; private set; }")
             .writeln("public IState Variant { get; private set; }")
             .newline();
 
         // Return variant values
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "public {0}? {0}Variant {{ get {{ return this.VariantTag == {1} ? ({0}) this.Variant : null; }} }}",
-                variant.ty.name.csharp(String::from), variant.tag,
+                "public {0}? {0}Variant {{ get {{ return this.Variant as {0}; }} }}",
+                variant.ty.name.csharp(String::from),
             ));
         }
 
@@ -380,7 +377,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
         for type_param in r#enum.type_params {
             writer.writeln(format!(
-                "Typing.CheckPrimitiveOrStateType(typeof({}));",
+                "StateFactory.ValidateType(typeof({}));",
                 type_param,
             ));
         }
@@ -396,7 +393,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         }
 
         writer
-            .writeln(format!("this.VariantTag = {};", default_variant.meta.tag))
+            .writeln(format!("this.Tag = {};", default_variant.meta.tag))
             .writeln(format!(
                 "this.Variant = new {}(this.Path.GetNested({}));",
                 default_variant.meta.ty.name.csharp(String::from),
@@ -410,7 +407,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             ))
             .newline()
             .writeln("public static void ClearUpdateHandlers() {")
-            .indent_writeln(format!("{}.OnUpdate = null;", type_name))
+            .indent_writeln("OnUpdate = null;")
             .outdent_writeln("}")
             .newline()
             .writeln(format!(
@@ -437,7 +434,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .newline()
             .writeln("public IState? GetNested(UInt32 tag) {")
-            .indent_writeln("return tag == this.VariantTag ? this.Variant : null;")
+            .indent_writeln("return tag == this.Tag ? this.Variant : null;")
             .outdent_writeln("}")
             .newline()
             .writeln("public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {")
@@ -447,7 +444,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         // Replace fields and notify event handlers
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "case {0}: this.NotifyAndUpdate({0}, {1}.Deserialize(reader, this.Path.GetNested({0})), shouldNotify); break;",
+                "case {0}: this.Update({0}, {1}.Deserialize(reader, this.Path.GetNested({0})), shouldNotify); break;",
                 variant.tag, variant.ty.name.csharp(String::from),
             ));
         }
@@ -465,16 +462,16 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .writeln("public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }")
             .writeln("public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }")
             .newline()
-            .writeln("private void NotifyAndUpdate(UInt32 newVariantTag, IState newVariant, bool shouldNotify) {")
+            .writeln("private void Update(UInt32 newTag, IState newVariant, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")
             .indent_writeln(format!(
-                "var args = new VariantUpdateEventArgs<{}>(newVariantTag, newVariant, this.VariantTag, this.Variant, this);",
+                "var args = new VariantUpdateEventArgs<{}>(newTag, newVariant, this.Tag, this.Variant, this);",
                 type_name,
             ))
             .writeln(format!("{}.OnUpdate?.Invoke(this, args);", type_name))
             .outdent_writeln("}")
             .newline()
-            .writeln("this.VariantTag = newVariantTag;")
+            .writeln("this.Tag = newTag;")
             .writeln("this.Variant = newVariant;")
             .outdent_writeln("}");
 
@@ -497,25 +494,6 @@ impl GeneratorV2 for CSharpGeneratorV2 {
     }
 }
 
-struct CSharpVariant {
-    meta: &'static VariantMeta,
-    // SCREAMING_SNAKE_CASE
-    screaming_snake_case_name: String,
-}
-
-impl CSharpVariant {
-    #[inline]
-    pub fn from_meta(variant: &'static VariantMeta) -> Self {
-        Self {
-            meta: variant,
-            screaming_snake_case_name: variant
-                .ty
-                .name
-                .csharp(|name| str_util::to_snake_case(name).to_uppercase()),
-        }
-    }
-}
-
 struct CSharpField {
     meta: &'static FieldMeta,
     // UpperCamelCase
@@ -532,6 +510,25 @@ impl CSharpField {
                 .name
                 .csharp(|name| str_util::to_camel_case(name, true)),
             type_name: field_type(field.ty),
+        }
+    }
+}
+
+struct CSharpVariant {
+    meta: &'static VariantMeta,
+    // UpperCamelCase
+    upper_camel_case_name: String,
+}
+
+impl CSharpVariant {
+    #[inline]
+    pub fn from_meta(variant: &'static VariantMeta) -> Self {
+        Self {
+            meta: variant,
+            upper_camel_case_name: variant
+                .ty
+                .name
+                .csharp(|name| str_util::to_camel_case(name, true)),
         }
     }
 }

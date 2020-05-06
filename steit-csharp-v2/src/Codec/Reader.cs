@@ -1,4 +1,5 @@
 using System;
+using System.Linq.Expressions;
 
 using Steit.State;
 
@@ -77,34 +78,7 @@ namespace Steit.Codec {
         }
 
         public static T ReadValue<T>(this IReader reader, Path path, UInt32 tag) {
-            var type = typeof(T);
-
-            switch (type.FullName) {
-                case "System.Byte": return (T) (object) reader.ReadByte();
-                case "System.UInt16": return (T) (object) reader.ReadUInt16();
-                case "System.UInt32": return (T) (object) reader.ReadUInt32();
-                case "System.UInt64": return (T) (object) reader.ReadUInt64();
-                case "System.SByte": return (T) (object) reader.ReadSByte();
-                case "System.Int16": return (T) (object) reader.ReadInt16();
-                case "System.Int32": return (T) (object) reader.ReadInt32();
-                case "System.Int64": return (T) (object) reader.ReadInt64();
-                case "System.Boolean": return (T) (object) reader.ReadBoolean();
-
-                default:
-                    var method = type.GetMethod("Deserialize");
-
-                    if (method == null) {
-                        throw new MissingMethodException(String.Format("`Deserialize` method on `{0}` is missing.", type.FullName));
-                    }
-
-                    var value = (T) method.Invoke(null, new object[] { reader.GetNested(), path.GetNested(tag) });
-
-                    if (value == null) {
-                        throw new Exception(String.Format("`Deserialize` method on `{0}` returned `null`.", type.FullName));
-                    }
-
-                    return value;
-            }
+            return StateFactory.DeserializeNested<T>(reader, path, tag);
         }
 
         public static void SkipToEnd(this IReader reader) {
@@ -129,6 +103,25 @@ namespace Steit.Codec {
         public static IReader GetNested(this IReader reader) {
             var bytes = reader.Read(reader.ReadSize());
             return new ByteReader(bytes);
+        }
+
+        private sealed class Deserializer<T> {
+            public static Func<IReader, Path?, T> Deserialize { get; private set; }
+
+            static Deserializer() {
+                var parameters = new ParameterExpression[] {
+                    Expression.Parameter(typeof(IReader)),
+                    Expression.Parameter(typeof(Path)),
+                };
+
+                Deserialize = Expression.Lambda<Func<IReader, Path?, T>>(
+                    Expression.Call(
+                        typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) }),
+                        parameters
+                    ),
+                    parameters
+                ).Compile();
+            }
         }
     }
 }
