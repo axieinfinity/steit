@@ -84,11 +84,11 @@ namespace Just.To.Test {
             };
 
             list1.OnPush += (sender, e) => {
-                Console.WriteLine("List<Inner>, add #{0}: {1}", e.NewTag, InnerToString(e.NewItem));
+                Console.WriteLine("List<Inner>, add #{0}: {1}", e.Tag, InnerToString(e.Item));
             };
 
             list1.OnPop += (sender, e) => {
-                Console.WriteLine("List<Inner>, remove #{0}: {1}", e.OldTag, InnerToString(e.OldItem));
+                Console.WriteLine("List<Inner>, remove #{0}: {1}", e.Tag, InnerToString(e.Item));
             };
 
             StateReplayer.Replay<StateList<Inner>>(ref list1, new ByteReader(new byte[] {
@@ -108,11 +108,11 @@ namespace Just.To.Test {
             };
 
             list2.OnPush += (sender, e) => {
-                Console.WriteLine("List<SByte>, add #{0}: {1}", e.NewTag, e.NewItem);
+                Console.WriteLine("List<SByte>, add #{0}: {1}", e.Tag, e.Item);
             };
 
             list2.OnPop += (sender, e) => {
-                Console.WriteLine("List<SByte>, remove #{0}: {1}", e.OldTag, e.OldItem);
+                Console.WriteLine("List<SByte>, remove #{0}: {1}", e.Tag, e.Item);
             };
 
             StateReplayer.Replay<StateList<SByte>>(ref list2, new ByteReader(new byte[] {

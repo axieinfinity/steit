@@ -16,8 +16,8 @@ namespace Steit.Collections {
         }
 
         public event EventHandler<FieldUpdateEventArgs<T, StateList<T>>>? OnUpdate;
-        public event EventHandler<ItemPushEventArgs<T, StateList<T>>>? OnPush;
-        public event EventHandler<ItemPopEventArgs<T, StateList<T>>>? OnPop;
+        public event EventHandler<ListPushEventArgs<T, StateList<T>>>? OnPush;
+        public event EventHandler<ListPopEventArgs<T, StateList<T>>>? OnPop;
 
         public void ClearUpdateHandlers() { this.OnUpdate = null; }
         public void ClearPushHandlers() { this.OnPush = null; }
@@ -72,7 +72,7 @@ namespace Steit.Collections {
             var tag = (UInt32) this.Items.Count;
             var item = StateFactory.Deserialize<T>(itemReader, this.Path, tag);
 
-            var args = new ItemPushEventArgs<T, StateList<T>>(tag, item, this);
+            var args = new ListPushEventArgs<T, StateList<T>>(tag, item, this);
             this.OnPush?.Invoke(this, args);
 
             this.Items.Add(item);
@@ -86,7 +86,7 @@ namespace Steit.Collections {
             var tag = (UInt32) this.Items.Count - 1;
             var item = this.Items[(int) tag];
 
-            var args = new ItemPopEventArgs<T, StateList<T>>(tag, item, this);
+            var args = new ListPopEventArgs<T, StateList<T>>(tag, item, this);
             this.OnPop?.Invoke(this, args);
 
             this.Items.RemoveAt(this.Items.Count - 1);
