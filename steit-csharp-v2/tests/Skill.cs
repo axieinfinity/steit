@@ -67,20 +67,20 @@ namespace Just.To.Test {
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             switch (tag) {
                 case 0: this.TargetIndex = this.MaybeNotify(0, reader.ReadUInt16(), this.TargetIndex, OnTargetIndexUpdate, shouldNotify); break;
-                case 1: this.PreCast = this.MaybeNotify(1, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(1)), this.PreCast, OnPreCastUpdate, shouldNotify); break;
-                case 2: this.Cast = this.MaybeNotify(2, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(2)), this.Cast, OnCastUpdate, shouldNotify); break;
-                case 3: this.PostCast = this.MaybeNotify(3, Vector<Sure<Action>>.Deserialize(reader.GetNested(), this.Path.GetNested(3)), this.PostCast, OnPostCastUpdate, shouldNotify); break;
+                case 1: this.PreCast = this.MaybeNotify(1, Vector<Action>.Deserialize(reader, this.Path.GetNested(1)), this.PreCast, OnPreCastUpdate, shouldNotify); break;
+                case 2: this.Cast = this.MaybeNotify(2, Vector<Action>.Deserialize(reader, this.Path.GetNested(2)), this.Cast, OnCastUpdate, shouldNotify); break;
+                case 3: this.PostCast = this.MaybeNotify(3, Vector<Sure<Action>>.Deserialize(reader, this.Path.GetNested(3)), this.PostCast, OnPostCastUpdate, shouldNotify); break;
                 default: reader.SkipField(wireType); break;
             }
         }
 
         public bool IsList() { return false; }
-        public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
 
         public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
         private TValue MaybeNotify<TValue>(
             UInt32 tag,

@@ -48,10 +48,15 @@ namespace Steit.State {
                     var path = state.Path.GetNested(tag);
                     Console.Error.WriteLine("Expected wire type {0} for path {1}, got {2}.", expectedWireType, path, wireType);
                     reader.SkipField(wireType);
-                    return;
+                    continue;
                 }
 
-                state.ReplaceAt(tag, wireType, reader, shouldNotify: false);
+                state.ReplaceAt(
+                    tag,
+                    wireType,
+                    wireType == WireType.Sized ? reader.GetNested() : reader,
+                    shouldNotify: false
+                );
             }
         }
     }

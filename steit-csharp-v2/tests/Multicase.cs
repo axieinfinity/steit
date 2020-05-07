@@ -7,35 +7,34 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class ActionsOr<T> : IEnumState {
-        public const UInt32 ActionsTag = 0;
-        public const UInt32 ValueTag = 1;
+    public sealed class Multicase : IEnumState {
+        public const UInt32 FirstCaseTag = 0;
+        public const UInt32 SecondCaseTag = 1;
 
         public Path Path { get; }
 
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public Actions? ActionsVariant { get { return this.Variant as Actions; } }
-        public Value? ValueVariant { get { return this.Variant as Value; } }
+        public FirstCase? FirstCaseVariant { get { return this.Variant as FirstCase; } }
+        public SecondCase? SecondCaseVariant { get { return this.Variant as SecondCase; } }
 
-        public ActionsOr(Path? path = null) {
-            StateFactory.ValidateType(typeof(T));
+        public Multicase(Path? path = null) {
             this.Path = path ?? Path.Root;
             this.Tag = 0;
-            this.Variant = new Actions(this.Path.GetNested(0));
+            this.Variant = new FirstCase(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<ActionsOr<T>>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<Multicase>>? OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static ActionsOr<T> Deserialize(IReader reader, Path? path = null) {
-            var actionsOr = new ActionsOr<T>(path);
-            actionsOr.Replace(reader);
-            return actionsOr;
+        public static Multicase Deserialize(IReader reader, Path? path = null) {
+            var multicase = new Multicase(path);
+            multicase.Replace(reader);
+            return multicase;
         }
 
         public WireType? GetWireType(UInt32 tag) {
@@ -52,8 +51,8 @@ namespace Just.To.Test {
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.UpdateAndNotify(0, Actions.Deserialize(reader, this.Path.GetNested(0)), shouldNotify); break;
-                case 1: this.UpdateAndNotify(1, Value.Deserialize(reader, this.Path.GetNested(1)), shouldNotify); break;
+                case 0: this.UpdateAndNotify(0, FirstCase.Deserialize(reader, this.Path.GetNested(0)), shouldNotify); break;
+                case 1: this.UpdateAndNotify(1, SecondCase.Deserialize(reader, this.Path.GetNested(1)), shouldNotify); break;
                 default: reader.SkipToEnd(); break;
             }
         }
@@ -68,58 +67,61 @@ namespace Just.To.Test {
 
         private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {
             if (shouldNotify) {
-                var args = new VariantUpdateEventArgs<ActionsOr<T>>(newTag, newVariant, this.Tag, this.Variant, this);
-                ActionsOr<T>.OnUpdate?.Invoke(this, args);
+                var args = new VariantUpdateEventArgs<Multicase>(newTag, newVariant, this.Tag, this.Variant, this);
+                Multicase.OnUpdate?.Invoke(this, args);
             }
 
             this.Tag = newTag;
             this.Variant = newVariant;
         }
 
-        // Variant (0): Actions
+        // Variant (0): FirstCase
 
-        public sealed class Actions : IState {
+        public sealed class FirstCase : IState {
             public Path Path { get; }
-            public Vector<Action> F0 { get; private set; }
 
-            internal Actions(Path? path = null) {
+            public Int32 Counter { get; private set; }
+            public Boolean Enabled { get; private set; }
+
+            internal FirstCase(Path? path = null) {
                 this.Path = path ?? Path.Root;
-                this.F0 = new Vector<Action>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Actions>>? OnF0Update;
+            public static event EventHandler<FieldUpdateEventArgs<Int32, FirstCase>>? OnCounterUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Boolean, FirstCase>>? OnEnabledUpdate;
 
-            public static void ClearF0UpdateHandlers() {
-                OnF0Update = null;
-            }
+            public static void ClearCounterUpdateHandlers() { OnCounterUpdate = null; }
+            public static void ClearEnabledUpdateHandlers() { OnEnabledUpdate = null; }
 
             public static void ClearUpdateHandlers() {
-                OnF0Update = null;
+                OnCounterUpdate = null;
+                OnEnabledUpdate = null;
             }
 
-            internal static Actions Deserialize(IReader reader, Path? path = null) {
-                var actions = new Actions(path);
-                actions.Replace(reader);
-                return actions;
+            internal static FirstCase Deserialize(IReader reader, Path? path = null) {
+                var firstCase = new FirstCase(path);
+                firstCase.Replace(reader);
+                return firstCase;
             }
 
             public WireType? GetWireType(UInt32 tag) {
                 switch (tag) {
-                    case 0: return WireType.Sized;
+                    case 0: return WireType.Varint;
+                    case 1: return WireType.Varint;
                     default: return null;
                 }
             }
 
             public IState? GetNested(UInt32 tag) {
                 switch (tag) {
-                    case 0: return this.F0;
                     default: return null;
                 }
             }
 
             public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
                 switch (tag) {
-                    case 0: this.F0 = this.MaybeNotify(0, Vector<Action>.Deserialize(reader, this.Path.GetNested(0)), this.F0, OnF0Update, shouldNotify); break;
+                    case 0: this.Counter = this.MaybeNotify(0, reader.ReadInt32(), this.Counter, OnCounterUpdate, shouldNotify); break;
+                    case 1: this.Enabled = this.MaybeNotify(1, reader.ReadBoolean(), this.Enabled, OnEnabledUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
@@ -136,11 +138,11 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Actions>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, FirstCase>>? handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
-                    var args = new FieldUpdateEventArgs<TValue, Actions>(tag, newValue, oldValue, this);
+                    var args = new FieldUpdateEventArgs<TValue, FirstCase>(tag, newValue, oldValue, this);
                     handler?.Invoke(this, args);
                 }
 
@@ -148,50 +150,53 @@ namespace Just.To.Test {
             }
         }
 
-        // Variant (1): Value
+        // Variant (1): SecondCase
 
-        public sealed class Value : IState {
+        public sealed class SecondCase : IState {
             public Path Path { get; }
-            public T F0 { get; private set; }
 
-            internal Value(Path? path = null) {
+            public Int32 Counter { get; private set; }
+            public Boolean Enabled { get; private set; }
+
+            internal SecondCase(Path? path = null) {
                 this.Path = path ?? Path.Root;
-                this.F0 = StateFactory.Construct<T>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<T, Value>>? OnF0Update;
+            public static event EventHandler<FieldUpdateEventArgs<Int32, SecondCase>>? OnCounterUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Boolean, SecondCase>>? OnEnabledUpdate;
 
-            public static void ClearF0UpdateHandlers() {
-                OnF0Update = null;
-            }
+            public static void ClearCounterUpdateHandlers() { OnCounterUpdate = null; }
+            public static void ClearEnabledUpdateHandlers() { OnEnabledUpdate = null; }
 
             public static void ClearUpdateHandlers() {
-                OnF0Update = null;
+                OnCounterUpdate = null;
+                OnEnabledUpdate = null;
             }
 
-            internal static Value Deserialize(IReader reader, Path? path = null) {
-                var value = new Value(path);
-                value.Replace(reader);
-                return value;
+            internal static SecondCase Deserialize(IReader reader, Path? path = null) {
+                var secondCase = new SecondCase(path);
+                secondCase.Replace(reader);
+                return secondCase;
             }
 
             public WireType? GetWireType(UInt32 tag) {
                 switch (tag) {
-                    case 0: return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
+                    case 0: return WireType.Varint;
+                    case 1: return WireType.Varint;
                     default: return null;
                 }
             }
 
             public IState? GetNested(UInt32 tag) {
                 switch (tag) {
-                    case 0: return this.F0 as IState;
                     default: return null;
                 }
             }
 
             public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
                 switch (tag) {
-                    case 0: this.F0 = this.MaybeNotify(0, StateFactory.Deserialize<T>(reader, this.Path, 0), this.F0, OnF0Update, shouldNotify); break;
+                    case 0: this.Counter = this.MaybeNotify(0, reader.ReadInt32(), this.Counter, OnCounterUpdate, shouldNotify); break;
+                    case 1: this.Enabled = this.MaybeNotify(1, reader.ReadBoolean(), this.Enabled, OnEnabledUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
@@ -208,11 +213,11 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Value>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, SecondCase>>? handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
-                    var args = new FieldUpdateEventArgs<TValue, Value>(tag, newValue, oldValue, this);
+                    var args = new FieldUpdateEventArgs<TValue, SecondCase>(tag, newValue, oldValue, this);
                     handler?.Invoke(this, args);
                 }
 

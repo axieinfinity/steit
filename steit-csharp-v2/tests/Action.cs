@@ -60,24 +60,24 @@ namespace Just.To.Test {
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.Update(0, Raw.Deserialize(reader, this.Path.GetNested(0)), shouldNotify); break;
-                case 1: this.Update(1, CardDraw.Deserialize(reader, this.Path.GetNested(1)), shouldNotify); break;
-                case 2: this.Update(2, CardDiscard.Deserialize(reader, this.Path.GetNested(2)), shouldNotify); break;
-                case 3: this.Update(3, Attack.Deserialize(reader, this.Path.GetNested(3)), shouldNotify); break;
-                case 4: this.Update(4, Skill.Deserialize(reader, this.Path.GetNested(4)), shouldNotify); break;
+                case 0: this.UpdateAndNotify(0, Raw.Deserialize(reader, this.Path.GetNested(0)), shouldNotify); break;
+                case 1: this.UpdateAndNotify(1, CardDraw.Deserialize(reader, this.Path.GetNested(1)), shouldNotify); break;
+                case 2: this.UpdateAndNotify(2, CardDiscard.Deserialize(reader, this.Path.GetNested(2)), shouldNotify); break;
+                case 3: this.UpdateAndNotify(3, Attack.Deserialize(reader, this.Path.GetNested(3)), shouldNotify); break;
+                case 4: this.UpdateAndNotify(4, Skill.Deserialize(reader, this.Path.GetNested(4)), shouldNotify); break;
                 default: reader.SkipToEnd(); break;
             }
         }
 
         public bool IsList() { return false; }
-        public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
 
         public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
-        private void Update(UInt32 newTag, IState newVariant, bool shouldNotify) {
+        private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {
             if (shouldNotify) {
                 var args = new VariantUpdateEventArgs<Action>(newTag, newVariant, this.Tag, this.Variant, this);
                 Action.OnUpdate?.Invoke(this, args);
@@ -123,12 +123,12 @@ namespace Just.To.Test {
             }
 
             public bool IsList() { return false; }
-            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
 
             public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -201,19 +201,19 @@ namespace Just.To.Test {
             public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
                 switch (tag) {
                     case 0: this.PlayerIndex = this.MaybeNotify(0, reader.ReadUInt16(), this.PlayerIndex, OnPlayerIndexUpdate, shouldNotify); break;
-                    case 1: this.Draw = this.MaybeNotify(1, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(1)), this.Draw, OnDrawUpdate, shouldNotify); break;
-                    case 2: this.PostDraw = this.MaybeNotify(2, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(2)), this.PostDraw, OnPostDrawUpdate, shouldNotify); break;
+                    case 1: this.Draw = this.MaybeNotify(1, Vector<Action>.Deserialize(reader, this.Path.GetNested(1)), this.Draw, OnDrawUpdate, shouldNotify); break;
+                    case 2: this.PostDraw = this.MaybeNotify(2, Vector<Action>.Deserialize(reader, this.Path.GetNested(2)), this.PostDraw, OnPostDrawUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
 
             public bool IsList() { return false; }
-            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
 
             public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -267,12 +267,12 @@ namespace Just.To.Test {
             }
 
             public bool IsList() { return false; }
-            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
 
             public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -358,20 +358,20 @@ namespace Just.To.Test {
                 switch (tag) {
                     case 0: this.AttackerIndex = this.MaybeNotify(0, reader.ReadUInt16(), this.AttackerIndex, OnAttackerIndexUpdate, shouldNotify); break;
                     case 1: this.CardId = this.MaybeNotify(1, reader.ReadUInt32(), this.CardId, OnCardIdUpdate, shouldNotify); break;
-                    case 2: this.BeforeAttacks = this.MaybeNotify(2, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(2)), this.BeforeAttacks, OnBeforeAttacksUpdate, shouldNotify); break;
-                    case 3: this.Attacks = this.MaybeNotify(3, ActionsOr<Vector<ActionsOr<Attack>>>.Deserialize(reader.GetNested(), this.Path.GetNested(3)), this.Attacks, OnAttacksUpdate, shouldNotify); break;
-                    case 4: this.AfterAttacks = this.MaybeNotify(4, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(4)), this.AfterAttacks, OnAfterAttacksUpdate, shouldNotify); break;
+                    case 2: this.BeforeAttacks = this.MaybeNotify(2, Vector<Action>.Deserialize(reader, this.Path.GetNested(2)), this.BeforeAttacks, OnBeforeAttacksUpdate, shouldNotify); break;
+                    case 3: this.Attacks = this.MaybeNotify(3, ActionsOr<Vector<ActionsOr<Attack>>>.Deserialize(reader, this.Path.GetNested(3)), this.Attacks, OnAttacksUpdate, shouldNotify); break;
+                    case 4: this.AfterAttacks = this.MaybeNotify(4, Vector<Action>.Deserialize(reader, this.Path.GetNested(4)), this.AfterAttacks, OnAfterAttacksUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
 
             public bool IsList() { return false; }
-            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
 
             public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -457,20 +457,20 @@ namespace Just.To.Test {
                 switch (tag) {
                     case 0: this.CasterIndex = this.MaybeNotify(0, reader.ReadUInt16(), this.CasterIndex, OnCasterIndexUpdate, shouldNotify); break;
                     case 1: this.CardId = this.MaybeNotify(1, reader.ReadUInt32(), this.CardId, OnCardIdUpdate, shouldNotify); break;
-                    case 2: this.BeforeSkills = this.MaybeNotify(2, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(2)), this.BeforeSkills, OnBeforeSkillsUpdate, shouldNotify); break;
-                    case 3: this.Skills = this.MaybeNotify(3, ActionsOr<Vector<ActionsOr<Skill>>>.Deserialize(reader.GetNested(), this.Path.GetNested(3)), this.Skills, OnSkillsUpdate, shouldNotify); break;
-                    case 4: this.AfterSkills = this.MaybeNotify(4, Vector<Action>.Deserialize(reader.GetNested(), this.Path.GetNested(4)), this.AfterSkills, OnAfterSkillsUpdate, shouldNotify); break;
+                    case 2: this.BeforeSkills = this.MaybeNotify(2, Vector<Action>.Deserialize(reader, this.Path.GetNested(2)), this.BeforeSkills, OnBeforeSkillsUpdate, shouldNotify); break;
+                    case 3: this.Skills = this.MaybeNotify(3, ActionsOr<Vector<ActionsOr<Skill>>>.Deserialize(reader, this.Path.GetNested(3)), this.Skills, OnSkillsUpdate, shouldNotify); break;
+                    case 4: this.AfterSkills = this.MaybeNotify(4, Vector<Action>.Deserialize(reader, this.Path.GetNested(4)), this.AfterSkills, OnAfterSkillsUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
 
             public bool IsList() { return false; }
-            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
 
             public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,

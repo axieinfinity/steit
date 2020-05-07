@@ -35,6 +35,11 @@ impl<T: StateV2> ListV2<T> {
     }
 
     #[inline]
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
+        self.items.get_mut(index)
+    }
+
+    #[inline]
     pub fn push(&mut self, mut item: T) {
         self.push_with(|runtime| {
             item.set_runtime_v2(runtime);

@@ -273,7 +273,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, {2}.Deserialize(reader.GetNested(), this.Path.GetNested({0})), this.{1}, On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, {2}.Deserialize(reader, this.Path.GetNested({0})), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
@@ -282,7 +282,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
 
                 FieldTypeMeta::TypeParam(_) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.ReadValue<{2}>(this.Path, {0}), this.{1}, On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, StateFactory.Deserialize<{2}>(reader, this.Path, {0}), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
@@ -297,12 +297,12 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .newline()
             .writeln("public bool IsList() { return false; }")
-            .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }")
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
             .newline()
             .writeln("public bool IsMap() { return false; }")
-            .writeln("public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }")
-            .writeln("public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }")
             .newline()
             .writeln("private TValue MaybeNotify<TValue>(")
             .indent_writeln("UInt32 tag,")
@@ -445,7 +445,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
         // Replace fields and notify event handlers
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "case {0}: this.Update({0}, {1}.Deserialize(reader, this.Path.GetNested({0})), shouldNotify); break;",
+                "case {0}: this.UpdateAndNotify({0}, {1}.Deserialize(reader, this.Path.GetNested({0})), shouldNotify); break;",
                 variant.tag, variant.ty.name.csharp(String::from),
             ));
         }
@@ -456,14 +456,14 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .newline()
             .writeln("public bool IsList() { return false; }")
-            .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }")
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
             .newline()
             .writeln("public bool IsMap() { return false; }")
-            .writeln("public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }")
-            .writeln("public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }")
             .newline()
-            .writeln("private void Update(UInt32 newTag, IState newVariant, bool shouldNotify) {")
+            .writeln("private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")
             .indent_writeln(format!(
                 "var args = new VariantUpdateEventArgs<{}>(newTag, newVariant, this.Tag, this.Variant, this);",

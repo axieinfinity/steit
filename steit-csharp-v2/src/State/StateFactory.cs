@@ -1,4 +1,3 @@
-
 using System;
 using System.Linq.Expressions;
 
@@ -46,6 +45,14 @@ namespace Steit.State {
         public static T Deserialize<T>(IReader reader, Path? path = null) {
             if (IsStateType(typeof(T))) {
                 return DeserializeState<T>(reader, path);
+            } else {
+                return DeserializePrimitive<T>(reader);
+            }
+        }
+
+        public static T Deserialize<T>(IReader reader, Path path, UInt32 tag) {
+            if (IsStateType(typeof(T))) {
+                return DeserializeState<T>(reader, path.GetNested(tag));
             } else {
                 return DeserializePrimitive<T>(reader);
             }

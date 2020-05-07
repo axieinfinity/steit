@@ -5,7 +5,10 @@ mod tests {
             generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
             *,
         },
-        log::loggers::PrintLogger,
+        log::{
+            loggers::{PrintLogger, WriterLogger},
+            LogEntryV2,
+        },
         rt::RuntimeV2,
         ser_v2::SerializeV2,
         steit_derive, steitize,
@@ -430,11 +433,94 @@ mod tests {
             pub post_cast: Vec<Sure<Action>>,
         }
 
-        let setting = CSharpSetting::new("Just.To.Test");
-        let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), true, setting);
+        #[steit_derive(State)]
+        struct Hello {
+            #[steit(tag = 0)]
+            numbers: ListV2<i32>,
+            #[steit(tag = 1, no_state)]
+            others: Vec<i32>,
+        }
+
+        #[steit_derive(Debug, State)]
+        struct Outer {
+            #[steit(tag = 0)]
+            foo: i32,
+            #[steit(tag = 1)]
+            bar: bool,
+            #[steit(tag = 2)]
+            inner: Inner,
+        }
+
+        #[steit_derive(Debug, State)]
+        struct Inner {
+            #[steit(tag = 0)]
+            foo: i32,
+            #[steit(tag = 1)]
+            bar: bool,
+        }
+
+        #[steit_derive(Debug, State)]
+        enum Multicase {
+            #[steit(tag = 0, default)]
+            FirstCase {
+                #[steit(tag = 0)]
+                counter: i32,
+                #[steit(tag = 1)]
+                enabled: bool,
+            },
+            #[steit(tag = 1)]
+            SecondCase {
+                #[steit(tag = 0)]
+                counter: i32,
+                #[steit(tag = 1)]
+                enabled: bool,
+            },
+        }
 
         let generator = CSharpGeneratorV2;
 
+        let setting = CSharpSetting::new("Just.To.Test");
+        let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), true, setting);
+
         generator.generate::<Action>(&setting).unwrap();
+        generator.generate::<Hello>(&setting).unwrap();
+        generator.generate::<Outer>(&setting).unwrap();
+        generator.generate::<Multicase>(&setting).unwrap();
+
+        // let setting = CSharpSetting::new("Steit.State");
+        // let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), false, setting);
+        //
+        // generator.generate::<LogEntryV2>(&setting).unwrap();
+
+        println!("\nLIST #1");
+
+        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let mut list = ListV2::new(runtime);
+
+        list.push_with(|runtime| {
+            let mut inner = Inner::empty(runtime);
+            inner.set_foo(6);
+            inner
+        });
+
+        list.push_with(|runtime| {
+            let mut inner = Inner::empty(runtime);
+            inner.set_foo(77).set_bar(true);
+            inner
+        });
+
+        list.push_with(Inner::empty);
+        list.get_mut(1).unwrap().set_foo(68);
+        list.swap_remove(0);
+
+        println!("\nLIST #2");
+
+        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let mut list = ListV2::new(runtime);
+
+        list.push(10i8);
+        list.push(11);
+        list.push(0);
+        list.swap_remove(1);
     }
 }

@@ -11,26 +11,26 @@ use crate::{
 pub enum LogEntryV2 {
     #[steit(tag = 0, default)]
     Update {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
         #[steit(tag = 1)]
         value: BytesV2,
     },
     #[steit(tag = 8)]
     ListPush {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
         #[steit(tag = 1)]
         item: BytesV2,
     },
     #[steit(tag = 9)]
     ListPop {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
     },
     #[steit(tag = 12)]
     MapInsert {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
         #[steit(tag = 1)]
         key: BytesV2,
@@ -39,7 +39,7 @@ pub enum LogEntryV2 {
     },
     #[steit(tag = 13)]
     MapRemove {
-        #[steit(tag = 0)]
+        #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
         #[steit(tag = 1)]
         key: BytesV2,

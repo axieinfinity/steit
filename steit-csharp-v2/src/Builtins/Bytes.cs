@@ -24,11 +24,11 @@ namespace Steit.Builtins {
         }
 
         public bool IsList() { return false; }
-        public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
 
         public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader reader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader reader) { throw new NotSupportedException(); }
+        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
     }
 }

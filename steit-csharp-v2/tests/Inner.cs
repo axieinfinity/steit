@@ -7,49 +7,51 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Sure<T> : IState {
+    public sealed class Inner : IState {
         public Path Path { get; }
-        public T F0 { get; private set; }
 
-        public Sure(Path? path = null) {
-            StateFactory.ValidateType(typeof(T));
+        public Int32 Foo { get; private set; }
+        public Boolean Bar { get; private set; }
+
+        public Inner(Path? path = null) {
             this.Path = path ?? Path.Root;
-            this.F0 = StateFactory.Construct<T>(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<T, Sure<T>>>? OnF0Update;
+        public static event EventHandler<FieldUpdateEventArgs<Int32, Inner>>? OnFooUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Boolean, Inner>>? OnBarUpdate;
 
-        public static void ClearF0UpdateHandlers() {
-            OnF0Update = null;
-        }
+        public static void ClearFooUpdateHandlers() { OnFooUpdate = null; }
+        public static void ClearBarUpdateHandlers() { OnBarUpdate = null; }
 
         public static void ClearUpdateHandlers() {
-            OnF0Update = null;
+            OnFooUpdate = null;
+            OnBarUpdate = null;
         }
 
-        public static Sure<T> Deserialize(IReader reader, Path? path = null) {
-            var sure = new Sure<T>(path);
-            sure.Replace(reader);
-            return sure;
+        public static Inner Deserialize(IReader reader, Path? path = null) {
+            var inner = new Inner(path);
+            inner.Replace(reader);
+            return inner;
         }
 
         public WireType? GetWireType(UInt32 tag) {
             switch (tag) {
-                case 0: return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
+                case 0: return WireType.Varint;
+                case 1: return WireType.Varint;
                 default: return null;
             }
         }
 
         public IState? GetNested(UInt32 tag) {
             switch (tag) {
-                case 0: return this.F0 as IState;
                 default: return null;
             }
         }
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.F0 = this.MaybeNotify(0, StateFactory.Deserialize<T>(reader, this.Path, 0), this.F0, OnF0Update, shouldNotify); break;
+                case 0: this.Foo = this.MaybeNotify(0, reader.ReadInt32(), this.Foo, OnFooUpdate, shouldNotify); break;
+                case 1: this.Bar = this.MaybeNotify(1, reader.ReadBoolean(), this.Bar, OnBarUpdate, shouldNotify); break;
                 default: reader.SkipField(wireType); break;
             }
         }
@@ -66,11 +68,11 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Sure<T>>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Inner>>? handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {
-                var args = new FieldUpdateEventArgs<TValue, Sure<T>>(tag, newValue, oldValue, this);
+                var args = new FieldUpdateEventArgs<TValue, Inner>(tag, newValue, oldValue, this);
                 handler?.Invoke(this, args);
             }
 
