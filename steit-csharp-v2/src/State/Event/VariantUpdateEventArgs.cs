@@ -1,6 +1,6 @@
 using System;
 
-namespace Steit.State {
+namespace Steit.State.Event {
     public sealed class VariantUpdateEventArgs<TContainer> : EventArgs where TContainer : IEnumState {
         public UInt32 NewTag { get; }
         public IState NewVariant { get; }

@@ -27,6 +27,7 @@ impl CSharpGeneratorV2 {
             .writeln("using Steit.Codec;")
             .writeln("using Steit.Collections;")
             .writeln("using Steit.State;")
+            .writeln("using Steit.State.Event;")
             .newline()
             .writeln(format!("namespace {} {{", &setting.namespace))
             .indent();

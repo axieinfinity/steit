@@ -4,6 +4,7 @@ using Steit.Builtins;
 using Steit.Codec;
 using Steit.Collections;
 using Steit.State;
+using Steit.State.Event;
 
 namespace Just.To.Test {
     public sealed class Hit : IState {

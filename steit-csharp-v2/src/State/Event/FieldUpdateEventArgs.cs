@@ -1,6 +1,6 @@
 using System;
 
-namespace Steit.State {
+namespace Steit.State.Event {
     public sealed class FieldUpdateEventArgs<TValue, TContainer> : EventArgs where TContainer : IState {
         public UInt32 Tag { get; }
         public TValue NewValue { get; }
