@@ -5,10 +5,7 @@ mod tests {
             generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
             *,
         },
-        log::{
-            loggers::{PrintLogger, WriterLogger},
-            LogEntryV2,
-        },
+        log::loggers::{PrintLogger, WriterLogger},
         rt::RuntimeV2,
         ser_v2::SerializeV2,
         steit_derive, steitize,
