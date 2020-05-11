@@ -17,14 +17,16 @@ namespace Steit.State {
             var path = new List<UInt32>(GetPath(entry));
             var tag = 0U;
 
-            if (entry.Tag == LogEntry.UpdateTag) {
+            if (entry.Tag == LogEntry.UpdateTag || entry.Tag == LogEntry.MapRemoveTag) {
                 if (path.Count > 0) {
                     tag = path[path.Count - 1];
                     path.RemoveAt(path.Count - 1);
-                } else {
+                } else if (entry.Tag == LogEntry.UpdateTag) {
                     var reader = new ByteReader(entry.UpdateVariant!.Value);
                     root = StateFactory.Deserialize<T>(reader, root.Path);
                     return;
+                } else {
+                    throw new InvalidOperationException();
                 }
             }
 
@@ -44,8 +46,8 @@ namespace Steit.State {
                     }
 
                 case LogEntry.ListPushTag: {
-                        var itemReader = new ByteReader(entry.ListPushVariant!.Item);
-                        container.ReplayListPush(itemReader);
+                        var reader = new ByteReader(entry.ListPushVariant!.Item);
+                        container.ReplayListPush(reader);
                         break;
                     }
 
@@ -54,17 +56,8 @@ namespace Steit.State {
                         break;
                     }
 
-                case LogEntry.MapInsertTag: {
-                        var mapInsertEntry = entry.MapInsertVariant;
-                        var keyReader = new ByteReader(mapInsertEntry!.Key);
-                        var valueReader = new ByteReader(mapInsertEntry!.Value);
-                        container.ReplayMapInsert(keyReader, valueReader);
-                        break;
-                    }
-
                 case LogEntry.MapRemoveTag: {
-                        var keyReader = new ByteReader(entry.MapInsertVariant!.Key);
-                        container.ReplayMapRemove(keyReader);
+                        container.ReplayMapRemove(tag);
                         break;
                     }
 
@@ -77,7 +70,6 @@ namespace Steit.State {
                 case LogEntry.UpdateTag: return entry.UpdateVariant!.FlattenPath;
                 case LogEntry.ListPushTag: return entry.ListPushVariant!.FlattenPath;
                 case LogEntry.ListPopTag: return entry.ListPopVariant!.FlattenPath;
-                case LogEntry.MapInsertTag: return entry.MapInsertVariant!.FlattenPath;
                 case LogEntry.MapRemoveTag: return entry.MapRemoveVariant!.FlattenPath;
                 default: throw new InvalidOperationException(String.Format("Unknown log entry tag {0}", entry.Tag));
             }

@@ -11,8 +11,7 @@ namespace Steit.State {
         public const UInt32 UpdateTag = 0;
         public const UInt32 ListPushTag = 8;
         public const UInt32 ListPopTag = 9;
-        public const UInt32 MapInsertTag = 12;
-        public const UInt32 MapRemoveTag = 13;
+        public const UInt32 MapRemoveTag = 12;
 
         public Path Path { get; }
 
@@ -22,7 +21,6 @@ namespace Steit.State {
         public Update? UpdateVariant { get { return this.Variant as Update; } }
         public ListPush? ListPushVariant { get { return this.Variant as ListPush; } }
         public ListPop? ListPopVariant { get { return this.Variant as ListPop; } }
-        public MapInsert? MapInsertVariant { get { return this.Variant as MapInsert; } }
         public MapRemove? MapRemoveVariant { get { return this.Variant as MapRemove; } }
 
         public LogEntry(Path? path = null) {
@@ -49,7 +47,6 @@ namespace Steit.State {
                 case 8: return WireType.Sized;
                 case 9: return WireType.Sized;
                 case 12: return WireType.Sized;
-                case 13: return WireType.Sized;
                 default: return null;
             }
         }
@@ -63,19 +60,14 @@ namespace Steit.State {
                 case 0: this.UpdateAndNotify(0, Update.Deserialize(reader, this.Path.GetNested(0)), shouldNotify); break;
                 case 8: this.UpdateAndNotify(8, ListPush.Deserialize(reader, this.Path.GetNested(8)), shouldNotify); break;
                 case 9: this.UpdateAndNotify(9, ListPop.Deserialize(reader, this.Path.GetNested(9)), shouldNotify); break;
-                case 12: this.UpdateAndNotify(12, MapInsert.Deserialize(reader, this.Path.GetNested(12)), shouldNotify); break;
-                case 13: this.UpdateAndNotify(13, MapRemove.Deserialize(reader, this.Path.GetNested(13)), shouldNotify); break;
+                case 12: this.UpdateAndNotify(12, MapRemove.Deserialize(reader, this.Path.GetNested(12)), shouldNotify); break;
                 default: reader.SkipToEnd(); break;
             }
         }
 
-        public bool IsList() { return false; }
-        public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+        public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
-
-        public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
         private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {
             if (shouldNotify) {
@@ -142,13 +134,9 @@ namespace Steit.State {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -221,13 +209,9 @@ namespace Steit.State {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -293,13 +277,9 @@ namespace Steit.State {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -317,116 +297,25 @@ namespace Steit.State {
             }
         }
 
-        // Variant (12): MapInsert
-
-        public sealed class MapInsert : IState {
-            public Path Path { get; }
-
-            public Vector<UInt32> FlattenPath { get; private set; }
-            public Bytes Key { get; private set; }
-            public Bytes Value { get; private set; }
-
-            internal MapInsert(Path? path = null) {
-                this.Path = path ?? Path.Root;
-                this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
-                this.Key = new Bytes(this.Path.GetNested(1));
-                this.Value = new Bytes(this.Path.GetNested(2));
-            }
-
-            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, MapInsert>>? OnFlattenPathUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Bytes, MapInsert>>? OnKeyUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Bytes, MapInsert>>? OnValueUpdate;
-
-            public static void ClearFlattenPathUpdateHandlers() { OnFlattenPathUpdate = null; }
-            public static void ClearKeyUpdateHandlers() { OnKeyUpdate = null; }
-            public static void ClearValueUpdateHandlers() { OnValueUpdate = null; }
-
-            public static void ClearUpdateHandlers() {
-                OnFlattenPathUpdate = null;
-                OnKeyUpdate = null;
-                OnValueUpdate = null;
-            }
-
-            internal static MapInsert Deserialize(IReader reader, Path? path = null) {
-                var mapInsert = new MapInsert(path);
-                mapInsert.Replace(reader);
-                return mapInsert;
-            }
-
-            public WireType? GetWireType(UInt32 tag) {
-                switch (tag) {
-                    case 0: return WireType.Sized;
-                    case 1: return WireType.Sized;
-                    case 2: return WireType.Sized;
-                    default: return null;
-                }
-            }
-
-            public IState? GetNested(UInt32 tag) {
-                switch (tag) {
-                    case 0: return this.FlattenPath;
-                    case 1: return this.Key;
-                    case 2: return this.Value;
-                    default: return null;
-                }
-            }
-
-            public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
-                switch (tag) {
-                    case 0: this.FlattenPath = this.MaybeNotify(0, Vector<UInt32>.Deserialize(reader, this.Path.GetNested(0)), this.FlattenPath, OnFlattenPathUpdate, shouldNotify); break;
-                    case 1: this.Key = this.MaybeNotify(1, Bytes.Deserialize(reader, this.Path.GetNested(1)), this.Key, OnKeyUpdate, shouldNotify); break;
-                    case 2: this.Value = this.MaybeNotify(2, Bytes.Deserialize(reader, this.Path.GetNested(2)), this.Value, OnValueUpdate, shouldNotify); break;
-                    default: reader.SkipField(wireType); break;
-                }
-            }
-
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
-            public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
-
-            private TValue MaybeNotify<TValue>(
-                UInt32 tag,
-                TValue newValue,
-                TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, MapInsert>>? handler,
-                bool shouldNotify
-            ) {
-                if (shouldNotify) {
-                    var args = new FieldUpdateEventArgs<TValue, MapInsert>(tag, newValue, oldValue, this);
-                    handler?.Invoke(this, args);
-                }
-
-                return newValue;
-            }
-        }
-
-        // Variant (13): MapRemove
+        // Variant (12): MapRemove
 
         public sealed class MapRemove : IState {
             public Path Path { get; }
-
             public Vector<UInt32> FlattenPath { get; private set; }
-            public Bytes Key { get; private set; }
 
             internal MapRemove(Path? path = null) {
                 this.Path = path ?? Path.Root;
                 this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
-                this.Key = new Bytes(this.Path.GetNested(1));
             }
 
             public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, MapRemove>>? OnFlattenPathUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Bytes, MapRemove>>? OnKeyUpdate;
 
-            public static void ClearFlattenPathUpdateHandlers() { OnFlattenPathUpdate = null; }
-            public static void ClearKeyUpdateHandlers() { OnKeyUpdate = null; }
+            public static void ClearFlattenPathUpdateHandlers() {
+                OnFlattenPathUpdate = null;
+            }
 
             public static void ClearUpdateHandlers() {
                 OnFlattenPathUpdate = null;
-                OnKeyUpdate = null;
             }
 
             internal static MapRemove Deserialize(IReader reader, Path? path = null) {
@@ -438,7 +327,6 @@ namespace Steit.State {
             public WireType? GetWireType(UInt32 tag) {
                 switch (tag) {
                     case 0: return WireType.Sized;
-                    case 1: return WireType.Sized;
                     default: return null;
                 }
             }
@@ -446,7 +334,6 @@ namespace Steit.State {
             public IState? GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.FlattenPath;
-                    case 1: return this.Key;
                     default: return null;
                 }
             }
@@ -454,18 +341,13 @@ namespace Steit.State {
             public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
                 switch (tag) {
                     case 0: this.FlattenPath = this.MaybeNotify(0, Vector<UInt32>.Deserialize(reader, this.Path.GetNested(0)), this.FlattenPath, OnFlattenPathUpdate, shouldNotify); break;
-                    case 1: this.Key = this.MaybeNotify(1, Bytes.Deserialize(reader, this.Path.GetNested(1)), this.Key, OnKeyUpdate, shouldNotify); break;
                     default: reader.SkipField(wireType); break;
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,

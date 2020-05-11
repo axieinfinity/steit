@@ -64,13 +64,9 @@ namespace Steit.Collections {
             this.Items[(int) tag] = newItem;
         }
 
-        public bool IsList() {
-            return true;
-        }
-
-        public void ReplayListPush(IReader itemReader) {
+        public void ReplayListPush(IReader reader) {
             var tag = (UInt32) this.Count;
-            var item = StateFactory.Deserialize<T>(itemReader, this.Path, tag);
+            var item = StateFactory.Deserialize<T>(reader, this.Path, tag);
 
             var args = new ListPushEventArgs<T, StateList<T>>(tag, item, this);
             this.OnPush?.Invoke(this, args);
@@ -92,8 +88,8 @@ namespace Steit.Collections {
             this.Items.RemoveAt(this.Count - 1);
         }
 
-        public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(UInt32 tag) {
+            throw new NotSupportedException();
+        }
     }
 }

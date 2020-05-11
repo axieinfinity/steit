@@ -296,23 +296,29 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public bool IsList() { return false; }")
-            .writeln("public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }")
+            .writeln(
+                "public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }",
+            )
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
-            .newline()
-            .writeln("public bool IsMap() { return false; }")
-            .writeln("public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }")
-            .writeln("public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }")
+            .writeln(
+                "public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }",
+            )
             .newline()
             .writeln("private TValue MaybeNotify<TValue>(")
             .indent_writeln("UInt32 tag,")
             .writeln("TValue newValue,")
             .writeln("TValue oldValue,")
-            .writeln(format!("EventHandler<FieldUpdateEventArgs<TValue, {}>>? handler,", type_name))
+            .writeln(format!(
+                "EventHandler<FieldUpdateEventArgs<TValue, {}>>? handler,",
+                type_name
+            ))
             .writeln("bool shouldNotify")
             .outdent_writeln(") {")
             .indent_writeln("if (shouldNotify) {")
-            .indent_writeln(format!("var args = new FieldUpdateEventArgs<TValue, {}>(tag, newValue, oldValue, this);", type_name))
+            .indent_writeln(format!(
+                "var args = new FieldUpdateEventArgs<TValue, {}>(tag, newValue, oldValue, this);",
+                type_name
+            ))
             .writeln("handler?.Invoke(this, args);")
             .outdent_writeln("}")
             .newline()
@@ -455,13 +461,9 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public bool IsList() { return false; }")
-            .writeln("public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
-            .newline()
-            .writeln("public bool IsMap() { return false; }")
-            .writeln("public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }")
-            .writeln("public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }")
             .newline()
             .writeln("private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")
@@ -557,7 +559,12 @@ fn field_type(ty: &'static FieldTypeMeta) -> String {
                     return type_name;
                 }
 
-                let type_args: Vec<_> = type_args.iter().map(field_type).collect();
+                let mut type_args: Vec<_> = type_args.iter().map(field_type).collect();
+
+                // A hack to shadow the first type argument of `Map`
+                if &type_name == "StateMap" {
+                    type_args.remove(0);
+                }
 
                 format!("{}<{}>", type_name, type_args.join(", "))
             }

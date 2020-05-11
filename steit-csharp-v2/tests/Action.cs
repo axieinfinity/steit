@@ -69,13 +69,9 @@ namespace Just.To.Test {
             }
         }
 
-        public bool IsList() { return false; }
-        public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+        public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
-
-        public bool IsMap() { return false; }
-        public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-        public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
         private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {
             if (shouldNotify) {
@@ -122,13 +118,9 @@ namespace Just.To.Test {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -207,13 +199,9 @@ namespace Just.To.Test {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -266,13 +254,9 @@ namespace Just.To.Test {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -365,13 +349,9 @@ namespace Just.To.Test {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,
@@ -464,13 +444,9 @@ namespace Just.To.Test {
                 }
             }
 
-            public bool IsList() { return false; }
-            public void ReplayListPush(IReader itemReader) { throw new NotSupportedException(); }
+            public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
             public void ReplayListPop() { throw new NotSupportedException(); }
-
-            public bool IsMap() { return false; }
-            public void ReplayMapInsert(IReader keyReader, IReader valueReader) { throw new NotSupportedException(); }
-            public void ReplayMapRemove(IReader keyReader) { throw new NotSupportedException(); }
+            public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
 
             private TValue MaybeNotify<TValue>(
                 UInt32 tag,

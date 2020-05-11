@@ -1,4 +1,4 @@
-use std::{io, marker::PhantomData};
+use std::{hash::Hash, io, marker::PhantomData};
 
 use indexmap::map::IndexMap;
 
@@ -78,6 +78,15 @@ impl<K: MapKeyV2, V: StateV2> MapV2<K, V> {
         IterMutV2::new(self.entries.iter_mut())
     }
 }
+
+impl<K: Eq + Hash + MapKeyV2, V: PartialEq + StateV2> PartialEq for MapV2<K, V> {
+    #[inline]
+    fn eq(&self, other: &Self) -> bool {
+        self.entries == other.entries
+    }
+}
+
+impl<K: Eq + Hash + MapKeyV2, V: Eq + StateV2> Eq for MapV2<K, V> {}
 
 impl<K: MapKeyV2, V: StateV2> Default for MapV2<K, V> {
     #[inline]

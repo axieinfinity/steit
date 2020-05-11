@@ -11,12 +11,8 @@ namespace Steit.State {
 
         void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify);
 
-        bool IsList();
-        void ReplayListPush(IReader itemReader);
+        void ReplayListPush(IReader reader);
         void ReplayListPop();
-
-        bool IsMap();
-        void ReplayMapInsert(IReader keyReader, IReader valueReader);
-        void ReplayMapRemove(IReader keyReader);
+        void ReplayMapRemove(UInt32 tag);
     }
 }

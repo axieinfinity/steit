@@ -1,15 +1,19 @@
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
     use steit::{
         gen::{
             generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
             *,
         },
-        log::loggers::{PrintLogger, WriterLogger},
+        log::{
+            loggers::{PrintLogger, WriterLogger},
+            LogEntryV2,
+        },
         rt::RuntimeV2,
         ser_v2::SerializeV2,
         steit_derive, steitize,
-        types::{List, ListV2, Map},
+        types::{List, ListV2, Map, MapV2},
         Runtime, Serialize, State,
     };
 
@@ -474,6 +478,13 @@ mod tests {
             },
         }
 
+        #[steit_derive(Debug, State)]
+        #[steit(no_hash)]
+        struct Woof {
+            #[steit(tag = 0)]
+            map: MapV2<u16, i32>,
+        }
+
         let generator = CSharpGeneratorV2;
 
         let setting = CSharpSetting::new("Just.To.Test");
@@ -483,11 +494,13 @@ mod tests {
         generator.generate::<Hello>(&setting).unwrap();
         generator.generate::<Outer>(&setting).unwrap();
         generator.generate::<Multicase>(&setting).unwrap();
+        generator.generate::<Woof>(&setting).unwrap();
 
-        // let setting = CSharpSetting::new("Steit.State");
-        // let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), false, setting);
-        //
-        // generator.generate::<LogEntryV2>(&setting).unwrap();
+        let setting = CSharpSetting::new("Steit.State");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
+        let setting = Setting::new(&path, false, setting);
+
+        generator.generate::<LogEntryV2>(&setting).unwrap();
 
         println!("\nLIST #1");
 
