@@ -1,15 +1,11 @@
 #[cfg(test)]
 mod tests {
-    use std::path::Path;
     use steit::{
         gen::{
             generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
             *,
         },
-        log::{
-            loggers::{PrintLogger, WriterLogger},
-            LogEntryV2,
-        },
+        log::loggers::{PrintLogger, WriterLogger},
         rt::RuntimeV2,
         ser_v2::SerializeV2,
         steit_derive, steitize,
@@ -138,15 +134,14 @@ mod tests {
         let runtime = RuntimeV2::new();
         let mut hello = HelloV2::empty(runtime);
 
-        hello
-            .set_numbers_with(|runtime| {
-                let mut list = ListV2::new(runtime);
-                list.push(1);
-                list.push(2);
-                list.push(1337);
-                list
-            })
-            .set_others(vec![-1, -2, 1337]);
+        hello.set_numbers_with(|runtime| {
+            let mut list = ListV2::new(runtime);
+            list.push(1);
+            list.push(2);
+            list.push(1337);
+            list
+        });
+        // .set_others(vec![-1, -2, 1337]);
 
         let mut bytes = Vec::new();
         hello.serialize_v2(&mut bytes).unwrap();
@@ -496,11 +491,11 @@ mod tests {
         generator.generate::<Multicase>(&setting).unwrap();
         generator.generate::<Woof>(&setting).unwrap();
 
-        let setting = CSharpSetting::new("Steit.State");
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
-        let setting = Setting::new(&path, false, setting);
-
-        generator.generate::<LogEntryV2>(&setting).unwrap();
+        // let setting = CSharpSetting::new("Steit.State");
+        // let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
+        // let setting = Setting::new(&path, false, setting);
+        //
+        // generator.generate::<LogEntryV2>(&setting).unwrap();
 
         println!("\nLIST #1");
 

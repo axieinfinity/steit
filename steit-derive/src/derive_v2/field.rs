@@ -257,8 +257,7 @@ impl<'a> DeriveField<'a> {
                 quote! {{
                     let runtime = self.runtime_v2().parent();
                     let value = Self::#ctor_name(runtime.clone());
-                    let entry = runtime.entry_update(&value);
-                    logger.log(entry).unwrap();
+                    runtime.log_update(&value).unwrap();
                     value
                 }}
             } else {
@@ -284,22 +283,12 @@ impl<'a> DeriveField<'a> {
         };
 
         let (setter, setter_with) = if self.is_state() {
-            let declare_logger = quote! {
-                let logger = self.runtime_v2().logger().clone();
-                let mut logger = logger.lock().unwrap();
-            };
-
             let declare_runtime = quote! { let runtime = self.runtime_v2(); };
-
-            let log_update = quote! {
-                let entry = runtime.entry_update_child(#tag, &value);
-                logger.log(entry).unwrap();
-            };
+            let log_update = quote! { runtime.log_update_child(#tag, &value).unwrap(); };
 
             (
                 quote! {
                     pub fn #setter_name(&mut self, mut value: #ty) -> &mut Self {
-                        #declare_logger
                         #reset_variant
                         #declare_runtime
                         value.set_runtime_v2(runtime.nested(#tag));
@@ -310,7 +299,6 @@ impl<'a> DeriveField<'a> {
                 },
                 Some(quote! {
                     pub fn #setter_with_name(&mut self, get_value: impl FnOnce(RuntimeV2) -> #ty) -> &mut Self {
-                        #declare_logger
                         #reset_variant
                         #declare_runtime
                         runtime.pause_logger();
