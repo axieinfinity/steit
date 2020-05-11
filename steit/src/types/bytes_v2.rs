@@ -83,7 +83,7 @@ impl HasMeta for BytesV2 {
 mod tests {
     use crate::{
         test_case,
-        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
+        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
     };
 
     use super::BytesV2;
@@ -91,23 +91,23 @@ mod tests {
     test_case!(size_01: assert_size; BytesV2::from_value(&None::<u8>) => 0);
     test_case!(size_02: assert_size; BytesV2::from_value(&Some(1337)) => 2);
     test_case!(size_03: assert_size; BytesV2::from_value(&0) => 1);
-    // test_case!(size_04: assert_size; BytesV2::from_value(&Foo::new()) => 0);
-    // test_case!(size_05: assert_size; BytesV2::from_value(&Foo::with(-1, -1)) => 4);
+    test_case!(size_04: assert_size; BytesV2::from_value(&Foo::empty()) => 0);
+    test_case!(size_05: assert_size; BytesV2::from_value(&Foo::new(-1, -1)) => 4);
 
     test_case!(serialize_01: assert_serialize; BytesV2::from_value(&None::<u8>) => &[]);
     test_case!(serialize_02: assert_serialize; BytesV2::from_value(&Some(1337)) => &[242, 20]);
     test_case!(serialize_03: assert_serialize; BytesV2::from_value(&0) => &[0]);
-    // test_case!(serialize_04: assert_serialize; BytesV2::from_value(&Foo::new()) => &[]);
-    // test_case!(serialize_05: assert_serialize; BytesV2::from_value(&Foo::with(-1, -1)) => &[0, 1, 8, 1]);
+    test_case!(serialize_04: assert_serialize; BytesV2::from_value(&Foo::empty()) => &[]);
+    test_case!(serialize_05: assert_serialize; BytesV2::from_value(&Foo::new(-1, -1)) => &[0, 1, 8, 1]);
 
     test_case!(serialize_nested_01: assert_serialize_nested; BytesV2::from_value(&None::<u8>), None => &[0]);
     test_case!(serialize_nested_02: assert_serialize_nested; BytesV2::from_value(&Some(1)), None => &[1, 2]);
     test_case!(serialize_nested_03: assert_serialize_nested; BytesV2::from_value(&1), Some(10) => &[82, 1, 2]);
     test_case!(serialize_nested_04: assert_serialize_nested; BytesV2::from_value(&None::<u8>), Some(10) => &[]);
     test_case!(serialize_nested_05: assert_serialize_nested; BytesV2::from_value(&Some(1)), Some(10) => &[82, 1, 2]);
-    // test_case!(serialize_nested_06: assert_serialize_nested; BytesV2::from_value(&Some(Foo::new())), Some(10) => &[82, 1, 0]);
-    // test_case!(serialize_nested_07: assert_serialize_nested; BytesV2::from_value(&Some(Foo::with(-1, -2))), Some(10) => &[82, 5, 4, 0, 1, 8, 3]);
+    test_case!(serialize_nested_06: assert_serialize_nested; BytesV2::from_value(&Some(Foo::empty())), Some(10) => &[82, 1, 0]);
+    test_case!(serialize_nested_07: assert_serialize_nested; BytesV2::from_value(&Some(Foo::new(-1, -2))), Some(10) => &[82, 5, 4, 0, 1, 8, 3]);
 
     test_case!(merge_01: assert_merge; BytesV2::from_value(&None::<u8>), &[242, 20] => BytesV2::from_value(&Some(1337)));
-    // test_case!(merge_02: assert_merge; BytesV2::from_value(&Foo::with(-1, -1)), &[8, 3] => BytesV2::with_raw(vec![0, 1, 8, 1, 8, 3]));
+    test_case!(merge_02: assert_merge; BytesV2::from_value(&Foo::new(-1, -1)), &[8, 3] => BytesV2::from_raw(vec![0, 1, 8, 1, 8, 3]));
 }
