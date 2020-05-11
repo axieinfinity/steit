@@ -21,7 +21,7 @@ impl WireTypeV2 {
             0 => Ok(WireTypeV2::Varint),
             2 => Ok(WireTypeV2::Sized),
             _ => Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
+                io::ErrorKind::InvalidData,
                 format!("illegal wire type {}", value),
             )),
         }
@@ -52,10 +52,10 @@ pub trait HasWireType {
     }
 }
 
-fn validate_field_number(field_number: u32) -> io::Result<()> {
+pub fn validate_field_number(field_number: u32) -> io::Result<()> {
     if field_number > FIELD_NUMBER_MAX {
         return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
+            io::ErrorKind::InvalidData,
             format!(
                 "field number must not be greater than 2^29 - 1, got {}",
                 field_number,
