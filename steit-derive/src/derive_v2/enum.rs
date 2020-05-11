@@ -521,9 +521,17 @@ impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
         tokens.extend(self.impl_ctors());
         tokens.extend(self.impl_setters());
-        tokens.extend(self.impl_eq());
+
+        if self.setting.has_eq() {
+            tokens.extend(self.impl_eq());
+        }
+
         tokens.extend(self.impl_default());
-        tokens.extend(self.impl_hash());
+
+        if self.setting.has_hash() {
+            tokens.extend(self.impl_hash());
+        }
+
         tokens.extend(self.impl_wire_type());
 
         if self.setting.impl_serialize() {

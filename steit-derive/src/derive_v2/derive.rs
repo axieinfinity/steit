@@ -21,8 +21,10 @@ pub struct DeriveSetting {
 
     pub steit_owned: bool,
 
-    no_meta: bool,
     no_size_cache: bool,
+    no_eq: bool,
+    no_hash: bool,
+    no_meta: bool,
 
     pub size_cache_renamed: Option<(String, TokenStream)>,
     pub runtime_renamed: Option<(String, TokenStream)>,
@@ -63,8 +65,10 @@ impl DeriveSetting {
 
         let mut steit_owned = Attribute::new(ctx, "steit_owned");
 
-        let mut no_meta = Attribute::new(ctx, "no_meta");
         let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
+        let mut no_eq = Attribute::new(ctx, "no_eq");
+        let mut no_hash = Attribute::new(ctx, "no_hash");
+        let mut no_meta = Attribute::new(ctx, "no_meta");
 
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
         let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
@@ -73,11 +77,17 @@ impl DeriveSetting {
             syn::Meta::Path(path) if steit_owned.parse_path(path) => true,
             syn::Meta::NameValue(meta) if steit_owned.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_meta.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
-
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_eq.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_eq.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_hash.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_hash.parse_bool(meta) => true,
+
+            syn::Meta::Path(path) if no_meta.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
 
             syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
@@ -95,8 +105,10 @@ impl DeriveSetting {
 
                 steit_owned: steit_owned.get().unwrap_or_default(),
 
-                no_meta: no_meta.get().unwrap_or_default(),
                 no_size_cache: no_size_cache.get().unwrap_or_default(),
+                no_eq: no_eq.get().unwrap_or_default(),
+                no_hash: no_hash.get().unwrap_or_default(),
+                no_meta: no_meta.get().unwrap_or_default(),
 
                 size_cache_renamed: size_cache_renamed.get_with_tokens(),
                 runtime_renamed: runtime_renamed.get_with_tokens(),
@@ -125,12 +137,20 @@ impl DeriveSetting {
     getter!(impl_deserialize -> bool = _.deserialize);
     getter!(impl_state -> bool = _.state);
 
-    pub fn has_meta(&self) -> bool {
-        self.deserialize && !self.no_meta
-    }
-
     pub fn has_size_cache(&self) -> bool {
         self.serialize && !self.no_size_cache
+    }
+
+    pub fn has_eq(&self) -> bool {
+        !self.no_eq
+    }
+
+    pub fn has_hash(&self) -> bool {
+        !self.no_hash
+    }
+
+    pub fn has_meta(&self) -> bool {
+        self.deserialize && !self.no_meta
     }
 
     getter!(has_runtime -> bool = _.state);
