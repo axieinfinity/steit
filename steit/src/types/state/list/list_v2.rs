@@ -140,7 +140,16 @@ impl<T: StateV2> SerializeV2 for ListV2<T> {
 impl<T: StateV2> DeserializeV2 for ListV2<T> {
     #[inline]
     fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
-        self.items.merge_v2(reader)
+        let mut field_number = 0;
+
+        while !reader.eof()? {
+            let mut item = T::with_runtime_v2(self.runtime.nested(field_number));
+            field_number += 1;
+            item.merge_nested_v2(T::WIRE_TYPE, reader)?;
+            self.items.push(item);
+        }
+
+        Ok(())
     }
 }
 
