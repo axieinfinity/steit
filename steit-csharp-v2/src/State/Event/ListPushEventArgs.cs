@@ -7,9 +7,9 @@ namespace Steit.State.Event {
         public TItem Item { get; }
         public TList List { get; }
 
-        public ListPushEventArgs(UInt32 newTag, TItem newItem, TList list) {
-            this.Tag = newTag;
-            this.Item = newItem;
+        public ListPushEventArgs(UInt32 tag, TItem item, TList list) {
+            this.Tag = tag;
+            this.Item = item;
             this.List = list;
         }
     }

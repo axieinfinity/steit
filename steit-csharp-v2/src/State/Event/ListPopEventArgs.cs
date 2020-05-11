@@ -7,9 +7,9 @@ namespace Steit.State.Event {
         public TItem Item { get; }
         public TList List { get; }
 
-        public ListPopEventArgs(UInt32 oldTag, TItem oldItem, TList list) {
-            this.Tag = oldTag;
-            this.Item = oldItem;
+        public ListPopEventArgs(UInt32 tag, TItem item, TList list) {
+            this.Tag = tag;
+            this.Item = item;
             this.List = list;
         }
     }
