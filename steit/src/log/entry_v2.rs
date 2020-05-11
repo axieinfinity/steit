@@ -29,20 +29,9 @@ pub enum LogEntryV2 {
         path: Vec<u32>,
     },
     #[steit(tag = 12)]
-    MapInsert {
-        #[steit(tag = 0, csharp_name = "flatten_path")]
-        path: Vec<u32>,
-        #[steit(tag = 1)]
-        key: BytesV2,
-        #[steit(tag = 2)]
-        value: BytesV2,
-    },
-    #[steit(tag = 13)]
     MapRemove {
         #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,
-        #[steit(tag = 1)]
-        key: BytesV2,
     },
 }
 
@@ -74,24 +63,9 @@ impl LogEntryV2 {
     }
 
     #[inline]
-    pub fn new_map_insert(
-        path: &Node<u32>,
-        key: &impl SerializeV2,
-        value: &impl SerializeV2,
-    ) -> Self {
-        LogEntryV2::MapInsert {
-            path: path.values(),
-            key: BytesV2::from_value(key),
-            value: BytesV2::from_value(value),
-            size_cache: SizeCache::new(),
-        }
-    }
-
-    #[inline]
-    pub fn new_map_remove(path: &Node<u32>, key: &impl SerializeV2) -> Self {
+    pub fn new_map_remove(path: &Node<u32>) -> Self {
         LogEntryV2::MapRemove {
             path: path.values(),
-            key: BytesV2::from_value(key),
             size_cache: SizeCache::new(),
         }
     }
@@ -101,7 +75,6 @@ impl LogEntryV2 {
             LogEntryV2::Update { path, .. }
             | LogEntryV2::ListPush { path, .. }
             | LogEntryV2::ListPop { path, .. }
-            | LogEntryV2::MapInsert { path, .. }
             | LogEntryV2::MapRemove { path, .. } => path,
         }
     }

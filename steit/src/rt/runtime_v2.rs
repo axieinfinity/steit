@@ -64,10 +64,10 @@ impl RuntimeV2 {
     }
 
     #[inline]
-    pub fn nested(&self, tag: u32) -> Self {
+    pub fn nested(&self, field_number: u32) -> Self {
         Self {
             logger: self.logger.clone(),
-            path: Arc::new(Node::child(&self.path, tag)),
+            path: Arc::new(Node::child(&self.path, field_number)),
         }
     }
 
@@ -120,17 +120,15 @@ impl RuntimeV2 {
     impl_entry!(entry_update, new_update, value: &impl SerializeV2);
     impl_entry!(entry_list_push, new_list_push, item: &impl SerializeV2);
     impl_entry!(entry_list_pop, new_list_pop);
-    impl_entry!(
-        entry_map_insert,
-        new_map_insert,
-        key: &impl SerializeV2,
-        value: &impl SerializeV2,
-    );
-    impl_entry!(entry_map_remove, new_map_remove, key: &impl SerializeV2);
 
     #[inline]
     pub fn entry_update_child(&self, field_number: u32, value: &impl SerializeV2) -> LogEntryV2 {
         LogEntryV2::new_update(&Node::child(&self.path, field_number), value)
+    }
+
+    #[inline]
+    pub fn entry_map_remove(&self, field_number: u32) -> LogEntryV2 {
+        LogEntryV2::new_map_remove(&Node::child(&self.path, field_number))
     }
 
     impl_log!(log_update, entry_update, value: &impl SerializeV2);
@@ -142,13 +140,7 @@ impl RuntimeV2 {
     );
     impl_log!(log_list_push, entry_list_push, item: &impl SerializeV2);
     impl_log!(log_list_pop, entry_list_pop);
-    impl_log!(
-        log_map_insert,
-        entry_map_insert,
-        key: &impl SerializeV2,
-        value: &impl SerializeV2,
-    );
-    impl_log!(log_map_remove, entry_map_remove, key: &impl SerializeV2);
+    impl_log!(log_map_remove, entry_map_remove, field_number: u32);
 }
 
 impl PartialEq for RuntimeV2 {
