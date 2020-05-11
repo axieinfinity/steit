@@ -37,7 +37,7 @@ namespace Steit.Collections {
         }
 
         public WireType? GetWireType(UInt32 tag) {
-            if (tag < this.Items.Count) {
+            if (tag < this.Count) {
                 return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
             } else {
                 return null;
@@ -45,16 +45,16 @@ namespace Steit.Collections {
         }
 
         public IState? GetNested(UInt32 tag) {
-            return tag < this.Items.Count ? this.Items[(int) tag] as IState : null;
+            return tag < this.Count ? this[(int) tag] as IState : null;
         }
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
-            if (tag >= this.Items.Count) {
+            if (tag >= this.Count) {
                 throw new IndexOutOfRangeException();
             }
 
             var newItem = StateFactory.Deserialize<T>(reader, this.Path, tag);
-            var oldItem = this.Items[(int) tag];
+            var oldItem = this[(int) tag];
 
             if (shouldNotify) {
                 var args = new FieldUpdateEventArgs<T, StateList<T>>(tag, newItem, oldItem, this);
@@ -69,7 +69,7 @@ namespace Steit.Collections {
         }
 
         public void ReplayListPush(IReader itemReader) {
-            var tag = (UInt32) this.Items.Count;
+            var tag = (UInt32) this.Count;
             var item = StateFactory.Deserialize<T>(itemReader, this.Path, tag);
 
             var args = new ListPushEventArgs<T, StateList<T>>(tag, item, this);
@@ -79,17 +79,17 @@ namespace Steit.Collections {
         }
 
         public void ReplayListPop() {
-            if (this.Items.Count <= 0) {
+            if (this.Count <= 0) {
                 throw new InvalidOperationException("Cannot pop from an empty `StateList`.");
             }
 
-            var tag = (UInt32) this.Items.Count - 1;
-            var item = this.Items[(int) tag];
+            var tag = (UInt32) this.Count - 1;
+            var item = this[(int) tag];
 
             var args = new ListPopEventArgs<T, StateList<T>>(tag, item, this);
             this.OnPop?.Invoke(this, args);
 
-            this.Items.RemoveAt(this.Items.Count - 1);
+            this.Items.RemoveAt(this.Count - 1);
         }
 
         public bool IsMap() { return false; }
