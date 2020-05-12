@@ -1,34 +1,30 @@
-use std::io::{self, Read};
-
-use crate::{
-    de_v2::{DeserializeV2, Reader},
-    impl_meta_primitive, impl_state_primitive,
-    ser_v2::SerializePrimitive,
-    wire_fmt::{HasWireType, WireTypeV2},
-};
-
 macro_rules! impl_unsigned_varint {
-    (u64, "UInt64") => {
-        impl_unsigned_varint!(@impl u64, size_64, i64, "UInt64");
+    (u64, $dummy:ident, "UInt64") => {
+        impl_unsigned_varint!(@impl u64, $dummy, size_64, i64, "UInt64");
     };
 
-    ($type:ty, $csharp_name:literal) => {
-        impl_unsigned_varint!(@impl $type, size_32, i32, $csharp_name);
+    ($type:ty, $dummy:ident, $csharp_name:literal) => {
+        impl_unsigned_varint!(@impl $type, $dummy, size_32, i32, $csharp_name);
     };
 
-    (@impl $type:ty, $size_fn:ident, $size_type:ty, $csharp_name:literal) => {
-        impl HasWireType for $type {
-            const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
-        }
-
-        impl SerializePrimitive for $type {
-            #[inline]
-            fn compute_size(&self) -> u32 {
-                $size_fn(*self as $size_type)
+    (@impl $type:ty, $dummy:ident, $size_fn:ident, $size_type:ty, $csharp_name:literal) => {
+        const $dummy: () = {
+            impl $crate::wire_fmt::HasWireType for $type {
+                const WIRE_TYPE: $crate::wire_fmt::WireTypeV2 =
+                    $crate::wire_fmt::WireTypeV2::Varint;
             }
 
-            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                let mut value = *self;
+            #[inline]
+            fn compute_size(value: &$type) -> u32 {
+                $size_fn(*value as $size_type)
+            }
+
+            #[inline]
+            fn serialize(
+                value: &$type,
+                writer: &mut impl ::std::io::Write,
+            ) -> ::std::io::Result<()> {
+                let mut value = *value;
 
                 loop {
                     if value & !0x7f == 0 {
@@ -39,86 +35,106 @@ macro_rules! impl_unsigned_varint {
                     }
                 }
             }
-        }
 
-        impl DeserializeV2 for $type {
-            fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
-                let mut value = 0;
+            $crate::impl_serialize_primitive!($type, compute_size, serialize);
 
-                let mut buf = [0];
-                let mut offset = 0;
+            impl $crate::de_v2::DeserializeV2 for $type {
+                fn merge_v2(
+                    &mut self,
+                    reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                ) -> ::std::io::Result<()> {
+                    use ::std::io::Read;
 
-                loop {
-                    reader.read_exact(&mut buf)?;
-                    value |= (buf[0] & 0x7f) as $type << offset;
+                    let mut value = 0;
 
-                    if buf[0] & 0x80 == 0 {
-                        *self = value;
-                        return Ok(());
+                    let mut buf = [0];
+                    let mut offset = 0;
+
+                    loop {
+                        reader.read_exact(&mut buf)?;
+                        value |= (buf[0] & 0x7f) as $type << offset;
+
+                        if buf[0] & 0x80 == 0 {
+                            *self = value;
+                            return Ok(());
+                        }
+
+                        offset += 7;
                     }
-
-                    offset += 7;
                 }
             }
-        }
 
-        impl_state_primitive!($type);
-        impl_meta_primitive!($type, $csharp_name);
+            $crate::impl_state_primitive!($type);
+            $crate::impl_meta_primitive!($type, $csharp_name);
+        };
     };
 }
 
-impl_unsigned_varint!(u8, "Byte");
-impl_unsigned_varint!(u16, "UInt16");
-impl_unsigned_varint!(u32, "UInt32");
-impl_unsigned_varint!(u64, "UInt64");
+impl_unsigned_varint!(u8, _U8_IMPLS, "Byte");
+impl_unsigned_varint!(u16, _U16_IMPLS, "UInt16");
+impl_unsigned_varint!(u32, _U32_IMPLS, "UInt32");
+impl_unsigned_varint!(u64, _U64_IMPLS, "UInt64");
 
 macro_rules! impl_signed_varint {
-    ($type:ty, $unsigned_type:ty, $csharp_name:literal) => {
-        impl HasWireType for $type {
-            const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
-        }
+    ($type:ty, $dummy:ident, $unsigned_type:ty, $csharp_name:literal) => {
+        const $dummy: () = {
+            impl $crate::wire_fmt::HasWireType for $type {
+                const WIRE_TYPE: $crate::wire_fmt::WireTypeV2 =
+                    $crate::wire_fmt::WireTypeV2::Varint;
+            }
 
-        impl SerializePrimitive for $type {
+            // More about Zigzag encoding can be found at:
+            // https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
+
             #[inline]
-            fn compute_size(&self) -> u32 {
-                (impl_signed_varint!(@encode self, $type) as $unsigned_type).compute_size()
+            fn encode(value: $type) -> $type {
+                (value << 1) ^ (value >> ((std::mem::size_of::<$type>() << 3) - 1))
             }
 
             #[inline]
-            fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-                (impl_signed_varint!(@encode self, $type) as $unsigned_type).serialize(writer)
+            fn decode(value: $type) -> $type {
+                (value >> 1) ^ -(value & 1)
             }
-        }
 
-        impl DeserializeV2 for $type {
             #[inline]
-            fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
-                let encoded = <$unsigned_type>::deserialize_v2(reader)? as $type;
-                *self = impl_signed_varint!(@decode encoded);
-                Ok(())
+            fn compute_size(value: &$type) -> u32 {
+                use $crate::ser_v2::SerializeV2;
+                (encode(*value) as $unsigned_type).compute_size_v2()
             }
-        }
 
-        impl_state_primitive!($type);
-        impl_meta_primitive!($type, $csharp_name);
-    };
+            #[inline]
+            fn serialize(
+                value: &$type,
+                writer: &mut impl ::std::io::Write,
+            ) -> ::std::io::Result<()> {
+                use $crate::ser_v2::SerializeV2;
+                (encode(*value) as $unsigned_type).serialize_v2(writer)
+            }
 
-    // More about Zigzag encoding can be found at:
-    // https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
+            $crate::impl_serialize_primitive!($type, compute_size, serialize);
 
-    (@encode $value:ident, $type:ty) => {
-        ($value << 1) ^ ($value >> ((std::mem::size_of::<$type>() << 3) - 1))
-    };
+            impl $crate::de_v2::DeserializeV2 for $type {
+                #[inline]
+                fn merge_v2(
+                    &mut self,
+                    reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                ) -> ::std::io::Result<()> {
+                    let encoded = <$unsigned_type>::deserialize_v2(reader)? as $type;
+                    *self = decode(encoded);
+                    Ok(())
+                }
+            }
 
-    (@decode $value:ident) => {
-        ($value >> 1) ^ -($value & 1)
+            $crate::impl_state_primitive!($type);
+            $crate::impl_meta_primitive!($type, $csharp_name);
+        };
     };
 }
 
-impl_signed_varint!(i8, u8, "SByte");
-impl_signed_varint!(i16, u16, "Int16");
-impl_signed_varint!(i32, u32, "Int32");
-impl_signed_varint!(i64, u64, "Int64");
+impl_signed_varint!(i8, _I8_IMPLS, u8, "SByte");
+impl_signed_varint!(i16, _I16_IMPLS, u16, "Int16");
+impl_signed_varint!(i32, _I32_IMPLS, u32, "Int32");
+impl_signed_varint!(i64, _I64_IMPLS, u64, "Int64");
 
 /// Gets varint size in bytes of a 32-bit integer.
 ///

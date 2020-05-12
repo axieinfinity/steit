@@ -559,6 +559,11 @@ fn field_type(ty: &'static FieldTypeMeta) -> String {
                     return type_name;
                 }
 
+                // A hack to bypass `Box`
+                if &type_name == "Box" {
+                    return type_name;
+                }
+
                 let mut type_args: Vec<_> = type_args.iter().map(field_type).collect();
 
                 // A hack to shadow the first type argument of `Map`

@@ -2,8 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
-    impl_meta_primitive, impl_state_primitive,
-    ser_v2::SerializePrimitive,
+    impl_meta_primitive, impl_serialize_primitive, impl_state_primitive,
     wire_fmt::{HasWireType, WireTypeV2},
 };
 
@@ -11,17 +10,17 @@ impl HasWireType for bool {
     const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
 }
 
-impl SerializePrimitive for bool {
-    #[inline]
-    fn compute_size(&self) -> u32 {
-        1
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        writer.write_all(&[*self as u8])
-    }
+#[inline]
+fn compute_size(_value: &bool) -> u32 {
+    1
 }
+
+#[inline]
+fn serialize(value: &bool, writer: &mut impl io::Write) -> io::Result<()> {
+    writer.write_all(&[*value as u8])
+}
+
+impl_serialize_primitive!(bool, compute_size, serialize);
 
 impl DeserializeV2 for bool {
     #[inline]

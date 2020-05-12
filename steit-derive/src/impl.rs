@@ -14,6 +14,7 @@ impl<'a> Implementer<'a> {
         self.name
     }
 
+    #[allow(dead_code)]
     pub fn r#impl(&self, tokens: TokenStream) -> TokenStream {
         self.impl_for(None, tokens)
     }

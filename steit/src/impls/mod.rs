@@ -1,4 +1,5 @@
 mod bool;
+mod r#box;
 mod hash_map;
 mod macros;
 mod option;

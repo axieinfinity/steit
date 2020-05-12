@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::{
-    ser_v2::SerializePrimitive,
+    impl_serialize_primitive,
     wire_fmt::{HasWireType, WireTypeV2},
 };
 
@@ -9,14 +9,14 @@ impl HasWireType for &str {
     const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
 }
 
-impl SerializePrimitive for &str {
-    #[inline]
-    fn compute_size(&self) -> u32 {
-        self.len() as u32
-    }
-
-    #[inline]
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
-        writer.write_all(self.as_bytes())
-    }
+#[inline]
+fn compute_size(value: &str) -> u32 {
+    value.len() as u32
 }
+
+#[inline]
+fn serialize(value: &str, writer: &mut impl io::Write) -> io::Result<()> {
+    writer.write_all(value.as_bytes())
+}
+
+impl_serialize_primitive!(&str, compute_size, serialize);

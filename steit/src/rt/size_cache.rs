@@ -29,7 +29,7 @@ impl SizeCache {
     /// Gets cached size.
     ///
     /// ```
-    /// # use steit::SizeCache;
+    /// # use steit::rt::SizeCache;
     /// let size_cache = SizeCache::new();
     /// assert_eq!(size_cache.get(), 0);
     /// ```
@@ -41,7 +41,7 @@ impl SizeCache {
     /// Sets cached size.
     ///
     /// ```
-    /// # use steit::SizeCache;
+    /// # use steit::rt::SizeCache;
     /// let size_cache = SizeCache::new();
     /// size_cache.set(1337);
     /// assert_eq!(size_cache.get(), 1337);
