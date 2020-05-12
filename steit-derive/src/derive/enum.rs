@@ -423,6 +423,7 @@ impl<'a> Enum<'a> {
                     &mut self,
                     mut path: impl Iterator<Item = u32>,
                     kind: LogEntryKind,
+                    key: Option<u32>,
                     reader: &mut Reader<impl io::Read>,
                 ) -> io::Result<()> {
                     if let Some(tag) = path.next() {

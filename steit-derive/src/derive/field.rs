@@ -385,7 +385,7 @@ impl<'a> DeriveField<'a> {
         let field = self.field(is_variant);
 
         if self.is_state() {
-            quote!(#tag => #field.handle(path, kind, reader))
+            quote!(#tag => #field.handle(path, kind, key, reader))
         } else {
             quote!(#tag => Ok(()))
         }

@@ -81,21 +81,12 @@ impl LogEntry {
         }
     }
 
-    pub fn unpack(self) -> (LogEntryKind, Vec<u32>, Vec<u8>) {
+    pub fn kind(&self) -> LogEntryKind {
         match self {
-            LogEntry::Update { path, value, .. } => (LogEntryKind::Update, path, value.into_raw()),
-
-            LogEntry::ListPush { path, item, .. } => {
-                (LogEntryKind::ListPush, path, item.into_raw())
-            }
-
-            LogEntry::ListPop { path, .. } => (LogEntryKind::ListPop, path, Vec::new()),
-
-            LogEntry::MapRemove { path, key, .. } => {
-                let mut bytes = Vec::new();
-                key.serialize(&mut bytes).unwrap();
-                (LogEntryKind::MapRemove, path, bytes)
-            }
+            LogEntry::Update { .. } => LogEntryKind::Update,
+            LogEntry::ListPush { .. } => LogEntryKind::ListPush,
+            LogEntry::ListPop { .. } => LogEntryKind::ListPop,
+            LogEntry::MapRemove { .. } => LogEntryKind::MapRemove,
         }
     }
 }

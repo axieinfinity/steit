@@ -59,9 +59,10 @@ impl<T: State> State for Box<T> {
         &mut self,
         path: impl Iterator<Item = u32>,
         kind: LogEntryKind,
+        key: Option<u32>,
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()> {
-        self.as_mut().handle(path, kind, reader)
+        self.as_mut().handle(path, kind, key, reader)
     }
 }
 

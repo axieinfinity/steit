@@ -192,11 +192,12 @@ impl<K: MapKey, V: State> State for Map<K, V> {
         &mut self,
         mut path: impl Iterator<Item = u32>,
         kind: LogEntryKind,
+        key: Option<u32>,
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()> {
         if let Some(field_number) = path.next() {
             if let Some(value) = self.entries.get_mut(&field_number) {
-                value.handle(path, kind, reader)
+                value.handle(path, kind, key, reader)
             } else if kind == LogEntryKind::Update && path.next().is_none() {
                 let mut value = V::with_runtime(self.runtime.nested(field_number));
                 value.merge_nested(V::WIRE_TYPE, reader)?;
@@ -213,7 +214,12 @@ impl<K: MapKey, V: State> State for Map<K, V> {
                 LogEntryKind::Update => self.handle_update(reader),
 
                 LogEntryKind::MapRemove => {
-                    let key = u32::deserialize(reader)?;
+                    let key = key.ok_or_else(|| {
+                        io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "missing key for `LogEntryKind::MapInsert`",
+                        )
+                    })?;
 
                     if self.entries.remove(&key).is_some() {
                         Ok(())

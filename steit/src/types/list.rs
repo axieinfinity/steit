@@ -177,11 +177,12 @@ impl<T: State> State for List<T> {
         &mut self,
         mut path: impl Iterator<Item = u32>,
         kind: LogEntryKind,
+        key: Option<u32>,
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()> {
         if let Some(field_number) = path.next() {
             if let Some(item) = self.items.get_mut(field_number as usize) {
-                item.handle(path, kind, reader)
+                item.handle(path, kind, key, reader)
             } else {
                 Err(io::Error::new(
                     io::ErrorKind::InvalidData,

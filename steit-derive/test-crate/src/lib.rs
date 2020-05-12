@@ -18,25 +18,25 @@ mod tests {
     #[steit_derive(Debug, State)]
     enum Foo {
         #[steit(tag = 0, default)]
-        FirstCase {
+        First {
             #[steit(tag = 0)]
             counter: i32,
             #[steit(tag = 1)]
             enabled: bool,
         },
         #[steit(tag = 1)]
-        SecondCase {
+        Second {
             #[steit(tag = 0)]
             counter: i32,
             #[steit(tag = 1)]
             enabled: bool,
         },
         #[steit(tag = 2)]
-        ThirdCase {},
+        Third {},
         #[steit(tag = 3)]
-        FourthCase(),
+        Fourth(),
         #[steit(tag = 4)]
-        FifthCase,
+        Fifth,
     }
 
     #[steit_derive(Debug, Serialize, Deserialize)]

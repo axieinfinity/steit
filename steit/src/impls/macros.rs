@@ -73,6 +73,7 @@ macro_rules! impl_state_primitive {
                 &mut self,
                 path: impl Iterator<Item = u32>,
                 kind: $crate::log::LogEntryKind,
+                _key: Option<u32>,
                 reader: &mut $crate::de::Reader<impl ::std::io::Read>,
             ) -> ::std::io::Result<()> {
                 let path: Vec<_> = path.collect();

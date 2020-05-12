@@ -17,6 +17,7 @@ pub trait State: Serialize + Deserialize {
         &mut self,
         path: impl Iterator<Item = u32>,
         kind: LogEntryKind,
+        key: Option<u32>,
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()>;
 
@@ -36,7 +37,6 @@ pub trait State: Serialize + Deserialize {
         self.merge(reader)
     }
 
-    #[inline]
     fn replay(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         if !self.is_root() {
             return Err(io::Error::new(
@@ -47,10 +47,30 @@ pub trait State: Serialize + Deserialize {
 
         while !reader.eof()? {
             let entry = LogEntry::deserialize_nested(LogEntry::WIRE_TYPE, reader)?;
-            let (kind, path, bytes) = entry.unpack();
-            self.handle(path.into_iter(), kind, &mut Reader::new(&*bytes))?;
+
+            let (kind, path, key, bytes) = unpack_log_entry(entry);
+            let path = path.into_iter();
+            let bytes = bytes.unwrap_or_default();
+            let reader = &mut Reader::new(&*bytes);
+
+            self.handle(path, kind, key, reader)?;
         }
 
         Ok(())
+    }
+}
+
+fn unpack_log_entry(entry: LogEntry) -> (LogEntryKind, Vec<u32>, Option<u32>, Option<Vec<u8>>) {
+    match entry {
+        LogEntry::Update { path, value, .. } => {
+            (LogEntryKind::Update, path, None, Some(value.into_raw()))
+        }
+
+        LogEntry::ListPush { path, item, .. } => {
+            (LogEntryKind::ListPush, path, None, Some(item.into_raw()))
+        }
+
+        LogEntry::ListPop { path, .. } => (LogEntryKind::ListPop, path, None, None),
+        LogEntry::MapRemove { path, key, .. } => (LogEntryKind::MapRemove, path, Some(key), None),
     }
 }
