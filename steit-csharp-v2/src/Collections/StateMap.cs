@@ -68,16 +68,16 @@ namespace Steit.Collections {
         public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
 
-        public void ReplayMapRemove(UInt32 tag) {
-            if (!this.ContainsKey(tag)) {
+        public void ReplayMapRemove(UInt32 key) {
+            if (!this.ContainsKey(key)) {
                 throw new KeyNotFoundException();
             }
 
-            var value = this[tag];
-            var args = new MapRemoveEventArgs<T, StateMap<T>>(tag, value, this);
+            var value = this[key];
+            var args = new MapRemoveEventArgs<T, StateMap<T>>(key, value, this);
             this.OnRemove?.Invoke(this, args);
 
-            this.Dictionary.Remove(tag);
+            this.Dictionary.Remove(key);
         }
     }
 }

@@ -37,6 +37,6 @@ namespace Steit.Collections {
 
         public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }
         public void ReplayListPop() { throw new NotSupportedException(); }
-        public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }
+        public void ReplayMapRemove(UInt32 key) { throw new NotSupportedException(); }
     }
 }

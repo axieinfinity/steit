@@ -15,7 +15,7 @@ macro_rules! impl_map_key {
                     Err(io::Error::new(
                         io::ErrorKind::InvalidData,
                         format!(
-                            "field number {} is not within the range of {}",
+                            "field number {} is not within the range of `{}`",
                             field_number,
                             stringify!($type),
                         ),

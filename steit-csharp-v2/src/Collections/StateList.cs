@@ -88,7 +88,7 @@ namespace Steit.Collections {
             this.Items.RemoveAt(this.Count - 1);
         }
 
-        public void ReplayMapRemove(UInt32 tag) {
+        public void ReplayMapRemove(UInt32 key) {
             throw new NotSupportedException();
         }
     }

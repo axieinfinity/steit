@@ -394,9 +394,49 @@ impl<'a> Struct<'a> {
         }
     }
 
+    pub fn replayer(&self) -> TokenStream {
+        let name = self.impler.name().to_token_stream().to_string();
+        let is_variant = self.variant.is_some();
+        let replayers = map_fields!(self, _.replayer(is_variant));
+
+        let update = if is_variant {
+            quote! {
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "`LogEntryKind::Update` is not supported on variants but their enums",
+                ))
+            }
+        } else {
+            quote!(self.handle_update_v2(reader))
+        };
+
+        quote! {
+            if let Some(tag) = path.next() {
+                match tag {
+                    #(#replayers,)*
+
+                    _ => Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("unexpected tag {}", tag),
+                    )),
+                }
+            } else {
+                match kind {
+                    LogEntryKind::Update => #update,
+
+                    _ => Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        format!("{:?} is not supported on `{}`", kind, #name),
+                    )),
+                }
+            }
+        }
+    }
+
     fn impl_state(&self) -> TokenStream {
         let runtime = self.runtime().unwrap().field(false);
         let runtime_setter = self.runtime_setter();
+        let replayer = self.replayer();
 
         self.impler.impl_for(
             "StateV2",
@@ -413,6 +453,15 @@ impl<'a> Struct<'a> {
 
                 fn set_runtime_v2(&mut self, runtime: RuntimeV2) {
                     #runtime_setter
+                }
+
+                fn handle_v2(
+                    &mut self,
+                    mut path: impl Iterator<Item = u32>,
+                    kind: LogEntryKind,
+                    reader: &mut Reader<impl io::Read>,
+                ) -> io::Result<()> {
+                    #replayer
                 }
             },
         )

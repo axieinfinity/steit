@@ -4,6 +4,7 @@ use super::{
     de_v2::{DeserializeV2, Reader},
     rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
+    state_v2::StateV2,
     steit_derive,
 };
 
@@ -85,17 +86,17 @@ pub fn assert_serialize_nested(value: impl SerializeV2, tag: impl Into<Option<u3
     assert_eq!(&*serialize_nested(value, tag), bytes);
 }
 
-pub fn merge<T: DeserializeV2>(mut value: T, bytes: &[u8]) -> T {
+pub fn merge<T: DeserializeV2>(value: &mut T, bytes: &[u8]) {
     value.merge_v2(&mut Reader::new(bytes)).unwrap();
-    value
 }
 
 pub fn assert_merge<T: PartialEq + fmt::Debug + DeserializeV2>(
-    value: T,
+    mut value: T,
     bytes: &[u8],
     expected_value: T,
 ) {
-    assert_eq!(merge(value, bytes), expected_value);
+    merge(&mut value, bytes);
+    assert_eq!(value, expected_value);
 }
 
 pub fn deserialize<T: DeserializeV2>(bytes: &[u8]) -> T {
@@ -110,7 +111,6 @@ pub fn assert_ser_de<T: Clone + PartialEq + fmt::Debug + SerializeV2 + Deseriali
     assert_eq!(deserialize::<T>(&*serialize(value.clone())), value);
 }
 
-// pub fn replay<T: State>(mut value: T, bytes: &[u8]) -> T {
-//     value.replay(&mut Eof::new(bytes)).unwrap();
-//     value
-// }
+pub fn replay<T: StateV2>(value: &mut T, bytes: &[u8]) {
+    value.replay(&mut Reader::new(bytes)).unwrap();
+}

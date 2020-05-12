@@ -370,6 +370,28 @@ impl<'a> Enum<'a> {
             }
         });
 
+        let replayers = self.variants.iter().map(|r#struct| {
+            let variant = r#struct.variant().unwrap();
+            let qual = variant.qual();
+            let tag = variant.tag();
+
+            let destructure = r#struct.destructure();
+            let replayer = r#struct.replayer();
+
+            quote! {
+                #tag => {
+                    if let #name #qual { #destructure .. } = self {
+                        #replayer
+                    } else {
+                        Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!("expected variant with tag {}, got another", tag),
+                        ))
+                    }
+                }
+            }
+        });
+
         self.impler.impl_for(
             "StateV2",
             quote! {
@@ -384,6 +406,44 @@ impl<'a> Enum<'a> {
 
                 fn set_runtime_v2(&mut self, runtime: RuntimeV2) {
                     match self { #(#runtime_setters)* }
+                }
+
+                #[inline]
+                fn is_root_v2(&self) -> bool {
+                    self.runtime_v2().parent().is_root()
+                }
+
+                #[inline]
+                fn handle_update_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                    *self = Self::with_runtime_v2(self.runtime_v2().parent());
+                    self.merge_v2(reader)
+                }
+
+                fn handle_v2(
+                    &mut self,
+                    mut path: impl Iterator<Item = u32>,
+                    kind: LogEntryKind,
+                    reader: &mut Reader<impl io::Read>,
+                ) -> io::Result<()> {
+                    if let Some(tag) = path.next() {
+                        match tag {
+                            #(#replayers,)*
+
+                            _ => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("unexpected variant tag {}", tag),
+                            )),
+                        }
+                    } else {
+                        match kind {
+                            LogEntryKind::Update => self.handle_update_v2(reader),
+
+                            _ => Err(io::Error::new(
+                                io::ErrorKind::InvalidData,
+                                format!("{:?} is not supported on `{}`", kind, stringify!(#name)),
+                            )),
+                        }
+                    }
                 }
             },
         )

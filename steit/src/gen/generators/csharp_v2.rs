@@ -301,7 +301,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             )
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
             .writeln(
-                "public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }",
+                "public void ReplayMapRemove(UInt32 key) { throw new NotSupportedException(); }",
             )
             .newline()
             .writeln("private TValue MaybeNotify<TValue>(")
@@ -463,7 +463,7 @@ impl GeneratorV2 for CSharpGeneratorV2 {
             .newline()
             .writeln("public void ReplayListPush(IReader reader) { throw new NotSupportedException(); }")
             .writeln("public void ReplayListPop() { throw new NotSupportedException(); }")
-            .writeln("public void ReplayMapRemove(UInt32 tag) { throw new NotSupportedException(); }")
+            .writeln("public void ReplayMapRemove(UInt32 key) { throw new NotSupportedException(); }")
             .newline()
             .writeln("private void UpdateAndNotify(UInt32 newTag, IState newVariant, bool shouldNotify) {")
             .indent_writeln("if (shouldNotify) {")

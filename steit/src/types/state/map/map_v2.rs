@@ -4,6 +4,7 @@ use indexmap::map::IndexMap;
 
 use crate::{
     de_v2::{DeserializeV2, Reader},
+    log::LogEntryKind,
     meta::{FieldTypeMeta, HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::{RuntimeV2, SizeCache},
     ser_v2::SerializeV2,
@@ -186,6 +187,51 @@ impl<K: MapKeyV2, V: StateV2> StateV2 for MapV2<K, V> {
 
         self.runtime = runtime;
     }
+
+    fn handle_v2(
+        &mut self,
+        mut path: impl Iterator<Item = u32>,
+        kind: LogEntryKind,
+        reader: &mut Reader<impl io::Read>,
+    ) -> io::Result<()> {
+        if let Some(field_number) = path.next() {
+            if let Some(value) = self.entries.get_mut(&field_number) {
+                value.handle_v2(path, kind, reader)
+            } else if kind == LogEntryKind::Update && path.next().is_none() {
+                let mut value = V::with_runtime_v2(self.runtime.nested(field_number));
+                value.merge_nested_v2(V::WIRE_TYPE, reader)?;
+                self.entries.insert(field_number, value);
+                Ok(())
+            } else {
+                Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("key {} not found", field_number),
+                ))
+            }
+        } else {
+            match kind {
+                LogEntryKind::Update => self.handle_update_v2(reader),
+
+                LogEntryKind::MapRemove => {
+                    let key = u32::deserialize_v2(reader)?;
+
+                    if self.entries.remove(&key).is_some() {
+                        Ok(())
+                    } else {
+                        Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            format!("key {} not found", key),
+                        ))
+                    }
+                }
+
+                _ => Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    format!("{:?} is not supported on `Map` (maybe on its items?)", kind),
+                )),
+            }
+        }
+    }
 }
 
 impl<K: MapKeyV2, V: StateV2 + HasMeta> HasMeta for MapV2<K, V> {
@@ -211,7 +257,7 @@ mod tests {
         log::loggers::BufferLoggerV2,
         rt::{LoggerHandleV2, RuntimeV2},
         state_v2::StateV2,
-        test_util_v2::{assert_serialize, merge, Point},
+        test_util_v2::{assert_serialize, merge, replay, Point},
     };
 
     use super::{MapKeyV2, MapV2};
@@ -268,7 +314,6 @@ mod tests {
     #[test]
     fn insert_and_check_log_01() {
         let (mut map, logger) = map_with_logger();
-
         map.insert(1u16, 1);
         map.insert(2, 2);
 
@@ -281,7 +326,6 @@ mod tests {
     #[test]
     fn insert_and_check_log_02() {
         let (mut map, logger) = map_with_logger();
-
         map.insert_with(3u32, |runtime| Point::new(runtime, -1, -1, -1));
         map.insert_with(7, |runtime| Point::new(runtime, 2, 2, 2));
 
@@ -297,38 +341,29 @@ mod tests {
     #[test]
     fn remove_and_get() {
         let mut map = map();
-
         map.insert(Key::Two, 0);
         map.insert(Key::Three, 1);
-
         map.remove(&Key::Three);
-
         assert_eq!(map.get(&Key::Three), None);
     }
 
     #[test]
     fn remove_and_check_log() {
         let (mut map, logger) = map_with_logger();
-
         map.insert(1u32, 10);
         map.insert(2, 20);
         map.insert(3, 30);
-
         logger.lock().unwrap().clear();
-
         map.remove(&2);
-
-        assert_eq!(logger.lock().unwrap().bytes(), &[4, 12, 2, 1, 2]);
+        assert_eq!(logger.lock().unwrap().bytes(), &[3, 12, 8, 2]);
     }
 
     #[test]
     fn iter() {
         let mut map = map();
-
         map.insert(Key::One, 10);
         map.insert(Key::Two, 20);
         map.insert(Key::Three, 30);
-
         map.remove(&Key::One);
 
         assert_eq!(
@@ -340,14 +375,12 @@ mod tests {
     #[test]
     fn iter_mut_update_and_check_log() {
         let (mut map, logger) = map_with_logger();
-
         map.insert_with(Key::Two, |runtime| Point::new(runtime, -1, -1, -1));
         map.insert_with(Key::Four, |runtime| Point::new(runtime, 2, 2, 2));
         map.insert_with(Key::Five, |runtime| Point::new(runtime, 3, 3, 3));
-
         logger.lock().unwrap().clear();
 
-        for (_key, value) in map.iter_mut() {
+        for (_, value) in map.iter_mut() {
             value.set_x(value.x + 1);
         }
 
@@ -363,26 +396,20 @@ mod tests {
     #[test]
     fn serialize_01() {
         let mut map = map();
-
         map.insert(2u8, 20);
         map.insert(3, 30);
-
         map.remove(&2);
-
         map.insert(6, 60);
         map.insert(7, 70);
-
         assert_serialize(map, &[24, 60, 48, 120, 56, 140, 1]);
     }
 
     #[test]
     fn serialize_02() {
         let mut map = map();
-
         map.insert_with(Key::Two, |runtime| Point::new(runtime, -1, -1, -1));
         map.insert_with(Key::Three, |runtime| Point::new(runtime, 2, 2, 2));
         map.insert_with(Key::One, |runtime| Point::new(runtime, 3, 3, 3));
-
         map.remove(&Key::Three);
 
         assert_serialize(
@@ -394,14 +421,10 @@ mod tests {
     #[test]
     fn merge_no_log() {
         let (mut map, logger) = map_with_logger();
-
         map.insert(1u16, 10);
         map.insert(2, 20);
-
         logger.lock().unwrap().clear();
-
-        let map = merge(map, &[3, 60]);
-
+        merge(&mut map, &[3, 60]);
         assert_eq!(map.get(&3), Some(&30));
         assert_eq!(logger.lock().unwrap().bytes(), &[]);
     }
@@ -409,67 +432,56 @@ mod tests {
     #[test]
     fn merge_update_nested() {
         let mut map = map();
-
         map.insert_with(1u8, |runtime| Point::new(runtime, -1, -1, -1));
         map.insert_with(10, |runtime| Point::new(runtime, 2, 2, 2));
-
-        let map = merge(map, &[10, 2, 8, 5]);
-
+        merge(&mut map, &[10, 2, 8, 5]);
         assert_eq!(map.get(&10), Some(&Point::new(RuntimeV2::new(), 2, -3, 2)));
     }
 
     #[test]
     fn merge_push_new() {
-        let map = merge(map(), &[2, 2, 16, 7]);
+        let mut map = map();
+        merge(&mut map, &[2, 2, 16, 7]);
         assert_eq!(map.get(&2u8), Some(&Point::new(RuntimeV2::new(), 0, 0, -4)));
     }
 
-    // #[test]
-    // fn replay_insert_no_log() {
-    //     let (map, logger) = map_with_logger();
-    //     let map = replay(map, &[7, 0, 2, 1, 7, 10, 1, 1]);
-    //     assert_eq!(map.get(&7), Some(&-1));
-    //     assert_eq!(logger.lock().unwrap().bytes(), &[]);
-    // }
-    //
-    // #[test]
-    // fn replay_update() {
-    //     let mut map = map();
-    //
-    //     map.insert(1, 111);
-    //
-    //     let map = replay(map, &[7, 0, 2, 1, 1, 10, 1, 1]);
-    //
-    //     assert_eq!(map.get(&1), Some(&-1));
-    // }
-    //
-    // #[test]
-    // fn replay_update_nested() {
-    //     let mut map = map();
-    //
-    //     map.insert_with(3, |runtime| Point::new(runtime, -1, -1, -1));
-    //
-    //     let map = replay(map, &[8, 0, 2, 2, 3, 2, 10, 1, 100]);
-    //
-    //     assert_eq!(map.get(&3), Some(&Point::new(RuntimeV2::new(), -1, -1, 50)));
-    // }
-    //
-    // #[test]
-    // fn replay_remove() {
-    //     let mut map = map();
-    //
-    //     map.insert_with(10, |runtime| Point::new(runtime, -1, -1, -1));
-    //     map.insert_with(15, |runtime| Point::new(runtime, 2, 2, 2));
-    //
-    //     let map = replay(map, &[4, 2, 2, 1, 10]);
-    //
-    //     assert_eq!(map.get(&10), None);
-    //     assert_eq!(map.get(&15), Some(&Point::new(RuntimeV2::new(), 2, 2, 2)));
-    // }
-    //
-    // #[test]
-    // #[should_panic(expected = "nonexistent value with tag 1")]
-    // fn replay_remove_nonexistent() {
-    //     replay(map::<u16, i32>(), &[4, 2, 2, 1, 1]);
-    // }
+    #[test]
+    fn replay_insert_no_log() {
+        let (mut map, logger) = map_with_logger();
+        replay(&mut map, &[7, 0, 2, 1, 7, 10, 1, 1]);
+        assert_eq!(map.get(&7u8), Some(&-1));
+        assert_eq!(logger.lock().unwrap().bytes(), &[]);
+    }
+
+    #[test]
+    fn replay_update() {
+        let mut map = map();
+        map.insert(1u16, 111);
+        replay(&mut map, &[7, 0, 2, 1, 1, 10, 1, 1]);
+        assert_eq!(map.get(&1), Some(&-1));
+    }
+
+    #[test]
+    fn replay_update_nested() {
+        let mut map = map();
+        map.insert_with(3u32, |runtime| Point::new(runtime, -1, -1, -1));
+        replay(&mut map, &[8, 0, 2, 2, 3, 2, 10, 1, 100]);
+        assert_eq!(map.get(&3), Some(&Point::new(RuntimeV2::new(), -1, -1, 50)));
+    }
+
+    #[test]
+    fn replay_remove() {
+        let mut map = map();
+        map.insert_with(10u32, |runtime| Point::new(runtime, -1, -1, -1));
+        map.insert_with(15, |runtime| Point::new(runtime, 2, 2, 2));
+        replay(&mut map, &[3, 12, 8, 10]);
+        assert_eq!(map.get(&10), None);
+        assert_eq!(map.get(&15), Some(&Point::new(RuntimeV2::new(), 2, 2, 2)));
+    }
+
+    #[test]
+    #[should_panic(expected = "key 1 not found")]
+    fn replay_remove_key_not_found() {
+        replay(&mut map::<u16, i32>(), &[4, 12, 2, 1, 1]);
+    }
 }

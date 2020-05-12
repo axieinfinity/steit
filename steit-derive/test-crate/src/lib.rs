@@ -1,11 +1,16 @@
 #[cfg(test)]
 mod tests {
+    use std::path::Path;
+
     use steit::{
         gen::{
             generators::{CSharpGenerator, CSharpGeneratorV2, CSharpSetting},
             *,
         },
-        log::loggers::{PrintLogger, WriterLogger},
+        log::{
+            loggers::{PrintLogger, WriterLogger},
+            LogEntryV2,
+        },
         rt::RuntimeV2,
         ser_v2::SerializeV2,
         steit_derive, steitize,
@@ -491,11 +496,11 @@ mod tests {
         generator.generate::<Multicase>(&setting).unwrap();
         generator.generate::<Woof>(&setting).unwrap();
 
-        // let setting = CSharpSetting::new("Steit.State");
-        // let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
-        // let setting = Setting::new(&path, false, setting);
-        //
-        // generator.generate::<LogEntryV2>(&setting).unwrap();
+        let setting = CSharpSetting::new("Steit.State");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
+        let setting = Setting::new(&path, false, setting);
+
+        generator.generate::<LogEntryV2>(&setting).unwrap();
 
         println!("\nLIST #1");
 

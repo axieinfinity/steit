@@ -13,6 +13,6 @@ namespace Steit.State {
 
         void ReplayListPush(IReader reader);
         void ReplayListPop();
-        void ReplayMapRemove(UInt32 tag);
+        void ReplayMapRemove(UInt32 key);
     }
 }

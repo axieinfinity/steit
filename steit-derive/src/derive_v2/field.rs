@@ -381,6 +381,17 @@ impl<'a> DeriveField<'a> {
         }
     }
 
+    pub fn replayer(&self, is_variant: bool) -> TokenStream {
+        let tag = self.attrs.tag;
+        let field = self.field(is_variant);
+
+        if self.is_state() {
+            quote!(#tag => #field.handle_v2(path, kind, reader))
+        } else {
+            quote!(#tag => Ok(()))
+        }
+    }
+
     pub fn meta(&self) -> TokenStream {
         let rust_name = self.alias().to_string();
         let csharp_name = match &self.attrs.csharp_name {

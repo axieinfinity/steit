@@ -9,11 +9,46 @@ macro_rules! impl_state_primitive {
 
             #[inline]
             fn runtime_v2(&self) -> &$crate::rt::RuntimeV2 {
-                panic!("cannot get `Runtime` from {}", stringify!($type))
+                panic!("cannot get `Runtime` from `{}`", stringify!($type))
             }
 
             #[inline]
             fn set_runtime_v2(&mut self, _runtime: $crate::rt::RuntimeV2) {}
+
+            #[inline]
+            fn handle_update_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+                *self = <Self as $crate::de_v2::DeserializeV2>::deserialize_v2(reader)?;
+                Ok(())
+            }
+
+            fn handle_v2(
+                &mut self,
+                path: impl Iterator<Item = u32>,
+                kind: $crate::log::LogEntryKind,
+                reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+            ) -> io::Result<()> {
+                let path: Vec<_> = path.collect();
+
+                if path.is_empty() {
+                    match kind {
+                        $crate::log::LogEntryKind::Update => self.handle_update_v2(reader),
+
+                        _ => Err(::std::io::Error::new(
+                            ::std::io::ErrorKind::InvalidData,
+                            format!("{:?} is not supported on `{}`", kind, stringify!($name)),
+                        )),
+                    }
+                } else {
+                    Err(::std::io::Error::new(
+                        ::std::io::ErrorKind::InvalidData,
+                        format!(
+                            "`{}` expected end-of-path but still got {:?} remaining",
+                            stringify!($name),
+                            path,
+                        ),
+                    ))
+                }
+            }
         }
     };
 }
