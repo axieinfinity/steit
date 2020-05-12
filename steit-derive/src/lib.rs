@@ -6,7 +6,7 @@ use proc_macro::TokenStream;
 
 mod attr;
 mod ctx;
-mod derive_v2;
+mod derive;
 mod r#impl;
 mod str_util;
 
@@ -14,5 +14,5 @@ mod str_util;
 pub fn steit_derive(args: TokenStream, input: TokenStream) -> TokenStream {
     let args = syn::parse_macro_input!(args as syn::AttributeArgs);
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
-    derive_v2::do_it(args, input).into()
+    derive::do_it(args, input).into()
 }

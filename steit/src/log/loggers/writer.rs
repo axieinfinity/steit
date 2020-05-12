@@ -1,8 +1,8 @@
 use std::io;
 
 use crate::{
-    log::{LogEntryV2, LoggerV2},
-    ser_v2::SerializeV2,
+    log::{LogEntry, Logger},
+    ser::Serialize,
 };
 
 pub struct WriterLogger {
@@ -35,9 +35,9 @@ impl Default for WriterLogger {
     }
 }
 
-impl LoggerV2 for WriterLogger {
+impl Logger for WriterLogger {
     #[inline]
-    fn log(&mut self, entry: LogEntryV2) -> io::Result<()> {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         let mut bytes = Vec::new();
         entry.cache_size();
         entry.serialize_nested(None, false, &mut bytes)?;

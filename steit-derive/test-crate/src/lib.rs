@@ -4,15 +4,15 @@ mod tests {
 
     use steit::{
         gen::{
-            generators::{CSharpGeneratorV2, CSharpSetting},
-            GeneratorV2, Setting,
+            generators::{CSharpGenerator, CSharpSetting},
+            Generator, Setting,
         },
-        log::{loggers::WriterLogger, LogEntryV2},
-        rt::RuntimeV2,
-        ser_v2::SerializeV2,
-        state_v2::StateV2,
+        log::{loggers::WriterLogger, LogEntry},
+        rt::Runtime,
+        ser::Serialize,
+        state::State,
         steit_derive,
-        types::{ListV2, MapV2},
+        types::{List, Map},
     };
 
     #[steit_derive(Debug, State)]
@@ -85,7 +85,7 @@ mod tests {
         #[steit(tag = 0, default)]
         Raw {
             #[steit(tag = 0)]
-            log_entries: ListV2<u8>,
+            log_entries: List<u8>,
         },
         #[steit(tag = 1)]
         Attack {
@@ -94,7 +94,7 @@ mod tests {
             #[steit(tag = 1)]
             defender: u8,
             #[steit(tag = 2)]
-            hits: ListV2<OldHit>,
+            hits: List<OldHit>,
         },
     }
 
@@ -196,7 +196,7 @@ mod tests {
     #[steit_derive(State)]
     struct Hello {
         #[steit(tag = 0)]
-        numbers: ListV2<i32>,
+        numbers: List<i32>,
         #[steit(tag = 1, no_state)]
         others: Vec<i32>,
     }
@@ -241,15 +241,22 @@ mod tests {
     #[steit(no_hash)]
     struct Woof {
         #[steit(tag = 0)]
-        map: MapV2<u16, i32>,
+        map: Map<u16, i32>,
     }
 
     #[test]
     fn test() {
-        let generator = CSharpGeneratorV2;
+        let generator = CSharpGenerator;
+
+        let setting = CSharpSetting::new("Steit.State");
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp/src/State");
+        let setting = Setting::new(&path, false, setting);
+
+        generator.generate::<LogEntry>(&setting).unwrap();
 
         let setting = CSharpSetting::new("Just.To.Test");
-        let setting = Setting::new(&env!("NEW_CSHARP_OUT_DIR"), true, setting);
+        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp/tests");
+        let setting = Setting::new(&path, true, setting);
 
         generator.generate::<OldAction>(&setting).unwrap();
         generator.generate::<Action>(&setting).unwrap();
@@ -258,20 +265,14 @@ mod tests {
         generator.generate::<Multicase>(&setting).unwrap();
         generator.generate::<Woof>(&setting).unwrap();
 
-        let setting = CSharpSetting::new("Steit.State");
-        let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp-v2/src/State");
-        let setting = Setting::new(&path, false, setting);
-
-        generator.generate::<LogEntryV2>(&setting).unwrap();
-
         println!("\nHELLO!");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
         let mut hello = Hello::empty(runtime);
 
         hello
             .set_numbers_with(|runtime| {
-                let mut list = ListV2::new(runtime);
+                let mut list = List::new(runtime);
                 list.push(1);
                 list.push(2);
                 list.push(1337);
@@ -280,12 +281,12 @@ mod tests {
             .set_others(vec![-1, -2, 1337]);
 
         let mut bytes = Vec::new();
-        hello.serialize_v2(&mut bytes).unwrap();
+        hello.serialize(&mut bytes).unwrap();
         println!("serialized: {:?}", bytes);
 
         println!("\nOUTER");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
         let mut outer = Outer::empty(runtime);
 
         outer.set_foo(127).set_bar(true).set_inner_with(|runtime| {
@@ -299,29 +300,29 @@ mod tests {
 
         println!("{:?}", outer);
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        outer.set_runtime_v2(runtime.nested(10));
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        outer.set_runtime(runtime.nested(10));
 
         println!("{:?}", outer);
 
         println!("\nENUM");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
         let mut multicase = Multicase::empty(runtime);
 
         multicase.set_second_case_counter(68);
 
         println!("{:?}", multicase);
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        multicase.set_runtime_v2(runtime.nested(10));
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        multicase.set_runtime(runtime.nested(10));
 
         println!("{:?}", multicase);
 
         println!("\nLIST #1");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        let mut list = ListV2::new(runtime);
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        let mut list = List::new(runtime);
 
         list.push_with(|runtime| {
             let mut inner = Inner::empty(runtime);
@@ -341,8 +342,8 @@ mod tests {
 
         println!("\nLIST #2");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        let mut list = ListV2::new(runtime);
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        let mut list = List::new(runtime);
 
         list.push(10i8);
         list.push(11);
@@ -351,8 +352,8 @@ mod tests {
 
         println!("\nMAP #1");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        let mut map = MapV2::new(runtime);
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        let mut map = Map::new(runtime);
 
         map.insert_with(5u16, |runtime| {
             let mut inner = Inner::empty(runtime);
@@ -372,8 +373,8 @@ mod tests {
 
         println!("\nMAP #2");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
-        let mut map = MapV2::new(runtime);
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
+        let mut map = Map::new(runtime);
 
         map.insert(1u32, 10i8);
         map.insert(3, 11);
@@ -382,14 +383,14 @@ mod tests {
 
         println!("\nACTION!");
 
-        let runtime = RuntimeV2::with_logger(WriterLogger::stdout());
+        let runtime = Runtime::with_logger(WriterLogger::stdout());
         let mut action = OldAction::empty(runtime);
 
         action.set_attack_attacker(1);
         action.set_attack_defender(2);
 
         action.set_attack_hits_with(|runtime| {
-            let mut hits = ListV2::new(runtime);
+            let mut hits = List::new(runtime);
 
             for dummy in 6..=9 {
                 hits.push_with(|runtime| {

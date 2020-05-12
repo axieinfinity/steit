@@ -1,23 +1,23 @@
 use std::io;
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     log::LogEntryKind,
     meta::{HasMeta, MetaLink, NameMeta, TypeMeta},
-    rt::{RuntimeV2, SizeCache},
-    ser_v2::SerializeV2,
-    state_v2::StateV2,
-    wire_fmt::{HasWireType, WireTypeV2},
+    rt::{Runtime, SizeCache},
+    ser::Serialize,
+    state::State,
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl<T: HasWireType> HasWireType for Box<T> {
-    const WIRE_TYPE: WireTypeV2 = T::WIRE_TYPE;
+    const WIRE_TYPE: WireType = T::WIRE_TYPE;
 }
 
-impl<T: SerializeV2> SerializeV2 for Box<T> {
+impl<T: Serialize> Serialize for Box<T> {
     #[inline]
-    fn compute_size_v2(&self) -> u32 {
-        self.as_ref().compute_size_v2()
+    fn compute_size(&self) -> u32 {
+        self.as_ref().compute_size()
     }
 
     #[inline]
@@ -31,37 +31,37 @@ impl<T: SerializeV2> SerializeV2 for Box<T> {
     }
 }
 
-impl<T: DeserializeV2> DeserializeV2 for Box<T> {
+impl<T: Deserialize> Deserialize for Box<T> {
     #[inline]
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
-        self.as_mut().merge_v2(reader)
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+        self.as_mut().merge(reader)
     }
 }
 
-impl<T: StateV2> StateV2 for Box<T> {
+impl<T: State> State for Box<T> {
     #[inline]
-    fn with_runtime_v2(runtime: RuntimeV2) -> Self {
-        Self::new(T::with_runtime_v2(runtime))
+    fn with_runtime(runtime: Runtime) -> Self {
+        Self::new(T::with_runtime(runtime))
     }
 
     #[inline]
-    fn runtime_v2(&self) -> &RuntimeV2 {
-        self.as_ref().runtime_v2()
+    fn runtime(&self) -> &Runtime {
+        self.as_ref().runtime()
     }
 
     #[inline]
-    fn set_runtime_v2(&mut self, runtime: RuntimeV2) {
-        self.as_mut().set_runtime_v2(runtime)
+    fn set_runtime(&mut self, runtime: Runtime) {
+        self.as_mut().set_runtime(runtime)
     }
 
     #[inline]
-    fn handle_v2(
+    fn handle(
         &mut self,
         path: impl Iterator<Item = u32>,
         kind: LogEntryKind,
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()> {
-        self.as_mut().handle_v2(path, kind, reader)
+        self.as_mut().handle(path, kind, reader)
     }
 }
 
@@ -83,9 +83,9 @@ impl<T: HasMeta> HasMeta for Box<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ser_v2::SerializeV2,
+        ser::Serialize,
         test_case,
-        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
     };
 
     #[test]

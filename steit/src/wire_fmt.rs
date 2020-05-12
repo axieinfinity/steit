@@ -10,16 +10,16 @@ pub const WIRE_TYPE_MASK: u32 = (1u32 << WIRE_TYPE_BITS) - 1;
 pub const FIELD_NUMBER_MAX: u32 = 0x1fffffff;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-pub enum WireTypeV2 {
+pub enum WireType {
     Varint = 0,
     Sized = 2,
 }
 
-impl WireTypeV2 {
+impl WireType {
     pub fn from_value(value: u32) -> io::Result<Self> {
         match value {
-            0 => Ok(WireTypeV2::Varint),
-            2 => Ok(WireTypeV2::Sized),
+            0 => Ok(WireType::Varint),
+            2 => Ok(WireType::Sized),
             _ => Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 format!("illegal wire type {}", value),
@@ -39,10 +39,10 @@ impl WireTypeV2 {
 }
 
 pub trait HasWireType {
-    const WIRE_TYPE: WireTypeV2;
+    const WIRE_TYPE: WireType;
 
     #[inline]
-    fn wire_type(&self) -> WireTypeV2 {
+    fn wire_type(&self) -> WireType {
         Self::WIRE_TYPE
     }
 
@@ -66,14 +66,14 @@ pub fn validate_field_number(field_number: u32) -> io::Result<()> {
     Ok(())
 }
 
-pub fn parse_tag(value: u32) -> io::Result<(u32, WireTypeV2)> {
-    let wire_type = WireTypeV2::from_value(value & WIRE_TYPE_MASK)?;
+pub fn parse_tag(value: u32) -> io::Result<(u32, WireType)> {
+    let wire_type = WireType::from_value(value & WIRE_TYPE_MASK)?;
     let field_number = value >> WIRE_TYPE_BITS;
     validate_field_number(field_number)?;
     Ok((field_number, wire_type))
 }
 
-pub fn tag(field_number: u32, wire_type: WireTypeV2) -> io::Result<u32> {
+pub fn tag(field_number: u32, wire_type: WireType) -> io::Result<u32> {
     validate_field_number(field_number)?;
     Ok(field_number << WIRE_TYPE_BITS | wire_type.value() as u32)
 }

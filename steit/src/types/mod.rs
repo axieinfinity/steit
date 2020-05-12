@@ -1,5 +1,5 @@
-mod bytes_v2;
+mod bytes;
 mod state;
 
-pub use bytes_v2::*;
+pub use bytes::*;
 pub use state::*;

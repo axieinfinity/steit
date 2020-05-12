@@ -1,9 +1,9 @@
 #[macro_export]
 macro_rules! impl_serialize_primitive {
     ($type:ty, $compute_size:ident, $serialize:ident) => {
-        impl $crate::ser_v2::SerializeV2 for $type {
+        impl $crate::ser::Serialize for $type {
             #[inline]
-            fn compute_size_v2(&self) -> u32 {
+            fn compute_size(&self) -> u32 {
                 $compute_size(self)
             }
 
@@ -12,7 +12,7 @@ macro_rules! impl_serialize_primitive {
                 &self,
                 writer: &mut impl ::std::io::Write,
             ) -> ::std::io::Result<()> {
-                self.serialize_v2(writer)
+                self.serialize(writer)
             }
 
             #[inline]
@@ -22,16 +22,16 @@ macro_rules! impl_serialize_primitive {
 
             #[inline]
             fn cache_size(&self) -> u32 {
-                self.compute_size_v2()
+                self.compute_size()
             }
 
             #[inline]
             fn cached_size(&self) -> u32 {
-                self.compute_size_v2()
+                self.compute_size()
             }
 
             #[inline]
-            fn serialize_v2(&self, writer: &mut impl ::std::io::Write) -> ::std::io::Result<()> {
+            fn serialize(&self, writer: &mut impl ::std::io::Write) -> ::std::io::Result<()> {
                 $serialize(self, writer)
             }
 
@@ -46,40 +46,40 @@ macro_rules! impl_serialize_primitive {
 #[macro_export]
 macro_rules! impl_state_primitive {
     ($type:ty) => {
-        impl $crate::state_v2::StateV2 for $type {
+        impl $crate::state::State for $type {
             #[inline]
-            fn with_runtime_v2(_runtime: $crate::rt::RuntimeV2) -> Self {
+            fn with_runtime(_runtime: $crate::rt::Runtime) -> Self {
                 Self::default()
             }
 
             #[inline]
-            fn runtime_v2(&self) -> &$crate::rt::RuntimeV2 {
+            fn runtime(&self) -> &$crate::rt::Runtime {
                 panic!("cannot get `Runtime` from `{}`", stringify!($type))
             }
 
             #[inline]
-            fn set_runtime_v2(&mut self, _runtime: $crate::rt::RuntimeV2) {}
+            fn set_runtime(&mut self, _runtime: $crate::rt::Runtime) {}
 
             #[inline]
-            fn handle_update_v2(
+            fn handle_update(
                 &mut self,
-                reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                reader: &mut $crate::de::Reader<impl ::std::io::Read>,
             ) -> ::std::io::Result<()> {
-                *self = <Self as $crate::de_v2::DeserializeV2>::deserialize_v2(reader)?;
+                *self = <Self as $crate::de::Deserialize>::deserialize(reader)?;
                 Ok(())
             }
 
-            fn handle_v2(
+            fn handle(
                 &mut self,
                 path: impl Iterator<Item = u32>,
                 kind: $crate::log::LogEntryKind,
-                reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                reader: &mut $crate::de::Reader<impl ::std::io::Read>,
             ) -> ::std::io::Result<()> {
                 let path: Vec<_> = path.collect();
 
                 if path.is_empty() {
                     match kind {
-                        $crate::log::LogEntryKind::Update => self.handle_update_v2(reader),
+                        $crate::log::LogEntryKind::Update => self.handle_update(reader),
 
                         _ => Err(::std::io::Error::new(
                             ::std::io::ErrorKind::InvalidData,

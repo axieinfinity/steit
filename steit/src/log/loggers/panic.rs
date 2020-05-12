@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::log::{LogEntryV2, LoggerV2};
+use crate::log::{LogEntry, Logger};
 
 #[derive(Default)]
 pub struct PanicLogger;
@@ -12,9 +12,9 @@ impl PanicLogger {
     }
 }
 
-impl LoggerV2 for PanicLogger {
+impl Logger for PanicLogger {
     #[inline]
-    fn log(&mut self, entry: LogEntryV2) -> io::Result<()> {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         panic!("got an entry but prefer to panic! {:#?}", entry);
     }
 }

@@ -2,7 +2,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::meta::{HasMeta, MessageMeta, MetaLink, TypeMeta};
 
-pub fn collect_meta_v2<T: HasMeta>() -> HashMap<&'static str, &'static MessageMeta> {
+pub fn collect_meta<T: HasMeta>() -> HashMap<&'static str, &'static MessageMeta> {
     let mut visited_types = HashSet::new();
     let mut collected_msgs = HashMap::new();
     visit_link(T::LINK, &mut visited_types, &mut collected_msgs);

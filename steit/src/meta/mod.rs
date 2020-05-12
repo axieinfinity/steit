@@ -1,3 +1,4 @@
+#[allow(clippy::module_inception)]
 mod meta;
 mod msg;
 mod name;

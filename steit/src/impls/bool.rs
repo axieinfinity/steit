@@ -1,13 +1,13 @@
 use std::io::{self, Read};
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     impl_meta_primitive, impl_serialize_primitive, impl_state_primitive,
-    wire_fmt::{HasWireType, WireTypeV2},
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl HasWireType for bool {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Varint;
+    const WIRE_TYPE: WireType = WireType::Varint;
 }
 
 #[inline]
@@ -22,9 +22,9 @@ fn serialize(value: &bool, writer: &mut impl io::Write) -> io::Result<()> {
 
 impl_serialize_primitive!(bool, compute_size, serialize);
 
-impl DeserializeV2 for bool {
+impl Deserialize for bool {
     #[inline]
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         let mut value = false;
         let mut buf = [0];
 
@@ -47,7 +47,7 @@ impl_meta_primitive!(bool, "Boolean");
 mod tests {
     use crate::{
         test_case,
-        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested},
     };
 
     test_case!(serialize_01: assert_serialize; false => &[0]);

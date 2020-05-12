@@ -2,11 +2,11 @@ use std::io;
 
 use crate::{
     impl_serialize_primitive,
-    wire_fmt::{HasWireType, WireTypeV2},
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl HasWireType for &str {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
+    const WIRE_TYPE: WireType = WireType::Sized;
 }
 
 #[inline]

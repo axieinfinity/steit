@@ -1,23 +1,23 @@
 use std::{collections::HashMap, hash::Hash, io};
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     rt::SizeCache,
-    ser_v2::SerializeV2,
-    wire_fmt::{HasWireType, WireTypeV2},
+    ser::Serialize,
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl<K, V> HasWireType for HashMap<K, V> {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
+    const WIRE_TYPE: WireType = WireType::Sized;
 }
 
-impl<K: SerializeV2, V: SerializeV2> SerializeV2 for HashMap<K, V> {
-    fn compute_size_v2(&self) -> u32 {
+impl<K: Serialize, V: Serialize> Serialize for HashMap<K, V> {
+    fn compute_size(&self) -> u32 {
         let mut size = 0;
 
         for (key, value) in self {
-            size += key.compute_size_nested_v2(None, false).unwrap();
-            size += value.compute_size_nested_v2(None, false).unwrap();
+            size += key.compute_size_nested(None, false).unwrap();
+            size += value.compute_size_nested(None, false).unwrap();
         }
 
         size
@@ -38,11 +38,11 @@ impl<K: SerializeV2, V: SerializeV2> SerializeV2 for HashMap<K, V> {
     }
 }
 
-impl<K: Eq + Hash + DeserializeV2, V: DeserializeV2> DeserializeV2 for HashMap<K, V> {
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+impl<K: Eq + Hash + Deserialize, V: Deserialize> Deserialize for HashMap<K, V> {
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
-            let key = K::deserialize_nested_v2(K::WIRE_TYPE, reader)?;
-            let value = V::deserialize_nested_v2(V::WIRE_TYPE, reader)?;
+            let key = K::deserialize_nested(K::WIRE_TYPE, reader)?;
+            let value = V::deserialize_nested(V::WIRE_TYPE, reader)?;
             self.insert(key, value);
         }
 
@@ -56,7 +56,7 @@ mod tests {
 
     use crate::{
         test_case,
-        test_util_v2::{
+        test_util::{
             assert_merge, assert_ser_de, assert_serialize, assert_serialize_nested, assert_size,
         },
     };

@@ -1,20 +1,20 @@
 use std::io;
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     rt::SizeCache,
-    ser_v2::SerializeV2,
-    wire_fmt::{HasWireType, WireTypeV2},
+    ser::Serialize,
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl<T> HasWireType for Option<T> {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
+    const WIRE_TYPE: WireType = WireType::Sized;
 }
 
-impl<T: SerializeV2> SerializeV2 for Option<T> {
-    fn compute_size_v2(&self) -> u32 {
+impl<T: Serialize> Serialize for Option<T> {
+    fn compute_size(&self) -> u32 {
         match self {
-            Some(value) => value.compute_size_nested_v2(None, false).unwrap(),
+            Some(value) => value.compute_size_nested(None, false).unwrap(),
             None => 0,
         }
     }
@@ -32,16 +32,16 @@ impl<T: SerializeV2> SerializeV2 for Option<T> {
     }
 }
 
-impl<T: DeserializeV2> DeserializeV2 for Option<T> {
+impl<T: Deserialize> Deserialize for Option<T> {
     #[inline]
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             if self.is_none() {
                 *self = Some(T::default());
             }
 
             if let Some(value) = self {
-                value.merge_nested_v2(T::WIRE_TYPE, reader)?;
+                value.merge_nested(T::WIRE_TYPE, reader)?;
             }
         }
 
@@ -52,9 +52,9 @@ impl<T: DeserializeV2> DeserializeV2 for Option<T> {
 #[cfg(test)]
 mod tests {
     use crate::{
-        ser_v2::SerializeV2,
+        ser::Serialize,
         test_case,
-        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size, Foo},
     };
 
     #[test]

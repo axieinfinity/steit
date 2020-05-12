@@ -1,9 +1,9 @@
-mod logger_v2;
+mod logger;
 mod node;
-mod runtime_v2;
+mod runtime;
 mod size_cache;
 
-pub use logger_v2::*;
+pub use logger::*;
 pub use node::*;
-pub use runtime_v2::*;
+pub use runtime::*;
 pub use size_cache::*;

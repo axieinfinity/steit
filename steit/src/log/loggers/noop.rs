@@ -1,6 +1,6 @@
 use std::io;
 
-use crate::log::{LogEntryV2, LoggerV2};
+use crate::log::{LogEntry, Logger};
 
 #[derive(Default)]
 pub struct NoopLogger;
@@ -12,9 +12,9 @@ impl NoopLogger {
     }
 }
 
-impl LoggerV2 for NoopLogger {
+impl Logger for NoopLogger {
     #[inline]
-    fn log(&mut self, _entry: LogEntryV2) -> io::Result<()> {
+    fn log(&mut self, _entry: LogEntry) -> io::Result<()> {
         Ok(())
     }
 }

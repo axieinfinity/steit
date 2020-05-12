@@ -1,23 +1,23 @@
 use std::io;
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     meta::{FieldTypeMeta, HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::SizeCache,
-    ser_v2::SerializeV2,
-    wire_fmt::{HasWireType, WireTypeV2},
+    ser::Serialize,
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl<T> HasWireType for Vec<T> {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
+    const WIRE_TYPE: WireType = WireType::Sized;
 }
 
-impl<T: SerializeV2> SerializeV2 for Vec<T> {
-    fn compute_size_v2(&self) -> u32 {
+impl<T: Serialize> Serialize for Vec<T> {
+    fn compute_size(&self) -> u32 {
         let mut size = 0;
 
         for item in self {
-            size += item.compute_size_nested_v2(None, false).unwrap();
+            size += item.compute_size_nested(None, false).unwrap();
         }
 
         size
@@ -37,10 +37,10 @@ impl<T: SerializeV2> SerializeV2 for Vec<T> {
     }
 }
 
-impl<T: DeserializeV2> DeserializeV2 for Vec<T> {
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+impl<T: Deserialize> Deserialize for Vec<T> {
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
-            let item = T::deserialize_nested_v2(T::WIRE_TYPE, reader)?;
+            let item = T::deserialize_nested(T::WIRE_TYPE, reader)?;
             self.push(item);
         }
 
@@ -67,7 +67,7 @@ impl<T: HasMeta> HasMeta for Vec<T> {
 mod tests {
     use crate::{
         test_case,
-        test_util_v2::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
+        test_util::{assert_merge, assert_serialize, assert_serialize_nested, assert_size},
     };
 
     test_case!(size_01: assert_size; Vec::<u8>::new() => 0);

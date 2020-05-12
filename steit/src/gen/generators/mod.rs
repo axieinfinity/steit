@@ -1,3 +1,3 @@
-mod csharp_v2;
+mod csharp;
 
-pub use csharp_v2::*;
+pub use csharp::*;

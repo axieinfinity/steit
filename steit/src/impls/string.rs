@@ -1,29 +1,29 @@
 use std::io::{self, Read};
 
 use crate::{
-    de_v2::{DeserializeV2, Reader},
+    de::{Deserialize, Reader},
     impl_serialize_primitive,
-    wire_fmt::{HasWireType, WireTypeV2},
+    wire_fmt::{HasWireType, WireType},
 };
 
 impl HasWireType for String {
-    const WIRE_TYPE: WireTypeV2 = WireTypeV2::Sized;
+    const WIRE_TYPE: WireType = WireType::Sized;
 }
 
 #[inline]
-fn compute_size(value: &String) -> u32 {
+fn compute_size(value: &str) -> u32 {
     value.len() as u32
 }
 
 #[inline]
-fn serialize(value: &String, writer: &mut impl io::Write) -> io::Result<()> {
+fn serialize(value: &str, writer: &mut impl io::Write) -> io::Result<()> {
     writer.write_all(value.as_bytes())
 }
 
 impl_serialize_primitive!(String, compute_size, serialize);
 
-impl DeserializeV2 for String {
-    fn merge_v2(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
+impl Deserialize for String {
+    fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         let mut bytes = Vec::new();
         reader.read_to_end(&mut bytes)?;
         *self = from_utf8(bytes)?;

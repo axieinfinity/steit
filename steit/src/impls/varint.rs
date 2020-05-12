@@ -10,8 +10,8 @@ macro_rules! impl_unsigned_varint {
     (@impl $type:ty, $dummy:ident, $size_fn:ident, $size_type:ty, $csharp_name:literal) => {
         const $dummy: () = {
             impl $crate::wire_fmt::HasWireType for $type {
-                const WIRE_TYPE: $crate::wire_fmt::WireTypeV2 =
-                    $crate::wire_fmt::WireTypeV2::Varint;
+                const WIRE_TYPE: $crate::wire_fmt::WireType =
+                    $crate::wire_fmt::WireType::Varint;
             }
 
             #[inline]
@@ -38,10 +38,10 @@ macro_rules! impl_unsigned_varint {
 
             $crate::impl_serialize_primitive!($type, compute_size, serialize);
 
-            impl $crate::de_v2::DeserializeV2 for $type {
-                fn merge_v2(
+            impl $crate::de::Deserialize for $type {
+                fn merge(
                     &mut self,
-                    reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                    reader: &mut $crate::de::Reader<impl ::std::io::Read>,
                 ) -> ::std::io::Result<()> {
                     use ::std::io::Read;
 
@@ -79,8 +79,7 @@ macro_rules! impl_signed_varint {
     ($type:ty, $dummy:ident, $unsigned_type:ty, $csharp_name:literal) => {
         const $dummy: () = {
             impl $crate::wire_fmt::HasWireType for $type {
-                const WIRE_TYPE: $crate::wire_fmt::WireTypeV2 =
-                    $crate::wire_fmt::WireTypeV2::Varint;
+                const WIRE_TYPE: $crate::wire_fmt::WireType = $crate::wire_fmt::WireType::Varint;
             }
 
             // More about Zigzag encoding can be found at:
@@ -98,8 +97,8 @@ macro_rules! impl_signed_varint {
 
             #[inline]
             fn compute_size(value: &$type) -> u32 {
-                use $crate::ser_v2::SerializeV2;
-                (encode(*value) as $unsigned_type).compute_size_v2()
+                use $crate::ser::Serialize;
+                (encode(*value) as $unsigned_type).compute_size()
             }
 
             #[inline]
@@ -107,19 +106,19 @@ macro_rules! impl_signed_varint {
                 value: &$type,
                 writer: &mut impl ::std::io::Write,
             ) -> ::std::io::Result<()> {
-                use $crate::ser_v2::SerializeV2;
-                (encode(*value) as $unsigned_type).serialize_v2(writer)
+                use $crate::ser::Serialize;
+                (encode(*value) as $unsigned_type).serialize(writer)
             }
 
             $crate::impl_serialize_primitive!($type, compute_size, serialize);
 
-            impl $crate::de_v2::DeserializeV2 for $type {
+            impl $crate::de::Deserialize for $type {
                 #[inline]
-                fn merge_v2(
+                fn merge(
                     &mut self,
-                    reader: &mut $crate::de_v2::Reader<impl ::std::io::Read>,
+                    reader: &mut $crate::de::Reader<impl ::std::io::Read>,
                 ) -> ::std::io::Result<()> {
-                    let encoded = <$unsigned_type>::deserialize_v2(reader)? as $type;
+                    let encoded = <$unsigned_type>::deserialize(reader)? as $type;
                     *self = decode(encoded);
                     Ok(())
                 }
@@ -210,9 +209,7 @@ fn size_64(mut value: i64) -> u32 {
 mod tests {
     use crate::{
         test_case,
-        test_util_v2::{
-            assert_deserialize, assert_ser_de, assert_serialize, assert_serialize_nested,
-        },
+        test_util::{assert_deserialize, assert_ser_de, assert_serialize, assert_serialize_nested},
     };
 
     test_case!(encode_zig_zag_01: assert_serialize;  0 => &[0]);
