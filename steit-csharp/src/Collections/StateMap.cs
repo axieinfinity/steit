@@ -37,11 +37,7 @@ namespace Steit.Collections {
         }
 
         public WireType? GetWireType(UInt32 tag) {
-            if (this.ContainsKey(tag)) {
-                return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
-            } else {
-                return null;
-            }
+            return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
         }
 
         public IState? GetNested(UInt32 tag) {
@@ -73,8 +69,7 @@ namespace Steit.Collections {
                 throw new KeyNotFoundException();
             }
 
-            var value = this[key];
-            var args = new MapRemoveEventArgs<T, StateMap<T>>(key, value, this);
+            var args = new MapRemoveEventArgs<T, StateMap<T>>(key, this[key], this);
             this.OnRemove?.Invoke(this, args);
 
             this.Dictionary.Remove(key);

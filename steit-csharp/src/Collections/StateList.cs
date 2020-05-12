@@ -37,11 +37,7 @@ namespace Steit.Collections {
         }
 
         public WireType? GetWireType(UInt32 tag) {
-            if (tag < this.Count) {
-                return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
-            } else {
-                return null;
-            }
+            return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
         }
 
         public IState? GetNested(UInt32 tag) {
@@ -80,12 +76,11 @@ namespace Steit.Collections {
             }
 
             var tag = (UInt32) this.Count - 1;
-            var item = this[(int) tag];
 
-            var args = new ListPopEventArgs<T, StateList<T>>(tag, item, this);
+            var args = new ListPopEventArgs<T, StateList<T>>(tag, this[(int) tag], this);
             this.OnPop?.Invoke(this, args);
 
-            this.Items.RemoveAt(this.Count - 1);
+            this.Items.RemoveAt((int) tag);
         }
 
         public void ReplayMapRemove(UInt32 key) {
