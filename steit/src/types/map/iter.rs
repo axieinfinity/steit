@@ -2,12 +2,12 @@ use std::marker::PhantomData;
 
 use super::key::MapKey;
 
-pub struct Iter<'a, K: MapKey, V: 'a> {
+pub struct MapIter<'a, K: MapKey, V: 'a> {
     inner: Box<dyn Iterator<Item = (&'a u32, &'a V)> + 'a>,
     _marker: PhantomData<*const K>,
 }
 
-impl<'a, K: MapKey, V> Iter<'a, K, V> {
+impl<'a, K: MapKey, V> MapIter<'a, K, V> {
     #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u32, &'a V)> + 'a) -> Self {
         Self {
@@ -17,7 +17,7 @@ impl<'a, K: MapKey, V> Iter<'a, K, V> {
     }
 }
 
-impl<'a, K: MapKey, V> Iterator for Iter<'a, K, V> {
+impl<'a, K: MapKey, V> Iterator for MapIter<'a, K, V> {
     type Item = (K, &'a V);
 
     #[inline]
@@ -29,12 +29,12 @@ impl<'a, K: MapKey, V> Iterator for Iter<'a, K, V> {
     }
 }
 
-pub struct IterMut<'a, K: MapKey, V: 'a> {
+pub struct MapIterMut<'a, K: MapKey, V: 'a> {
     inner: Box<dyn Iterator<Item = (&'a u32, &'a mut V)> + 'a>,
     _marker: PhantomData<*const K>,
 }
 
-impl<'a, K: MapKey, V> IterMut<'a, K, V> {
+impl<'a, K: MapKey, V> MapIterMut<'a, K, V> {
     #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u32, &'a mut V)> + 'a) -> Self {
         Self {
@@ -44,7 +44,7 @@ impl<'a, K: MapKey, V> IterMut<'a, K, V> {
     }
 }
 
-impl<'a, K: MapKey, V> Iterator for IterMut<'a, K, V> {
+impl<'a, K: MapKey, V> Iterator for MapIterMut<'a, K, V> {
     type Item = (K, &'a mut V);
 
     #[inline]

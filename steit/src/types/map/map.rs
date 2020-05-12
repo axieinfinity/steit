@@ -13,7 +13,7 @@ use crate::{
 };
 
 use super::{
-    iter::{Iter, IterMut},
+    iter::{MapIter, MapIterMut},
     key::MapKey,
 };
 
@@ -70,13 +70,13 @@ impl<K: MapKey, V: State> Map<K, V> {
     }
 
     #[inline]
-    pub fn iter(&self) -> Iter<K, V> {
-        Iter::new(self.entries.iter())
+    pub fn iter(&self) -> MapIter<K, V> {
+        MapIter::new(self.entries.iter())
     }
 
     #[inline]
-    pub fn iter_mut(&mut self) -> IterMut<K, V> {
-        IterMut::new(self.entries.iter_mut())
+    pub fn iter_mut(&mut self) -> MapIterMut<K, V> {
+        MapIterMut::new(self.entries.iter_mut())
     }
 }
 
@@ -98,7 +98,7 @@ impl<K: MapKey, V: State> Default for Map<K, V> {
 
 impl<'a, K: MapKey, V: State> IntoIterator for &'a Map<K, V> {
     type Item = (K, &'a V);
-    type IntoIter = Iter<'a, K, V>;
+    type IntoIter = MapIter<'a, K, V>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
@@ -108,7 +108,7 @@ impl<'a, K: MapKey, V: State> IntoIterator for &'a Map<K, V> {
 
 impl<'a, K: MapKey, V: State> IntoIterator for &'a mut Map<K, V> {
     type Item = (K, &'a mut V);
-    type IntoIter = IterMut<'a, K, V>;
+    type IntoIter = MapIterMut<'a, K, V>;
 
     #[inline]
     fn into_iter(self) -> Self::IntoIter {
