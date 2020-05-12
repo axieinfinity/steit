@@ -235,7 +235,7 @@ impl AttributeParse for &mut Vec<syn::Attribute> {
                     |meta| should_accept(meta),
                 )),
 
-                Ok(other) => ctx.error(other, "expected #[steit(...)]"),
+                Ok(other) => ctx.error(other, "expected `#[steit(...)]`"),
                 Err(error) => ctx.syn_error(error),
             };
 

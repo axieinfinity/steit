@@ -44,7 +44,13 @@ pub struct EnumMeta {
 pub struct VariantMeta {
     pub ty: StructMeta,
     pub tag: u32,
-    pub default: bool,
+}
+
+impl VariantMeta {
+    #[inline]
+    pub fn default(&self) -> bool {
+        self.tag == 0
+    }
 }
 
 #[derive(Debug)]

@@ -54,7 +54,7 @@ impl FieldAttrs {
 
         let (tag, tag_tokens) = tag
             .get_with_tokens()
-            .ok_or_else(|| ctx.error(field, "expected a valid tag #[steit(tag = …)]"))?;
+            .ok_or_else(|| ctx.error(field, "expected a valid tag `#[steit(tag = …)]`"))?;
 
         tag::validate(tag).map_err(|message| {
             ctx.error(&tag_tokens, message);

@@ -457,7 +457,6 @@ impl<'a> Enum<'a> {
         let variants = self.variants.iter().map(|r#struct| {
             let variant = r#struct.variant().unwrap();
             let tag = variant.tag();
-            let default = variant.default();
 
             let meta = r#struct.meta();
 
@@ -465,7 +464,6 @@ impl<'a> Enum<'a> {
                 VariantMeta {
                     ty: #meta,
                     tag: #tag,
-                    default: #default,
                 }
             }
         });
@@ -526,7 +524,6 @@ fn parse_variants<'a>(
 
         if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(ctx, variant) {
             let (tag, tag_tokens) = parsed_variant.tag_with_tokens();
-            let (default, default_tokens) = parsed_variant.default_with_tokens();
 
             if reserved_tags.contains(&tag) {
                 ctx.error(tag_tokens, format!("tag {} has been reserved", tag));
@@ -535,19 +532,6 @@ fn parse_variants<'a>(
             if !tags.insert(tag) {
                 ctx.error(tag_tokens, format!("duplicate tag {}", tag));
                 unique_tags = false;
-            }
-
-            if default {
-                if default_variant_index.is_none() {
-                    // If struct parsing fails, `default_variant_index` could be wrong.
-                    // We accept that, so we don't miss any multiple-default-variants error.
-                    default_variant_index = Some(parsed_variants.len());
-                } else {
-                    ctx.error(
-                        default_tokens.unwrap(),
-                        "unexpected multiple default variants",
-                    );
-                }
             }
 
             if let Ok(r#struct) = Struct::parse(
@@ -559,6 +543,10 @@ fn parse_variants<'a>(
                 &mut variant.fields,
                 Some(parsed_variant),
             ) {
+                if tag == 0 && default_variant_index.is_none() {
+                    default_variant_index = Some(parsed_variants.len());
+                }
+
                 parsed_variants.push(r#struct);
             }
         }
@@ -567,7 +555,7 @@ fn parse_variants<'a>(
     if default_variant_index.is_none() {
         ctx.error(
             impler.name(),
-            "expected a default variant #[steit(tag = …, default)]",
+            "expected a variant with tag 0 as the default variant `#[steit(tag = 0)]`",
         );
     }
 

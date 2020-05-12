@@ -17,7 +17,7 @@ pub enum LogEntryKind {
 #[steit_derive(Debug, Serialize, Deserialize)]
 #[steit(steit_owned)]
 pub enum LogEntry {
-    #[steit(tag = 0, default)]
+    #[steit(tag = 0)]
     Update {
         #[steit(tag = 0, csharp_name = "flatten_path")]
         path: Vec<u32>,

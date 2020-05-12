@@ -344,7 +344,7 @@ impl Generator for CSharpGenerator {
 
         let default_variant = variants
             .iter()
-            .find(|variant| variant.meta.default)
+            .find(|variant| variant.meta.default())
             .unwrap_or_else(|| panic!("expected a default variant for enum {}", name));
 
         self.gen_file_opening(setting, writer);

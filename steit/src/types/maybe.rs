@@ -3,7 +3,7 @@ use crate::steit_derive;
 #[steit_derive(Debug, State)]
 #[steit(steit_owned)]
 pub enum Maybe<T> {
-    #[steit(tag = 0, default)]
+    #[steit(tag = 0)]
     None,
     #[steit(tag = 1)]
     Some(#[steit(tag = 0)] T),

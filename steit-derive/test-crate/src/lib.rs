@@ -17,7 +17,7 @@ mod tests {
 
     #[steit_derive(Debug, State)]
     enum Foo {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         First {
             #[steit(tag = 0)]
             counter: i32,
@@ -49,7 +49,7 @@ mod tests {
 
     #[steit_derive(Debug, State)]
     enum Maybe<T> {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         None,
         #[steit(tag = 1)]
         Some(#[steit(tag = 0)] T),
@@ -57,7 +57,7 @@ mod tests {
 
     #[steit_derive(Debug, State)]
     enum Animal<A, B, C> {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         Alligator(#[steit(tag = 0)] Maybe<A>),
         #[steit(tag = 1)]
         Bear(#[steit(tag = 0)] i32, #[steit(tag = 1)] B),
@@ -74,7 +74,7 @@ mod tests {
 
     #[steit_derive(Debug, Serialize, Deserialize)]
     pub enum ActionsOr<T> {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         Actions(#[steit(tag = 0)] Vec<Action>),
         #[steit(tag = 1)]
         Value(#[steit(tag = 0)] T),
@@ -82,7 +82,7 @@ mod tests {
 
     #[steit_derive(Debug, State)]
     pub enum OldAction {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         Raw {
             #[steit(tag = 0)]
             log_entries: List<u8>,
@@ -116,7 +116,7 @@ mod tests {
 
     #[steit_derive(Debug, Serialize, Deserialize)]
     pub enum Action {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         Raw {},
         #[steit(tag = 1)]
         CardDraw {
@@ -221,7 +221,7 @@ mod tests {
 
     #[steit_derive(Debug, State)]
     enum Multicase {
-        #[steit(tag = 0, default)]
+        #[steit(tag = 0)]
         FirstCase {
             #[steit(tag = 0)]
             counter: i32,
