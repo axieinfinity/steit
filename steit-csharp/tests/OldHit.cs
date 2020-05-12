@@ -10,27 +10,27 @@ namespace Just.To.Test {
     public sealed class OldHit : IState {
         public Path Path { get; }
 
-        public Box BeforeAttacking { get; private set; }
-        public Box BeforeDamaging { get; private set; }
-        public Box Damaging { get; private set; }
-        public Box AfterDamaging { get; private set; }
-        public Box AfterAttacking { get; private set; }
+        public OldAction BeforeAttacking { get; private set; }
+        public OldAction BeforeDamaging { get; private set; }
+        public OldAction Damaging { get; private set; }
+        public OldAction AfterDamaging { get; private set; }
+        public OldAction AfterAttacking { get; private set; }
         public Int32 Dummy { get; private set; }
 
         public OldHit(Path? path = null) {
             this.Path = path ?? Path.Root;
-            this.BeforeAttacking = new Box(this.Path.GetNested(0));
-            this.BeforeDamaging = new Box(this.Path.GetNested(1));
-            this.Damaging = new Box(this.Path.GetNested(2));
-            this.AfterDamaging = new Box(this.Path.GetNested(3));
-            this.AfterAttacking = new Box(this.Path.GetNested(4));
+            this.BeforeAttacking = new OldAction(this.Path.GetNested(0));
+            this.BeforeDamaging = new OldAction(this.Path.GetNested(1));
+            this.Damaging = new OldAction(this.Path.GetNested(2));
+            this.AfterDamaging = new OldAction(this.Path.GetNested(3));
+            this.AfterAttacking = new OldAction(this.Path.GetNested(4));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<Box, OldHit>>? OnBeforeAttackingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Box, OldHit>>? OnBeforeDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Box, OldHit>>? OnDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Box, OldHit>>? OnAfterDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Box, OldHit>>? OnAfterAttackingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnBeforeAttackingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnBeforeDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnAfterDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnAfterAttackingUpdate;
         public static event EventHandler<FieldUpdateEventArgs<Int32, OldHit>>? OnDummyUpdate;
 
         public static void ClearBeforeAttackingUpdateHandlers() { OnBeforeAttackingUpdate = null; }
@@ -80,11 +80,11 @@ namespace Just.To.Test {
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             switch (tag) {
-                case 0: this.BeforeAttacking = this.MaybeNotify(0, Box.Deserialize(reader, this.Path.GetNested(0)), this.BeforeAttacking, OnBeforeAttackingUpdate, shouldNotify); break;
-                case 1: this.BeforeDamaging = this.MaybeNotify(1, Box.Deserialize(reader, this.Path.GetNested(1)), this.BeforeDamaging, OnBeforeDamagingUpdate, shouldNotify); break;
-                case 2: this.Damaging = this.MaybeNotify(2, Box.Deserialize(reader, this.Path.GetNested(2)), this.Damaging, OnDamagingUpdate, shouldNotify); break;
-                case 3: this.AfterDamaging = this.MaybeNotify(3, Box.Deserialize(reader, this.Path.GetNested(3)), this.AfterDamaging, OnAfterDamagingUpdate, shouldNotify); break;
-                case 4: this.AfterAttacking = this.MaybeNotify(4, Box.Deserialize(reader, this.Path.GetNested(4)), this.AfterAttacking, OnAfterAttackingUpdate, shouldNotify); break;
+                case 0: this.BeforeAttacking = this.MaybeNotify(0, OldAction.Deserialize(reader, this.Path.GetNested(0)), this.BeforeAttacking, OnBeforeAttackingUpdate, shouldNotify); break;
+                case 1: this.BeforeDamaging = this.MaybeNotify(1, OldAction.Deserialize(reader, this.Path.GetNested(1)), this.BeforeDamaging, OnBeforeDamagingUpdate, shouldNotify); break;
+                case 2: this.Damaging = this.MaybeNotify(2, OldAction.Deserialize(reader, this.Path.GetNested(2)), this.Damaging, OnDamagingUpdate, shouldNotify); break;
+                case 3: this.AfterDamaging = this.MaybeNotify(3, OldAction.Deserialize(reader, this.Path.GetNested(3)), this.AfterDamaging, OnAfterDamagingUpdate, shouldNotify); break;
+                case 4: this.AfterAttacking = this.MaybeNotify(4, OldAction.Deserialize(reader, this.Path.GetNested(4)), this.AfterAttacking, OnAfterAttackingUpdate, shouldNotify); break;
                 case 5: this.Dummy = this.MaybeNotify(5, reader.ReadInt32(), this.Dummy, OnDummyUpdate, shouldNotify); break;
                 default: reader.SkipField(wireType); break;
             }
