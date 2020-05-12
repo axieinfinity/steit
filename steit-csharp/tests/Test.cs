@@ -80,15 +80,15 @@ namespace Just.To.Test {
             var list1 = new StateList<Inner>();
 
             list1.OnUpdate += (sender, e) => {
-                Console.WriteLine("List<Inner>, update #{0}: {1} => {2}", e.Tag, InnerToString(e.OldValue), InnerToString(e.NewValue));
+                Console.WriteLine("StateList<Inner>, update #{0}: {1} => {2}", e.Tag, InnerToString(e.OldValue), InnerToString(e.NewValue));
             };
 
             list1.OnPush += (sender, e) => {
-                Console.WriteLine("List<Inner>, add #{0}: {1}", e.Tag, InnerToString(e.Item));
+                Console.WriteLine("StateList<Inner>, add #{0}: {1}", e.Tag, InnerToString(e.Item));
             };
 
             list1.OnPop += (sender, e) => {
-                Console.WriteLine("List<Inner>, remove #{0}: {1}", e.Tag, InnerToString(e.Item));
+                Console.WriteLine("StateList<Inner>, remove #{0}: {1}", e.Tag, InnerToString(e.Item));
             };
 
             StateReplayer.Replay<StateList<Inner>>(ref list1, new ByteReader(new byte[] {
@@ -104,15 +104,15 @@ namespace Just.To.Test {
             var list2 = new StateList<SByte>();
 
             list2.OnUpdate += (sender, e) => {
-                Console.WriteLine("List<SByte>, update #{0}: {1} => {2}", e.Tag, e.OldValue, e.NewValue);
+                Console.WriteLine("StateList<SByte>, update #{0}: {1} => {2}", e.Tag, e.OldValue, e.NewValue);
             };
 
             list2.OnPush += (sender, e) => {
-                Console.WriteLine("List<SByte>, add #{0}: {1}", e.Tag, e.Item);
+                Console.WriteLine("StateList<SByte>, add #{0}: {1}", e.Tag, e.Item);
             };
 
             list2.OnPop += (sender, e) => {
-                Console.WriteLine("List<SByte>, remove #{0}: {1}", e.Tag, e.Item);
+                Console.WriteLine("StateList<SByte>, remove #{0}: {1}", e.Tag, e.Item);
             };
 
             StateReplayer.Replay<StateList<SByte>>(ref list2, new ByteReader(new byte[] {
@@ -123,95 +123,105 @@ namespace Just.To.Test {
                 7, 0, 2, 1, 1, 10, 1, 0,
             }));
 
-            // var map1 = new StateDictionary<Inner>();
+            var map1 = new StateMap<Inner>();
 
-            // map1.OnUpdate((newItem, oldItem, tag, container) => {
-            //     Console.WriteLine("Dictionary<Inner>, update #{0}: {1} => {2}", tag, InnerToString(oldItem), InnerToString(newItem));
-            // });
+            map1.OnUpdate += (sender, e) => {
+                Console.WriteLine("StateMap<Inner>, update #{0}: {1} => {2}", e.Tag, InnerToString(e.OldValue), InnerToString(e.NewValue));
+            };
 
-            // map1.OnRemove((item, tag, container) => {
-            //     Console.WriteLine("Dictionary<Inner>, remove #{0}: {1}", tag, InnerToString(item));
-            // });
+            map1.OnInsert += (sender, e) => {
+                Console.WriteLine("StateMap<Inner>, insert #{0}: {1}", e.Tag, InnerToString(e.Value));
+            };
 
-            // Replayer.Replay(ref map1, new Reader(new byte[] {
-            //     8, 0, 2, 1, 5, 10, 2, 0, 12,
-            //     11, 0, 2, 1, 1, 10, 5, 0, 154, 1, 8, 1,
-            //     4, 0, 2, 1, 0,
-            //     9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
-            //     4, 2, 2, 1, 0,
-            // }));
+            map1.OnRemove += (sender, e) => {
+                Console.WriteLine("StateMap<Inner>, remove #{0}: {1}", e.Tag, InnerToString(e.Value));
+            };
 
-            // var map2 = new StateDictionary<SByte>();
+            StateReplayer.Replay<StateMap<Inner>>(ref map1, new ByteReader(new byte[] {
+                8, 0, 2, 1, 5, 10, 2, 0, 12,
+                11, 0, 2, 1, 1, 10, 5, 0, 154, 1, 8, 1,
+                4, 0, 2, 1, 0,
+                10, 0, 2, 1, 0, 10, 4, 0, 84, 8, 1,
+                9, 0, 2, 2, 1, 0, 10, 2, 136, 1,
+                3, 12, 8, 0,
+             }));
 
-            // map2.OnUpdate((newItem, oldItem, tag, container) => {
-            //     Console.WriteLine("Dictionary<SByte>, update #{0}: {1} => {2}", tag, oldItem, newItem);
-            // });
+            var map2 = new StateMap<SByte>();
 
-            // map2.OnRemove((item, tag, container) => {
-            //     Console.WriteLine("Dictionary<SByte>, remove #{0}: {1}", tag, item);
-            // });
+            map2.OnUpdate += (sender, e) => {
+                Console.WriteLine("StateMap<SByte>, update #{0}: {1} => {2}", e.Tag, e.OldValue, e.NewValue);
+            };
 
-            // Replayer.Replay(ref map2, new Reader(new byte[] {
-            //     7, 0, 2, 1, 1, 10, 1, 20,
-            //     7, 0, 2, 1, 3, 10, 1, 22,
-            //     7, 0, 2, 1, 7, 10, 1, 0,
-            //     4, 2, 2, 1, 1,
-            // }));
+            map2.OnInsert += (sender, e) => {
+                Console.WriteLine("StateMap<SByte>, insert #{0}: {1}", e.Tag, e.Value);
+            };
 
-            // Action.OnUpdate((newValue, newVariant, oldValue, oldVariant, container) => {
-            //     Console.WriteLine("Action: variant {0} ({1}) => variant {2} ({3}", oldVariant, oldValue, newVariant, newValue);
-            // });
+            map2.OnRemove += (sender, e) => {
+                Console.WriteLine("StateMap<SByte>, remove #{0}: {1}", e.Tag, e.Value);
+            };
 
-            // Action.Attack.OnUpdateAttacker((newValue, oldValue, container) => {
-            //     Console.WriteLine("Action / Attack / Attacker: {0} => {1}", oldValue, newValue);
-            // });
+            StateReplayer.Replay<StateMap<SByte>>(ref map2, new ByteReader(new byte[] {
+                7, 0, 2, 1, 1, 10, 1, 20,
+                7, 0, 2, 1, 3, 10, 1, 22,
+                7, 0, 2, 1, 7, 10, 1, 0,
+                7, 0, 2, 1, 7, 10, 1, 1,
+                3, 12, 8, 1,
+            }));
 
-            // Action.Attack.OnUpdateDefender((newValue, oldValue, container) => {
-            //     Console.WriteLine("Action / Attack / Defender: {0} => {1}", oldValue, newValue);
-            // });
+            OldAction.OnUpdate += (sender, e) => {
+                Console.WriteLine("Action: variant {0} ({1}) => variant {2} ({3}", e.OldTag, e.OldVariant, e.NewTag, e.NewVariant);
+            };
 
-            // Action.Attack.OnUpdateHits((newValue, oldValue, container) => {
-            //     Console.WriteLine("Action / Attack / Hits:");
+            OldAction.Attack.OnAttackerUpdate += (sender, e) => {
+                Console.WriteLine("Action / Attack / Attacker: {0} => {1}", e.OldValue, e.NewValue);
+            };
 
-            //     if (oldValue.Count > 0) {
-            //         Console.WriteLine("Old Hits:");
-            //         foreach (var hit in oldValue) Console.WriteLine(HitToString(hit));
-            //     } else {
-            //         Console.WriteLine("Old Hits:\n<empty>");
-            //     }
+            OldAction.Attack.OnDefenderUpdate += (sender, e) => {
+                Console.WriteLine("Action / Attack / Defender: {0} => {1}", e.OldValue, e.NewValue);
+            };
 
-            //     if (newValue.Count > 0) {
-            //         Console.WriteLine("New Hits:");
-            //         foreach (var hit in newValue) Console.WriteLine(HitToString(hit));
-            //     } else {
-            //         Console.WriteLine("New Hits:\n<empty>");
-            //     }
-            // });
+            OldAction.Attack.OnHitsUpdate += (sender, e) => {
+                Console.WriteLine("Action / Attack / Hits:");
 
-            // var action = new Action();
+                if (e.OldValue.Count > 0) {
+                    Console.WriteLine("Old Hits:");
+                    foreach (var hit in e.OldValue) Console.WriteLine(HitToString(hit));
+                } else {
+                    Console.WriteLine("Old Hits:\n<empty>");
+                }
 
-            // Replayer.Replay(ref action, new Reader(new byte[] {
-            //     // Set variant from to `Action::Attack`
-            //     4, 0, 10, 1, 1,
-            //     // Set attacker to 1
-            //     8, 0, 2, 2, 1, 0, 10, 1, 1,
-            //     // Set defender to 2
-            //     8, 0, 2, 2, 1, 1, 10, 1, 2,
-            //     // Add 4 hits with dummy values from 6 to 9, inclusive
-            //     83, 0, 2, 2, 1, 2, 10, 76,
-            //         2, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 12,
-            //         10, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 14,
-            //         18, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 16,
-            //         26, 17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 18,
-            // }));
+                if (e.NewValue.Count > 0) {
+                    Console.WriteLine("New Hits:");
+                    foreach (var hit in e.NewValue) Console.WriteLine(HitToString(hit));
+                } else {
+                    Console.WriteLine("New Hits:\n<empty>");
+                }
+            };
+
+            var action = new OldAction();
+
+            StateReplayer.Replay<OldAction>(ref action, new ByteReader(new byte[] {
+                // Set variant from to `Action::Attack`
+                4, 0, 10, 1, 1,
+                // Set attacker to 1
+                8, 0, 2, 2, 1, 0, 10, 1, 1,
+                // Set defender to 2
+                8, 0, 2, 2, 1, 1, 10, 1, 2,
+                // Add 4 hits with dummy values from 6 to 9, inclusive
+                79, 0, 2, 2, 1, 2, 10, 72,
+                    17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 12,
+                    17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 14,
+                    17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 16,
+                    17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 18,
+            }));
         }
 
         private static String InnerToString(Inner inner) {
             return inner != null ? string.Format("{{ Foo: {0}, Bar: {1} }}", inner.Foo, inner.Bar) : "<null>";
         }
 
-        // private static String HitToString(Hit hit) {
-        //     return hit != null ? string.Format("{{ Dummy: {0} }}", hit.Dummy) : "<null>";
-        // }
+        private static String HitToString(OldHit hit) {
+            return hit != null ? string.Format("{{ Dummy: {0} }}", hit.Dummy) : "<null>";
+        }
     }
 }
