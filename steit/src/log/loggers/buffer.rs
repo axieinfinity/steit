@@ -33,7 +33,12 @@ impl BufferLogger {
     }
 
     #[inline]
-    pub fn pluck(&mut self) -> Vec<u8> {
+    pub fn pluck(&mut self) -> Vec<LogEntry> {
+        std::mem::replace(&mut self.entries, Vec::new())
+    }
+
+    #[inline]
+    pub fn pluck_bytes(&mut self) -> Vec<u8> {
         let bytes = self.bytes();
         self.clear();
         bytes
