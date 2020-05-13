@@ -1,4 +1,9 @@
-use std::{error::Error, io, ops::Deref, slice};
+use std::{
+    error::Error,
+    io,
+    ops::{self, Deref},
+    slice,
+};
 
 use crate::{
     de::{Deserialize, Reader},
@@ -94,6 +99,22 @@ impl<T: State> List<T> {
     #[inline]
     pub fn iter_mut(&mut self) -> slice::IterMut<T> {
         self.items.iter_mut()
+    }
+}
+
+impl<T: State> ops::Index<usize> for List<T> {
+    type Output = T;
+
+    #[inline]
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.items[index]
+    }
+}
+
+impl<T: State> ops::IndexMut<usize> for List<T> {
+    #[inline]
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.items[index]
     }
 }
 

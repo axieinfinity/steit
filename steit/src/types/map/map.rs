@@ -1,4 +1,4 @@
-use std::{hash::Hash, io, marker::PhantomData};
+use std::{hash::Hash, io, marker::PhantomData, ops};
 
 use indexmap::map::IndexMap;
 
@@ -77,6 +77,20 @@ impl<K: MapKey, V: State> Map<K, V> {
     #[inline]
     pub fn iter_mut(&mut self) -> MapIterMut<K, V> {
         MapIterMut::new(self.entries.iter_mut())
+    }
+}
+
+impl<K: MapKey, V: State> ops::Index<&K> for Map<K, V> {
+    type Output = V;
+
+    fn index(&self, index: &K) -> &Self::Output {
+        self.get(index).expect("no entry found for key")
+    }
+}
+
+impl<K: MapKey, V: State> ops::IndexMut<&K> for Map<K, V> {
+    fn index_mut(&mut self, index: &K) -> &mut Self::Output {
+        self.get_mut(index).expect("no entry found for key")
     }
 }
 
