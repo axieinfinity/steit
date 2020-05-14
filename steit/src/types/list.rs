@@ -1,5 +1,4 @@
 use std::{
-    error::Error,
     io,
     ops::{self, Deref},
     slice,
@@ -86,14 +85,14 @@ impl<T: State> List<T> {
             return self.pop();
         }
 
-        || -> Result<(), Box<dyn Error>> {
-            let runtime = &self.runtime;
-            let mut logger = runtime.logger().lock()?;
-            logger.log(runtime.entry_list_pop())?;
-            logger.log(runtime.entry_update_child(index as u32, &self.items[last_index]))?;
-            Ok(())
-        }()
-        .unwrap();
+        let runtime = &self.runtime;
+
+        runtime
+            .log_multi(vec![
+                runtime.entry_list_pop(),
+                runtime.entry_update_child(index as u32, &self.items[last_index]),
+            ])
+            .unwrap();
 
         Some(self.items.swap_remove(index))
     }

@@ -117,6 +117,11 @@ impl Runtime {
         self.logger.lock().unwrap().log(entry)
     }
 
+    #[inline]
+    pub fn log_multi(&self, entries: Vec<LogEntry>) -> io::Result<()> {
+        self.logger.lock().unwrap().log_multi(entries)
+    }
+
     impl_entry!(entry_update, new_update, value: &impl Serialize);
     impl_entry!(entry_list_push, new_list_push, item: &impl Serialize);
     impl_entry!(entry_list_pop, new_list_pop);
