@@ -16,20 +16,20 @@ use super::{
 };
 
 struct EnumAttrs {
-    reserved: Vec<u32>,
+    reserved_tags: Vec<u32>,
 }
 
 impl EnumAttrs {
     pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
-        let mut reserved = VecAttribute::new(ctx, "reserved");
+        let mut reserved_tags = VecAttribute::new(ctx, "reserved_tags");
 
         attrs.parse(ctx, true, |meta| match meta {
-            syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
+            syn::Meta::List(meta) if reserved_tags.parse_int_list(meta) => true,
             _ => false,
         });
 
         Self {
-            reserved: reserved.get(),
+            reserved_tags: reserved_tags.get(),
         }
     }
 }
@@ -510,7 +510,7 @@ fn parse_variants<'a>(
 ) -> derive::Result<(Vec<Struct<'a>>, Option<usize>)> {
     let mut parsed_variants = Vec::with_capacity(variants.iter().len());
 
-    let reserved_tags: HashSet<_> = attrs.reserved.iter().collect();
+    let reserved_tags: HashSet<_> = attrs.reserved_tags.iter().collect();
     let mut tags = HashSet::new();
     let mut unique_tags = true;
 

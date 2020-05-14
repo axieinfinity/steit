@@ -16,42 +16,42 @@ use super::{
 };
 
 struct StructAttrs {
+    reserved_tags: Vec<u32>,
+
     no_size_cache: bool,
 
     size_cache_renamed: Option<(String, TokenStream)>,
     runtime_renamed: Option<(String, TokenStream)>,
-
-    reserved: Vec<u32>,
 }
 
 impl StructAttrs {
     pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
+        let mut reserved_tags = VecAttribute::new(ctx, "reserved_tags");
+
         let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
 
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
         let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
 
-        let mut reserved = VecAttribute::new(ctx, "reserved");
-
         attrs.parse(ctx, true, |meta| match meta {
+            syn::Meta::List(meta) if reserved_tags.parse_int_list(meta) => true,
+
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
             syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
 
-            syn::Meta::List(meta) if reserved.parse_int_list(meta) => true,
-
             _ => false,
         });
 
         Self {
+            reserved_tags: reserved_tags.get(),
+
             no_size_cache: no_size_cache.get().unwrap_or_default(),
 
             size_cache_renamed: size_cache_renamed.get_with_tokens(),
             runtime_renamed: runtime_renamed.get_with_tokens(),
-
-            reserved: reserved.get(),
         }
     }
 }
@@ -543,7 +543,7 @@ fn parse_fields<'a>(
 ) -> derive::Result<Vec<DeriveField<'a>>> {
     let mut parsed_fields = Vec::with_capacity(fields.iter().len());
 
-    let reserved_tags: HashSet<_> = attrs.reserved.iter().collect();
+    let reserved_tags: HashSet<_> = attrs.reserved_tags.iter().collect();
     let mut tags = HashSet::new();
     let mut unique_tags = true;
 
