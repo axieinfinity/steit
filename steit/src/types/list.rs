@@ -46,14 +46,14 @@ impl<T: State> List<T> {
     }
 
     #[inline]
-    pub fn push(&mut self, mut item: T) {
+    pub fn push(&mut self, mut item: T) -> usize {
         self.push_with(|runtime| {
             item.set_runtime(runtime);
             item
         })
     }
 
-    pub fn push_with(&mut self, get_item: impl FnOnce(Runtime) -> T) {
+    pub fn push_with(&mut self, get_item: impl FnOnce(Runtime) -> T) -> usize {
         let field_number = self.items.len() as u32;
 
         self.runtime.pause_logger();
@@ -62,6 +62,8 @@ impl<T: State> List<T> {
 
         self.runtime.log_list_push(&item).unwrap();
         self.items.push(item);
+
+        field_number as usize
     }
 
     pub fn pop(&mut self) -> Option<T> {
