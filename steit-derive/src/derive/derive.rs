@@ -197,7 +197,7 @@ pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStr
     let errors = ctx.check().err().map(to_compile_errors);
 
     let derived = quote! {
-        #[derive(#(#derives)*)]
+        #[derive(#(#derives),*)]
         #input
         #output
         #errors
