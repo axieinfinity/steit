@@ -393,6 +393,7 @@ impl<'a> DeriveField<'a> {
 
     pub fn meta(&self) -> TokenStream {
         let rust_name = self.alias().to_string();
+
         let csharp_name = match &self.attrs.csharp_name {
             Some(csharp_name) => quote!(Some(#csharp_name)),
             None => quote!(None),

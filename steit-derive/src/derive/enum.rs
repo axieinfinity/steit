@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 
 use crate::{
-    attr::{AttributeParse, VecAttribute},
+    attr::{Attribute, AttributeParse, VecAttribute},
     ctx::Context,
     r#impl::Implementer,
 };
@@ -17,19 +17,23 @@ use super::{
 
 struct EnumAttrs {
     reserved_tags: Vec<u32>,
+    csharp_name: Option<String>,
 }
 
 impl EnumAttrs {
     pub fn parse(ctx: &Context, attrs: impl AttributeParse) -> Self {
         let mut reserved_tags = VecAttribute::new(ctx, "reserved_tags");
+        let mut csharp_name = Attribute::new(ctx, "csharp_name");
 
         attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::List(meta) if reserved_tags.parse_int_list(meta) => true,
+            syn::Meta::NameValue(meta) if csharp_name.parse_str(meta) => true,
             _ => false,
         });
 
         Self {
             reserved_tags: reserved_tags.get(),
+            csharp_name: csharp_name.get(),
         }
     }
 }
@@ -37,6 +41,7 @@ impl EnumAttrs {
 pub struct Enum<'a> {
     impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
+    attrs: EnumAttrs,
     type_params: &'a [&'a syn::TypeParam],
     variants: Vec<Struct<'a>>,
     default_variant_index: Option<usize>,
@@ -64,6 +69,7 @@ impl<'a> Enum<'a> {
         Ok(Self {
             impler,
             setting,
+            attrs,
             type_params,
             variants,
             default_variant_index,
@@ -451,7 +457,13 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_meta(&self) -> TokenStream {
-        let name = self.impler.name().to_string();
+        let rust_name = self.impler.name().to_string();
+
+        let csharp_name = match &self.attrs.csharp_name {
+            Some(csharp_name) => quote!(Some(#csharp_name)),
+            None => quote!(None),
+        };
+
         let builtin = self.setting.steit_owned;
 
         let variants = self.variants.iter().map(|r#struct| {
@@ -483,8 +495,13 @@ impl<'a> Enum<'a> {
         self.impler.impl_for(
             "HasMeta",
             quote! {
-                const NAME: &'static NameMeta = &NameMeta::new(#name);
+                const NAME: &'static NameMeta = &NameMeta {
+                    rust: #rust_name,
+                    csharp: #csharp_name,
+                };
+
                 const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
+
                 const LINK: &'static MetaLink = &MetaLink {
                     r#type: Self::TYPE,
                     msg: Some(MessageMeta::Enum(EnumMeta {

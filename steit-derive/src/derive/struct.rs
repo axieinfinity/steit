@@ -22,6 +22,8 @@ struct StructAttrs {
 
     size_cache_renamed: Option<(String, TokenStream)>,
     runtime_renamed: Option<(String, TokenStream)>,
+
+    csharp_name: Option<String>,
 }
 
 impl StructAttrs {
@@ -33,6 +35,8 @@ impl StructAttrs {
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
         let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
 
+        let mut csharp_name = Attribute::new(ctx, "csharp_name");
+
         attrs.parse(ctx, true, |meta| match meta {
             syn::Meta::List(meta) if reserved_tags.parse_int_list(meta) => true,
 
@@ -41,6 +45,8 @@ impl StructAttrs {
 
             syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
+
+            syn::Meta::NameValue(meta) if csharp_name.parse_str(meta) => true,
 
             _ => false,
         });
@@ -52,6 +58,8 @@ impl StructAttrs {
 
             size_cache_renamed: size_cache_renamed.get_with_tokens(),
             runtime_renamed: runtime_renamed.get_with_tokens(),
+
+            csharp_name: csharp_name.get(),
         }
     }
 }
@@ -59,6 +67,7 @@ impl StructAttrs {
 pub struct Struct<'a> {
     impler: &'a Implementer<'a>,
     setting: &'a DeriveSetting,
+    attrs: StructAttrs,
     type_params: &'a [&'a syn::TypeParam],
     fields: Vec<DeriveField<'a>>,
     size_cache: Option<Field>,
@@ -91,10 +100,11 @@ impl<'a> Struct<'a> {
         let size_cache = if setting.has_size_cache() && !attrs.no_size_cache {
             Some(add_field(
                 fields,
-                attrs
-                    .size_cache_renamed
-                    .or_else(|| setting.size_cache_renamed.clone())
-                    .map_or("size_cache".to_string(), |(name, _)| name),
+                match (&attrs.size_cache_renamed, &setting.size_cache_renamed) {
+                    (Some((name, _)), _) => name.clone(),
+                    (_, Some((name, _))) => name.clone(),
+                    _ => "size_cache".to_string(),
+                },
                 syn::parse_quote!(#krate::rt::SizeCache),
                 {
                     field_index += 1;
@@ -108,10 +118,11 @@ impl<'a> Struct<'a> {
         let runtime = if setting.has_runtime() {
             Some(add_field(
                 fields,
-                attrs
-                    .runtime_renamed
-                    .or_else(|| setting.runtime_renamed.clone())
-                    .map_or("runtime".to_string(), |(name, _)| name),
+                match (&attrs.runtime_renamed, &setting.runtime_renamed) {
+                    (Some((name, _)), _) => name.clone(),
+                    (_, Some((name, _))) => name.clone(),
+                    _ => "runtime".to_string(),
+                },
                 syn::parse_quote!(#krate::rt::Runtime),
                 {
                     field_index += 1;
@@ -125,6 +136,7 @@ impl<'a> Struct<'a> {
         Ok(Self {
             impler,
             setting,
+            attrs,
             type_params,
             fields: parsed_fields,
             size_cache,
@@ -469,12 +481,16 @@ impl<'a> Struct<'a> {
     }
 
     pub fn meta(&self) -> TokenStream {
-        let name = match &self.variant {
-            Some(variant) => variant.name(),
-            None => self.impler.name(),
+        let rust_name = match &self.variant {
+            Some(variant) => variant.name().to_string(),
+            None => self.impler.name().to_string(),
         };
 
-        let name = name.to_string();
+        let csharp_name = match &self.attrs.csharp_name {
+            Some(csharp_name) => quote!(Some(#csharp_name)),
+            None => quote!(None),
+        };
+
         let fields = map_fields!(self, _.meta());
         let builtin = self.setting.steit_owned;
 
@@ -491,7 +507,10 @@ impl<'a> Struct<'a> {
 
         quote! {
             StructMeta {
-                name: &NameMeta::new(#name),
+                name: &NameMeta {
+                    rust: #rust_name,
+                    csharp: #csharp_name,
+                },
                 type_params: &[#type_params],
                 fields: &[#(#fields,)*],
                 builtin: #builtin,
@@ -510,7 +529,12 @@ impl<'a> Struct<'a> {
 
     fn impl_meta(&self) -> TokenStream {
         let meta = self.meta();
-        let name = self.impler.name().to_string();
+        let rust_name = self.impler.name().to_string();
+
+        let csharp_name = match &self.attrs.csharp_name {
+            Some(csharp_name) => quote!(Some(#csharp_name)),
+            None => quote!(None),
+        };
 
         let param_meta_list = self.type_params.iter().map(|param| {
             let name = &param.ident;
@@ -522,9 +546,14 @@ impl<'a> Struct<'a> {
         self.impler.impl_for(
             "HasMeta",
             quote! {
-                const NAME: &'static NameMeta = &NameMeta::new(#name);
+                const NAME: &'static NameMeta = &NameMeta {
+                    rust: #rust_name,
+                    csharp: #csharp_name,
+                };
+
                 const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[#(#param_meta_list,)*]);
-                const LINK: &'static MetaLink = &MetaLink{
+
+                const LINK: &'static MetaLink = &MetaLink {
                     r#type: Self::TYPE,
                     msg: Some(MessageMeta::Struct(#meta)),
                     links: || &[#links],
