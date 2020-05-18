@@ -72,7 +72,7 @@ pub struct Struct<'a> {
     fields: Vec<DeriveField<'a>>,
     size_cache: Option<Field>,
     runtime: Option<Field>,
-    variant: Option<Variant>,
+    variant: Option<Variant<'a>>,
 }
 
 macro_rules! map_fields {
@@ -89,7 +89,7 @@ impl<'a> Struct<'a> {
         attrs: impl AttributeParse,
         type_params: &'a [&'a syn::TypeParam],
         fields: &mut syn::Fields,
-        variant: Option<Variant>,
+        variant: Option<Variant<'a>>,
     ) -> derive::Result<Self> {
         let attrs = StructAttrs::parse(ctx, attrs);
         let parsed_fields = parse_fields(ctx, setting, &attrs, type_params, fields)?;
@@ -97,7 +97,7 @@ impl<'a> Struct<'a> {
         let krate = setting.krate();
         let mut field_index = parsed_fields.len();
 
-        let size_cache = if setting.has_size_cache() && !attrs.no_size_cache {
+        let size_cache = if setting.has_size_cache && !attrs.no_size_cache {
             Some(add_field(
                 fields,
                 match (&attrs.size_cache_renamed, &setting.size_cache_renamed) {
@@ -115,7 +115,7 @@ impl<'a> Struct<'a> {
             None
         };
 
-        let runtime = if setting.has_runtime() {
+        let runtime = if setting.has_runtime {
             Some(add_field(
                 fields,
                 match (&attrs.runtime_renamed, &setting.runtime_renamed) {
@@ -168,7 +168,7 @@ impl<'a> Struct<'a> {
     pub fn ctor_name(&self) -> syn::Ident {
         match &self.variant {
             Some(variant) => variant.ctor_name(),
-            None => format_ident!("empty"),
+            None => format_ident!("{}", &self.setting.ctor_prefix),
         }
     }
 
@@ -265,6 +265,8 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
+        let ctor_name = self.ctor_name();
+
         let args = if self.setting.derive_state {
             Some(quote!(Runtime::default()))
         } else {
@@ -277,7 +279,7 @@ impl<'a> Struct<'a> {
             quote! {
                 #[inline]
                 fn default() -> Self {
-                    Self::empty(#args)
+                    Self::#ctor_name(#args)
                 }
             },
         )
@@ -446,6 +448,7 @@ impl<'a> Struct<'a> {
     }
 
     fn impl_state(&self) -> TokenStream {
+        let ctor_name = self.ctor_name();
         let runtime = self.runtime().unwrap().field(false);
         let runtime_setter = self.runtime_setter();
         let replayer = self.replayer();
@@ -455,7 +458,7 @@ impl<'a> Struct<'a> {
             quote! {
                 #[inline]
                 fn with_runtime(runtime: Runtime) -> Self {
-                    Self::empty(runtime)
+                    Self::#ctor_name(runtime)
                 }
 
                 #[inline]
@@ -624,20 +627,29 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
 
 impl<'a> ToTokens for Struct<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(self.impl_ctor());
-        tokens.extend(self.impl_setters());
+        if self.setting.derive_ctors {
+            tokens.extend(self.impl_ctor());
+        }
 
-        if self.setting.derive_eq() {
+        if self.setting.derive_setters {
+            tokens.extend(self.impl_setters());
+        }
+
+        if self.setting.derive_eq {
             tokens.extend(self.impl_eq());
         }
 
-        tokens.extend(self.impl_default());
+        if self.setting.derive_default {
+            tokens.extend(self.impl_default());
+        }
 
         if self.setting.derive_hash {
             tokens.extend(self.impl_hash());
         }
 
-        tokens.extend(self.impl_wire_type());
+        if self.setting.derive_wire_type {
+            tokens.extend(self.impl_wire_type());
+        }
 
         if self.setting.derive_serialize {
             tokens.extend(self.impl_serialize());
@@ -651,7 +663,7 @@ impl<'a> ToTokens for Struct<'a> {
             tokens.extend(self.impl_state());
         }
 
-        if self.setting.derive_meta() {
+        if self.setting.derive_meta {
             tokens.extend(self.impl_meta());
         }
     }

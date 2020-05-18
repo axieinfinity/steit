@@ -90,7 +90,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_ctors(&self) -> TokenStream {
-        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+        let default_ctor_name = format_ident!("{}", &self.setting.ctor_prefix);
 
         let (default_ctor_params, default_ctor_args) = if self.setting.derive_state {
             (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
@@ -105,11 +105,13 @@ impl<'a> Enum<'a> {
             quote!(unimplemented!("no default variant"))
         };
 
+        let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
+
         self.impler.impl_with(
             self.trait_bounds(&["Default"]),
             quote! {
                 #[inline]
-                pub fn empty(#default_ctor_params) -> Self {
+                pub fn #default_ctor_name(#default_ctor_params) -> Self {
                     #default_ctor
                 }
 
@@ -162,6 +164,8 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
+        let ctor_name = format_ident!("{}", &self.setting.ctor_prefix);
+
         let args = if self.setting.derive_state {
             Some(quote!(Runtime::default()))
         } else {
@@ -174,7 +178,7 @@ impl<'a> Enum<'a> {
             quote! {
                 #[inline]
                 fn default() -> Self {
-                    Self::empty(#args)
+                    Self::#ctor_name(#args)
                 }
             },
         )
@@ -344,6 +348,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_state(&self) -> TokenStream {
+        let ctor_name = format_ident!("{}", &self.setting.ctor_prefix);
         let name = self.impler.name();
 
         let runtimes = self.variants.iter().map(|r#struct| {
@@ -403,7 +408,7 @@ impl<'a> Enum<'a> {
             quote! {
                 #[inline]
                 fn with_runtime(runtime: Runtime) -> Self {
-                    Self::empty(runtime)
+                    Self::#ctor_name(runtime)
                 }
 
                 fn runtime(&self) -> &Runtime {
@@ -539,7 +544,7 @@ fn parse_variants<'a>(
             continue;
         }
 
-        if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(ctx, variant) {
+        if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(ctx, setting, variant) {
             let (tag, tag_tokens) = parsed_variant.tag_with_tokens();
 
             if reserved_tags.contains(&tag) {
@@ -585,20 +590,29 @@ fn parse_variants<'a>(
 
 impl<'a> ToTokens for Enum<'a> {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(self.impl_ctors());
-        tokens.extend(self.impl_setters());
+        if self.setting.derive_ctors {
+            tokens.extend(self.impl_ctors());
+        }
 
-        if self.setting.derive_eq() {
+        if self.setting.derive_setters {
+            tokens.extend(self.impl_setters());
+        }
+
+        if self.setting.derive_eq {
             tokens.extend(self.impl_eq());
         }
 
-        tokens.extend(self.impl_default());
+        if self.setting.derive_default {
+            tokens.extend(self.impl_default());
+        }
 
         if self.setting.derive_hash {
             tokens.extend(self.impl_hash());
         }
 
-        tokens.extend(self.impl_wire_type());
+        if self.setting.derive_wire_type {
+            tokens.extend(self.impl_wire_type());
+        }
 
         if self.setting.derive_serialize {
             tokens.extend(self.impl_serialize());
@@ -612,7 +626,7 @@ impl<'a> ToTokens for Enum<'a> {
             tokens.extend(self.impl_state());
         }
 
-        if self.setting.derive_meta() {
+        if self.setting.derive_meta {
             tokens.extend(self.impl_meta());
         }
     }

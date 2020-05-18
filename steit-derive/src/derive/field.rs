@@ -200,7 +200,7 @@ impl<'a> DeriveField<'a> {
         let attrs = FieldAttrs::parse(ctx, field)?;
         let field = Field::from_field(field, index);
 
-        let type_meta = if setting.derive_meta() {
+        let type_meta = if setting.derive_meta {
             Some(field_type_meta(ctx, &field.ty, type_params)?)
         } else {
             None

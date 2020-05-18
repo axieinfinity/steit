@@ -39,7 +39,7 @@ mod tests {
         Fifth,
     }
 
-    #[steit_derive(Debug, Serialize, Deserialize)]
+    #[steit_derive(PartialEq, Debug, Serialize, Deserialize)]
     struct Bar {
         #[steit(tag = 0)]
         counter: i32,
@@ -238,7 +238,6 @@ mod tests {
     }
 
     #[steit_derive(Debug, State)]
-    #[steit(no_hash)]
     struct Woof {
         #[steit(tag = 0)]
         map: Map<u16, i32>,
@@ -268,7 +267,7 @@ mod tests {
         println!("\nHELLO!");
 
         let runtime = Runtime::with_logger(WriterLogger::stdout());
-        let mut hello = Hello::empty(runtime);
+        let mut hello = Hello::new(runtime);
 
         hello
             .set_numbers_with(|runtime| {
@@ -287,16 +286,16 @@ mod tests {
         println!("\nOUTER");
 
         let runtime = Runtime::with_logger(WriterLogger::stdout());
-        let mut outer = Outer::empty(runtime);
+        let mut outer = Outer::new(runtime);
 
         outer.set_foo(127).set_bar(true).set_inner_with(|runtime| {
-            let mut inner = Inner::empty(runtime);
+            let mut inner = Inner::new(runtime);
             inner.set_foo(22).set_bar(true);
             inner
         });
 
         outer.inner.set_foo(160);
-        outer.set_inner_with(Inner::empty);
+        outer.set_inner_with(Inner::new);
 
         println!("{:?}", outer);
 
@@ -308,7 +307,7 @@ mod tests {
         println!("\nENUM");
 
         let runtime = Runtime::with_logger(WriterLogger::stdout());
-        let mut multicase = Multicase::empty(runtime);
+        let mut multicase = Multicase::new(runtime);
 
         multicase.set_second_case_counter(68);
 
@@ -325,18 +324,18 @@ mod tests {
         let mut list = List::new(runtime);
 
         list.push_with(|runtime| {
-            let mut inner = Inner::empty(runtime);
+            let mut inner = Inner::new(runtime);
             inner.set_foo(6);
             inner
         });
 
         list.push_with(|runtime| {
-            let mut inner = Inner::empty(runtime);
+            let mut inner = Inner::new(runtime);
             inner.set_foo(77).set_bar(true);
             inner
         });
 
-        list.push_with(Inner::empty);
+        list.push_with(Inner::new);
         list.get_mut(1).unwrap().set_foo(68);
         list.swap_remove(0);
 
@@ -356,18 +355,18 @@ mod tests {
         let mut map = Map::new(runtime);
 
         map.insert_with(5u16, |runtime| {
-            let mut inner = Inner::empty(runtime);
+            let mut inner = Inner::new(runtime);
             inner.set_foo(6);
             inner
         });
 
         map.insert_with(1, |runtime| {
-            let mut inner = Inner::empty(runtime);
+            let mut inner = Inner::new(runtime);
             inner.set_foo(77).set_bar(true);
             inner
         });
 
-        map.insert_with(0, Inner::empty);
+        map.insert_with(0, Inner::new);
         map.get_mut(&1).unwrap().set_foo(68);
         map.remove(&0);
 
@@ -384,7 +383,7 @@ mod tests {
         println!("\nACTION!");
 
         let runtime = Runtime::with_logger(WriterLogger::stdout());
-        let mut action = OldAction::empty(runtime);
+        let mut action = OldAction::new(runtime);
 
         action.set_attack_attacker(1);
         action.set_attack_defender(2);
@@ -394,20 +393,20 @@ mod tests {
 
             for dummy in 6..=9 {
                 hits.push_with(|runtime| {
-                    let mut hit = OldHit::empty(runtime);
+                    let mut hit = OldHit::new(runtime);
                     hit.set_dummy(dummy);
                     hit
-                })
+                });
             }
 
             hits
         });
 
-        let mut b1 = Bar::empty();
+        let mut b1 = Bar::new();
         b1.counter = 10;
         b1.enabled = true;
 
-        let mut b2 = Bar::empty();
+        let mut b2 = Bar::new();
 
         assert_ne!(b1, b2);
 

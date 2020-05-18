@@ -6,7 +6,7 @@ use crate::{
     str_util,
 };
 
-use super::{derive, tag};
+use super::{derive, derive::DeriveSetting, tag};
 
 struct VariantAttrs {
     tag: u32,
@@ -37,22 +37,25 @@ impl VariantAttrs {
     }
 }
 
-pub struct Variant {
-    name: syn::Ident,
+pub struct Variant<'a> {
+    setting: &'a DeriveSetting,
     attrs: VariantAttrs,
+    name: syn::Ident,
 }
 
-impl Variant {
+impl<'a> Variant<'a> {
     pub fn parse(
         ctx: &Context,
+        setting: &'a DeriveSetting,
         variant: &mut syn::Variant,
     ) -> derive::Result<(Self, syn::AttributeArgs)> {
         let (attrs, unknown_attrs) = VariantAttrs::parse(ctx, variant)?;
 
         Ok((
             Self {
-                name: variant.ident.clone(),
+                setting,
                 attrs,
+                name: variant.ident.clone(),
             },
             unknown_attrs,
         ))
@@ -80,6 +83,6 @@ impl Variant {
     }
 
     pub fn ctor_name(&self) -> syn::Ident {
-        format_ident!("empty_{}", self.snake_case_name())
+        format_ident!("{}_{}", &self.setting.ctor_prefix, self.snake_case_name())
     }
 }

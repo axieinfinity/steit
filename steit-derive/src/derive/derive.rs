@@ -17,25 +17,25 @@ pub struct DeriveSetting {
     pub derive_deserialize: bool,
     pub derive_state: bool,
 
-    derives: syn::AttributeArgs,
+    pub derive_default: bool,
+    pub derive_eq: bool,
+    pub derive_hash: bool,
+
+    pub derives: syn::AttributeArgs,
 
     pub steit_owned: bool,
 
-    no_size_cache: bool,
-    no_eq: bool,
-    pub derive_hash: bool,
-    no_meta: bool,
+    pub has_size_cache: bool,
+    pub has_runtime: bool,
 
+    pub derive_ctors: bool,
+    pub derive_setters: bool,
+    pub derive_wire_type: bool,
+    pub derive_meta: bool,
+
+    pub ctor_prefix: String,
     pub size_cache_renamed: Option<(String, TokenStream)>,
     pub runtime_renamed: Option<(String, TokenStream)>,
-}
-
-macro_rules! getter {
-    ($getter:ident -> $type:ty = _.$field:ident) => {
-        pub fn $getter(&self) -> $type {
-            self.$field
-        }
-    };
 }
 
 impl DeriveSetting {
@@ -46,30 +46,43 @@ impl DeriveSetting {
     ) -> (Self, syn::AttributeArgs) {
         // Arguments
 
-        let mut serialize = Attribute::new(ctx, "Serialize");
-        let mut deserialize = Attribute::new(ctx, "Deserialize");
-        let mut state = Attribute::new(ctx, "State");
+        let mut derive_serialize = Attribute::new(ctx, "Serialize");
+        let mut derive_deserialize = Attribute::new(ctx, "Deserialize");
+        let mut derive_state = Attribute::new(ctx, "State");
+
+        let mut derive_default = Attribute::new(ctx, "Default");
+        let mut derive_eq = Attribute::new(ctx, "Eq");
+        let mut derive_hash = Attribute::new(ctx, "Hash");
 
         let derives = args.parse(ctx, false, |meta| match meta {
-            syn::Meta::Path(path) if serialize.parse_path(path) => true,
-            syn::Meta::Path(path) if deserialize.parse_path(path) => true,
-            syn::Meta::Path(path) if state.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_serialize.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_deserialize.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_state.parse_path(path) => true,
+
+            syn::Meta::Path(path) if derive_default.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_eq.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_hash.parse_path(path) => true,
+
             _ => false,
         });
 
-        let state = state.get().unwrap_or_default();
-        let serialize = state || serialize.get().unwrap_or_default();
-        let deserialize = state || deserialize.get().unwrap_or_default();
+        let derive_state = derive_state.get().unwrap_or_default();
+        let derive_serialize = derive_state || derive_serialize.get().unwrap_or_default();
+        let derive_deserialize = derive_state || derive_deserialize.get().unwrap_or_default();
+
+        let derive_default = derive_deserialize || derive_default.get().unwrap_or_default();
 
         // Attributes
 
         let mut steit_owned = Attribute::new(ctx, "steit_owned");
 
         let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
-        let mut no_eq = Attribute::new(ctx, "no_eq");
-        let mut derive_hash = Attribute::new(ctx, "derive_hash");
+
+        let mut derive_ctors = Attribute::new(ctx, "derive_ctors");
+        let mut derive_setters = Attribute::new(ctx, "derive_setters");
         let mut no_meta = Attribute::new(ctx, "no_meta");
 
+        let mut ctor_prefix = Attribute::new(ctx, "ctor_prefix");
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
         let mut runtime_renamed = Attribute::new(ctx, "runtime_renamed");
 
@@ -80,36 +93,53 @@ impl DeriveSetting {
             syn::Meta::Path(path) if no_size_cache.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_size_cache.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_eq.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_eq.parse_bool(meta) => true,
+            syn::Meta::Path(path) if derive_ctors.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if derive_ctors.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if derive_hash.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if derive_hash.parse_bool(meta) => true,
+            syn::Meta::Path(path) if derive_setters.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if derive_setters.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_meta.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
 
+            syn::Meta::NameValue(path) if ctor_prefix.parse_str(path) => true,
             syn::Meta::NameValue(meta) if size_cache_renamed.parse_str(meta) => true,
             syn::Meta::NameValue(meta) if runtime_renamed.parse_str(meta) => true,
 
             _ => false,
         });
 
+        let has_size_cache = derive_serialize && !no_size_cache.get().unwrap_or_default();
+        let has_runtime = derive_state;
+
+        let derive_ctors = derive_deserialize || derive_ctors.get().unwrap_or_default();
+        let derive_setters = derive_state || derive_setters.get().unwrap_or_default();
+        let derive_wire_type = derive_serialize || derive_deserialize;
+        let derive_meta = derive_deserialize && !no_meta.get().unwrap_or_default();
+
         (
             Self {
-                derive_serialize: serialize,
-                derive_deserialize: deserialize,
-                derive_state: state,
+                derive_serialize,
+                derive_deserialize,
+                derive_state,
+
+                derive_default,
+                derive_eq: derive_eq.get().unwrap_or_default(),
+                derive_hash: derive_hash.get().unwrap_or_default(),
 
                 derives,
 
                 steit_owned: steit_owned.get().unwrap_or_default(),
 
-                no_size_cache: no_size_cache.get().unwrap_or_default(),
-                no_eq: no_eq.get().unwrap_or_default(),
-                derive_hash: derive_hash.get().unwrap_or_default(),
-                no_meta: no_meta.get().unwrap_or_default(),
+                has_size_cache,
+                has_runtime,
 
+                derive_ctors,
+                derive_setters,
+                derive_wire_type,
+                derive_meta,
+
+                ctor_prefix: ctor_prefix.get().unwrap_or_else(|| "new".to_string()),
                 size_cache_renamed: size_cache_renamed.get_with_tokens(),
                 runtime_renamed: runtime_renamed.get_with_tokens(),
             },
@@ -131,20 +161,6 @@ impl DeriveSetting {
         } else {
             quote!(steit)
         }
-    }
-
-    pub fn has_size_cache(&self) -> bool {
-        self.derive_serialize && !self.no_size_cache
-    }
-
-    getter!(has_runtime -> bool = _.derive_state);
-
-    pub fn derive_eq(&self) -> bool {
-        !self.no_eq
-    }
-
-    pub fn derive_meta(&self) -> bool {
-        self.derive_deserialize && !self.no_meta
     }
 }
 

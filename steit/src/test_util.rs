@@ -22,8 +22,8 @@ macro_rules! test_case {
     };
 }
 
-#[steit_derive(Debug, Serialize, Deserialize)]
-#[steit(steit_owned)]
+#[steit_derive(PartialEq, Debug, Serialize, Deserialize)]
+#[steit(steit_owned, ctor_prefix = "empty")]
 pub struct Foo(#[steit(tag = 0)] pub i32, #[steit(tag = 1)] pub i32);
 
 impl Foo {
@@ -37,8 +37,8 @@ impl Foo {
     }
 }
 
-#[steit_derive(Debug, State)]
-#[steit(steit_owned)]
+#[steit_derive(PartialEq, Debug, State)]
+#[steit(steit_owned, ctor_prefix = "empty")]
 pub struct Point {
     #[steit(tag = 0)]
     pub x: i32,
