@@ -13,9 +13,9 @@ use super::{r#enum::Enum, r#struct::Struct};
 pub type Result<T> = std::result::Result<T, ()>;
 
 pub struct DeriveSetting {
-    serialize: bool,
-    deserialize: bool,
-    state: bool,
+    pub derive_serialize: bool,
+    pub derive_deserialize: bool,
+    pub derive_state: bool,
 
     derives: syn::AttributeArgs,
 
@@ -23,7 +23,7 @@ pub struct DeriveSetting {
 
     no_size_cache: bool,
     no_eq: bool,
-    no_hash: bool,
+    pub derive_hash: bool,
     no_meta: bool,
 
     pub size_cache_renamed: Option<(String, TokenStream)>,
@@ -67,7 +67,7 @@ impl DeriveSetting {
 
         let mut no_size_cache = Attribute::new(ctx, "no_size_cache");
         let mut no_eq = Attribute::new(ctx, "no_eq");
-        let mut no_hash = Attribute::new(ctx, "no_hash");
+        let mut derive_hash = Attribute::new(ctx, "derive_hash");
         let mut no_meta = Attribute::new(ctx, "no_meta");
 
         let mut size_cache_renamed = Attribute::new(ctx, "size_cache_renamed");
@@ -83,8 +83,8 @@ impl DeriveSetting {
             syn::Meta::Path(path) if no_eq.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_eq.parse_bool(meta) => true,
 
-            syn::Meta::Path(path) if no_hash.parse_path(path) => true,
-            syn::Meta::NameValue(meta) if no_hash.parse_bool(meta) => true,
+            syn::Meta::Path(path) if derive_hash.parse_path(path) => true,
+            syn::Meta::NameValue(meta) if derive_hash.parse_bool(meta) => true,
 
             syn::Meta::Path(path) if no_meta.parse_path(path) => true,
             syn::Meta::NameValue(meta) if no_meta.parse_bool(meta) => true,
@@ -97,9 +97,9 @@ impl DeriveSetting {
 
         (
             Self {
-                serialize,
-                deserialize,
-                state,
+                derive_serialize: serialize,
+                derive_deserialize: deserialize,
+                derive_state: state,
 
                 derives,
 
@@ -107,7 +107,7 @@ impl DeriveSetting {
 
                 no_size_cache: no_size_cache.get().unwrap_or_default(),
                 no_eq: no_eq.get().unwrap_or_default(),
-                no_hash: no_hash.get().unwrap_or_default(),
+                derive_hash: derive_hash.get().unwrap_or_default(),
                 no_meta: no_meta.get().unwrap_or_default(),
 
                 size_cache_renamed: size_cache_renamed.get_with_tokens(),
@@ -133,27 +133,19 @@ impl DeriveSetting {
         }
     }
 
-    getter!(impl_serialize -> bool = _.serialize);
-    getter!(impl_deserialize -> bool = _.deserialize);
-    getter!(impl_state -> bool = _.state);
-
     pub fn has_size_cache(&self) -> bool {
-        self.serialize && !self.no_size_cache
+        self.derive_serialize && !self.no_size_cache
     }
 
-    pub fn has_eq(&self) -> bool {
+    getter!(has_runtime -> bool = _.derive_state);
+
+    pub fn derive_eq(&self) -> bool {
         !self.no_eq
     }
 
-    pub fn has_hash(&self) -> bool {
-        !self.no_hash
+    pub fn derive_meta(&self) -> bool {
+        self.derive_deserialize && !self.no_meta
     }
-
-    pub fn has_meta(&self) -> bool {
-        self.deserialize && !self.no_meta
-    }
-
-    getter!(has_runtime -> bool = _.state);
 }
 
 pub fn derive(args: syn::AttributeArgs, mut input: syn::DeriveInput) -> TokenStream {

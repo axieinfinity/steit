@@ -200,7 +200,7 @@ impl<'a> DeriveField<'a> {
         let attrs = FieldAttrs::parse(ctx, field)?;
         let field = Field::from_field(field, index);
 
-        let type_meta = if setting.has_meta() {
+        let type_meta = if setting.derive_meta() {
             Some(field_type_meta(ctx, &field.ty, type_params)?)
         } else {
             None
@@ -223,7 +223,7 @@ impl<'a> DeriveField<'a> {
     }
 
     pub fn is_state(&self) -> bool {
-        self.setting.impl_state() && !self.attrs.no_state
+        self.setting.derive_state && !self.attrs.no_state
     }
 
     pub fn init_default(&self) -> TokenStream {
@@ -252,7 +252,7 @@ impl<'a> DeriveField<'a> {
 
             let destructure = self.destructure(format_ident!("self_value"));
 
-            let new_variant = if self.setting.impl_state() {
+            let new_variant = if self.setting.derive_state {
                 quote! {{
                     let runtime = self.runtime().parent();
                     let value = Self::#ctor_name(runtime.clone());

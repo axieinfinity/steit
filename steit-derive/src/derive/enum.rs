@@ -82,7 +82,7 @@ impl<'a> Enum<'a> {
     }
 
     fn trait_bounds(&self, fallback: &'static [&str]) -> &[&str] {
-        if self.setting.impl_state() {
+        if self.setting.derive_state {
             &["State"]
         } else {
             fallback
@@ -92,7 +92,7 @@ impl<'a> Enum<'a> {
     fn impl_ctors(&self) -> TokenStream {
         let ctors = self.variants.iter().map(|r#struct| r#struct.ctor());
 
-        let (default_ctor_params, default_ctor_args) = if self.setting.impl_state() {
+        let (default_ctor_params, default_ctor_args) = if self.setting.derive_state {
             (Some(quote!(runtime: Runtime)), Some(quote!(runtime)))
         } else {
             Default::default()
@@ -162,7 +162,7 @@ impl<'a> Enum<'a> {
     }
 
     fn impl_default(&self) -> TokenStream {
-        let args = if self.setting.impl_state() {
+        let args = if self.setting.derive_state {
             Some(quote!(Runtime::default()))
         } else {
             None
@@ -296,7 +296,7 @@ impl<'a> Enum<'a> {
             let tag = variant.tag();
             let ctor_name = variant.ctor_name();
 
-            let args = if self.setting.impl_state() {
+            let args = if self.setting.derive_state {
                 Some(quote!(self.runtime().parent()))
             } else {
                 None
@@ -588,31 +588,31 @@ impl<'a> ToTokens for Enum<'a> {
         tokens.extend(self.impl_ctors());
         tokens.extend(self.impl_setters());
 
-        if self.setting.has_eq() {
+        if self.setting.derive_eq() {
             tokens.extend(self.impl_eq());
         }
 
         tokens.extend(self.impl_default());
 
-        if self.setting.has_hash() {
+        if self.setting.derive_hash {
             tokens.extend(self.impl_hash());
         }
 
         tokens.extend(self.impl_wire_type());
 
-        if self.setting.impl_serialize() {
+        if self.setting.derive_serialize {
             tokens.extend(self.impl_serialize());
         }
 
-        if self.setting.impl_deserialize() {
+        if self.setting.derive_deserialize {
             tokens.extend(self.impl_deserialize());
         }
 
-        if self.setting.impl_state() {
+        if self.setting.derive_state {
             tokens.extend(self.impl_state());
         }
 
-        if self.setting.has_meta() {
+        if self.setting.derive_meta() {
             tokens.extend(self.impl_meta());
         }
     }
