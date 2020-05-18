@@ -248,20 +248,21 @@ impl<'a> Struct<'a> {
         }
     }
 
-    fn impl_eq(&self) -> TokenStream {
+    fn impl_partial_eq(&self) -> TokenStream {
         let eq = self.eq();
 
-        let mut r#impl = self.impler.impl_for(
+        self.impler.impl_for(
             "PartialEq",
             quote! {
                 fn eq(&self, other: &Self) -> bool {
                     #eq
                 }
             },
-        );
+        )
+    }
 
-        r#impl.extend(self.impler.impl_for("Eq", quote!()));
-        r#impl
+    fn impl_eq(&self) -> TokenStream {
+        self.impler.impl_for("Eq", quote!())
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -633,6 +634,10 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.derive_setters {
             tokens.extend(self.impl_setters());
+        }
+
+        if self.setting.derive_partial_eq {
+            tokens.extend(self.impl_partial_eq());
         }
 
         if self.setting.derive_eq {

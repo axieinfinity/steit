@@ -127,7 +127,7 @@ impl<'a> Enum<'a> {
             .impl_with(self.trait_bounds(&["Default"]), quote!(#(#setters)*))
     }
 
-    fn impl_eq(&self) -> TokenStream {
+    fn impl_partial_eq(&self) -> TokenStream {
         let name = self.impler.name();
 
         let eqs = self.variants.iter().map(|r#struct| {
@@ -149,7 +149,7 @@ impl<'a> Enum<'a> {
             }
         });
 
-        let mut r#impl = self.impler.impl_for(
+        self.impler.impl_for(
             "PartialEq",
             quote! {
                 #[inline]
@@ -157,10 +157,11 @@ impl<'a> Enum<'a> {
                     match self { #(#eqs,)* }
                 }
             },
-        );
+        )
+    }
 
-        r#impl.extend(self.impler.impl_for("Eq", quote!()));
-        r#impl
+    fn impl_eq(&self) -> TokenStream {
+        self.impler.impl_for("Eq", quote!())
     }
 
     fn impl_default(&self) -> TokenStream {
@@ -596,6 +597,10 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.derive_setters {
             tokens.extend(self.impl_setters());
+        }
+
+        if self.setting.derive_partial_eq {
+            tokens.extend(self.impl_partial_eq());
         }
 
         if self.setting.derive_eq {

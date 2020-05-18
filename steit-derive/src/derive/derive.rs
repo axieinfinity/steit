@@ -17,8 +17,9 @@ pub struct DeriveSetting {
     pub derive_deserialize: bool,
     pub derive_state: bool,
 
-    pub derive_default: bool,
+    pub derive_partial_eq: bool,
     pub derive_eq: bool,
+    pub derive_default: bool,
     pub derive_hash: bool,
 
     pub derives: syn::AttributeArgs,
@@ -50,8 +51,9 @@ impl DeriveSetting {
         let mut derive_deserialize = Attribute::new(ctx, "Deserialize");
         let mut derive_state = Attribute::new(ctx, "State");
 
-        let mut derive_default = Attribute::new(ctx, "Default");
+        let mut derive_partial_eq = Attribute::new(ctx, "PartialEq");
         let mut derive_eq = Attribute::new(ctx, "Eq");
+        let mut derive_default = Attribute::new(ctx, "Default");
         let mut derive_hash = Attribute::new(ctx, "Hash");
 
         let derives = args.parse(ctx, false, |meta| match meta {
@@ -59,8 +61,9 @@ impl DeriveSetting {
             syn::Meta::Path(path) if derive_deserialize.parse_path(path) => true,
             syn::Meta::Path(path) if derive_state.parse_path(path) => true,
 
-            syn::Meta::Path(path) if derive_default.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_partial_eq.parse_path(path) => true,
             syn::Meta::Path(path) if derive_eq.parse_path(path) => true,
+            syn::Meta::Path(path) if derive_default.parse_path(path) => true,
             syn::Meta::Path(path) if derive_hash.parse_path(path) => true,
 
             _ => false,
@@ -123,8 +126,9 @@ impl DeriveSetting {
                 derive_deserialize,
                 derive_state,
 
-                derive_default,
+                derive_partial_eq: derive_partial_eq.get().unwrap_or_default(),
                 derive_eq: derive_eq.get().unwrap_or_default(),
+                derive_default,
                 derive_hash: derive_hash.get().unwrap_or_default(),
 
                 derives,
