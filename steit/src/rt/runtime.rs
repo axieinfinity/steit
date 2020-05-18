@@ -75,7 +75,7 @@ impl Runtime {
     pub fn parent(&self) -> Self {
         Self {
             logger: self.logger.clone(),
-            path: self.path.parent().expect("expected a parent `Runtime`"),
+            path: self.path.parent(),
         }
     }
 
@@ -95,6 +95,16 @@ impl Runtime {
     #[inline]
     pub fn is_child(&self) -> bool {
         !self.is_root()
+    }
+
+    #[inline]
+    pub fn get_field_number(&self) -> Option<u32> {
+        self.path.get_value().copied()
+    }
+
+    #[inline]
+    pub fn field_number(&self) -> u32 {
+        *self.path.value()
     }
 
     #[inline]

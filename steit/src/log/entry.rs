@@ -49,7 +49,7 @@ impl LogEntry {
     #[inline]
     pub fn new_update(path: &Node<u32>, value: &impl Serialize) -> Self {
         LogEntry::Update {
-            path: path.values(),
+            path: path.collect_values(),
             value: Bytes::from_value(value),
             size_cache: SizeCache::new(),
         }
@@ -58,7 +58,7 @@ impl LogEntry {
     #[inline]
     pub fn new_list_push(path: &Node<u32>, item: &impl Serialize) -> Self {
         LogEntry::ListPush {
-            path: path.values(),
+            path: path.collect_values(),
             item: Bytes::from_value(item),
             size_cache: SizeCache::new(),
         }
@@ -67,7 +67,7 @@ impl LogEntry {
     #[inline]
     pub fn new_list_pop(path: &Node<u32>) -> Self {
         LogEntry::ListPop {
-            path: path.values(),
+            path: path.collect_values(),
             size_cache: SizeCache::new(),
         }
     }
@@ -75,7 +75,7 @@ impl LogEntry {
     #[inline]
     pub fn new_map_remove(path: &Node<u32>, key: u32) -> Self {
         LogEntry::MapRemove {
-            path: path.values(),
+            path: path.collect_values(),
             key,
             size_cache: SizeCache::new(),
         }

@@ -15,29 +15,48 @@ impl<T> Node<T> {
     }
 
     #[inline]
-    pub fn parent(&self) -> Option<Arc<Self>> {
+    pub fn get_parent(&self) -> Option<Arc<Self>> {
         match self {
             Node::Root => None,
             Node::Child { parent, .. } => Some(parent.clone()),
         }
     }
+
+    #[inline]
+    pub fn parent(&self) -> Arc<Self> {
+        self.get_parent()
+            .expect("there is no parent node of the root")
+    }
+
+    #[inline]
+    pub fn get_value(&self) -> Option<&T> {
+        match self {
+            Node::Root => None,
+            Node::Child { value, .. } => Some(value),
+        }
+    }
+
+    #[inline]
+    pub fn value(&self) -> &T {
+        self.get_value().expect("root node doesn't have any value")
+    }
 }
 
 impl<T: Copy> Node<T> {
-    fn write_values(&self, values: &mut Vec<T>) {
+    fn collect_values_to(&self, values: &mut Vec<T>) {
         match self {
             Node::Root => (),
             Node::Child { parent, value, .. } => {
-                parent.write_values(values);
+                parent.collect_values_to(values);
                 values.push(*value);
             }
         }
     }
 
     #[inline]
-    pub fn values(&self) -> Vec<T> {
+    pub fn collect_values(&self) -> Vec<T> {
         let mut values = Vec::new();
-        self.write_values(&mut values);
+        self.collect_values_to(&mut values);
         values
     }
 }
