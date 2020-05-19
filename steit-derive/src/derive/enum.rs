@@ -160,10 +160,6 @@ impl<'a> Enum<'a> {
         )
     }
 
-    fn impl_eq(&self) -> TokenStream {
-        self.impler.impl_for("Eq", quote!())
-    }
-
     fn impl_default(&self) -> TokenStream {
         let ctor_name = format_ident!("{}", &self.setting.ctor_prefix);
 
@@ -601,10 +597,6 @@ impl<'a> ToTokens for Enum<'a> {
 
         if self.setting.derive_partial_eq {
             tokens.extend(self.impl_partial_eq());
-        }
-
-        if self.setting.derive_eq {
-            tokens.extend(self.impl_eq());
         }
 
         if self.setting.derive_default {

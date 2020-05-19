@@ -261,10 +261,6 @@ impl<'a> Struct<'a> {
         )
     }
 
-    fn impl_eq(&self) -> TokenStream {
-        self.impler.impl_for("Eq", quote!())
-    }
-
     fn impl_default(&self) -> TokenStream {
         let ctor_name = self.ctor_name();
 
@@ -638,10 +634,6 @@ impl<'a> ToTokens for Struct<'a> {
 
         if self.setting.derive_partial_eq {
             tokens.extend(self.impl_partial_eq());
-        }
-
-        if self.setting.derive_eq {
-            tokens.extend(self.impl_eq());
         }
 
         if self.setting.derive_default {
