@@ -2,7 +2,7 @@ use std::io::{self, Read};
 
 use crate::{
     de::{Deserialize, Reader},
-    impl_serialize_primitive,
+    impl_meta_primitive, impl_serialize_primitive,
     wire_fmt::{HasWireType, WireType},
 };
 
@@ -30,6 +30,8 @@ impl Deserialize for String {
         Ok(())
     }
 }
+
+impl_meta_primitive!(String, "String");
 
 #[inline]
 fn from_utf8(bytes: Vec<u8>) -> io::Result<String> {
