@@ -14,7 +14,7 @@ use crate::{
     wire_fmt::{HasWireType, WireType},
 };
 
-#[derive(PartialEq, Eq, Default, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Default, Hash, Debug)]
 pub struct List<T: State> {
     items: Vec<T>,
     size_cache: SizeCache,

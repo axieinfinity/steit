@@ -11,7 +11,7 @@ use crate::{
     wire_fmt::{HasWireType, WireType},
 };
 
-#[derive(PartialEq, Eq, Default, Hash)]
+#[derive(Clone, PartialEq, Eq, Default, Hash)]
 pub struct Bytes(Vec<u8>);
 
 impl Bytes {

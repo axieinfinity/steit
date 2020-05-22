@@ -1,6 +1,6 @@
 use crate::steit_derive;
 
-#[steit_derive(Clone, PartialEq, Eq, Debug, State)]
+#[steit_derive(Clone, PartialEq, Eq, Hash, Debug, State)]
 #[steit(steit_owned)]
 pub enum Maybe<T> {
     #[steit(tag = 0)]

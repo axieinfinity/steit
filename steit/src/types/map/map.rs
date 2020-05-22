@@ -17,7 +17,7 @@ use super::{
     key::MapKey,
 };
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Map<K: MapKey, V: State> {
     entries: IndexMap<u32, V>,
     size_cache: SizeCache,
