@@ -5,10 +5,12 @@ namespace Steit.State {
     public sealed class Path {
         public static Path Root = new Path(null, null);
 
-        public Path? Parent { get; private set; }
+        // public Path? Parent { get; private set; }
+        public Path Parent { get; private set; }
         public UInt32? Tag { get; private set; }
 
-        private Path(Path? parent, UInt32? tag) {
+        // private Path(Path? parent, UInt32? tag) {
+        private Path(Path parent, UInt32? tag) {
             this.Parent = parent;
             this.Tag = tag;
         }

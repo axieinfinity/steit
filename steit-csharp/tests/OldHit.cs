@@ -17,7 +17,7 @@ namespace Just.To.Test {
         public OldAction AfterAttacking { get; private set; }
         public Int32 Dummy { get; private set; }
 
-        public OldHit(Path? path = null) {
+        public OldHit(Path path = null) {
             this.Path = path ?? Path.Root;
             this.BeforeAttacking = new OldAction(this.Path.GetNested(0));
             this.BeforeDamaging = new OldAction(this.Path.GetNested(1));
@@ -26,12 +26,12 @@ namespace Just.To.Test {
             this.AfterAttacking = new OldAction(this.Path.GetNested(4));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnBeforeAttackingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnBeforeDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnAfterDamagingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>>? OnAfterAttackingUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Int32, OldHit>>? OnDummyUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>> OnBeforeAttackingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>> OnBeforeDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>> OnDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>> OnAfterDamagingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<OldAction, OldHit>> OnAfterAttackingUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Int32, OldHit>> OnDummyUpdate;
 
         public static void ClearBeforeAttackingUpdateHandlers() { OnBeforeAttackingUpdate = null; }
         public static void ClearBeforeDamagingUpdateHandlers() { OnBeforeDamagingUpdate = null; }
@@ -49,7 +49,7 @@ namespace Just.To.Test {
             OnDummyUpdate = null;
         }
 
-        public static OldHit Deserialize(IReader reader, Path? path = null) {
+        public static OldHit Deserialize(IReader reader, Path path = null) {
             var oldHit = new OldHit(path);
             oldHit.Replace(reader);
             return oldHit;
@@ -67,7 +67,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 0: return this.BeforeAttacking;
                 case 1: return this.BeforeDamaging;
@@ -98,7 +98,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, OldHit>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, OldHit>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

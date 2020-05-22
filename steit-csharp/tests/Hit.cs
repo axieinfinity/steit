@@ -15,17 +15,17 @@ namespace Just.To.Test {
         public Vector<Action> Damage { get; private set; }
         public Vector<Action> PostDamage { get; private set; }
 
-        public Hit(Path? path = null) {
+        public Hit(Path path = null) {
             this.Path = path ?? Path.Root;
             this.PreDamage = new Vector<Action>(this.Path.GetNested(1));
             this.Damage = new Vector<Action>(this.Path.GetNested(2));
             this.PostDamage = new Vector<Action>(this.Path.GetNested(3));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<Boolean, Hit>>? OnIsMissUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>>? OnPreDamageUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>>? OnDamageUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>>? OnPostDamageUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Boolean, Hit>> OnIsMissUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>> OnPreDamageUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>> OnDamageUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Hit>> OnPostDamageUpdate;
 
         public static void ClearIsMissUpdateHandlers() { OnIsMissUpdate = null; }
         public static void ClearPreDamageUpdateHandlers() { OnPreDamageUpdate = null; }
@@ -39,7 +39,7 @@ namespace Just.To.Test {
             OnPostDamageUpdate = null;
         }
 
-        public static Hit Deserialize(IReader reader, Path? path = null) {
+        public static Hit Deserialize(IReader reader, Path path = null) {
             var hit = new Hit(path);
             hit.Replace(reader);
             return hit;
@@ -55,7 +55,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 1: return this.PreDamage;
                 case 2: return this.Damage;
@@ -82,7 +82,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Hit>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Hit>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

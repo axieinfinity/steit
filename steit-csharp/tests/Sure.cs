@@ -11,13 +11,13 @@ namespace Just.To.Test {
         public Path Path { get; }
         public T F0 { get; private set; }
 
-        public Sure(Path? path = null) {
+        public Sure(Path path = null) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
             this.F0 = StateFactory.Construct<T>(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<T, Sure<T>>>? OnF0Update;
+        public static event EventHandler<FieldUpdateEventArgs<T, Sure<T>>> OnF0Update;
 
         public static void ClearF0UpdateHandlers() {
             OnF0Update = null;
@@ -27,7 +27,7 @@ namespace Just.To.Test {
             OnF0Update = null;
         }
 
-        public static Sure<T> Deserialize(IReader reader, Path? path = null) {
+        public static Sure<T> Deserialize(IReader reader, Path path = null) {
             var sure = new Sure<T>(path);
             sure.Replace(reader);
             return sure;
@@ -40,7 +40,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 0: return this.F0 as IState;
                 default: return null;
@@ -62,7 +62,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Sure<T>>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Sure<T>>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

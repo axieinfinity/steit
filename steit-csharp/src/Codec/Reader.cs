@@ -106,7 +106,8 @@ namespace Steit.Codec {
         }
 
         private sealed class Deserializer<T> {
-            public static Func<IReader, Path?, T> Deserialize { get; private set; }
+            // public static Func<IReader, Path?, T> Deserialize { get; private set; }
+            public static Func<IReader, Path, T> Deserialize { get; private set; }
 
             static Deserializer() {
                 var parameters = new ParameterExpression[] {
@@ -114,7 +115,8 @@ namespace Steit.Codec {
                     Expression.Parameter(typeof(Path)),
                 };
 
-                Deserialize = Expression.Lambda<Func<IReader, Path?, T>>(
+                // Deserialize = Expression.Lambda<Func<IReader, Path?, T>>(
+                Deserialize = Expression.Lambda<Func<IReader, Path, T>>(
                     Expression.Call(
                         typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) }),
                         parameters

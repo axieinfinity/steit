@@ -7,7 +7,8 @@ namespace Steit.Codec {
         private readonly IReadOnlyList<Byte> bytes;
         private int offset;
 
-        public ByteReader(byte[]? bytes = null) : this(Array.AsReadOnly(bytes ?? new byte[0])) { }
+        // public ByteReader(byte[]? bytes = null) : this(Array.AsReadOnly(bytes ?? new byte[0])) { }
+        public ByteReader(byte[] bytes = null) : this(Array.AsReadOnly(bytes ?? new byte[0])) { }
 
         public ByteReader(IReadOnlyList<Byte> bytes) {
             this.bytes = bytes;

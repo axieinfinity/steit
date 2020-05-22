@@ -5,7 +5,8 @@ using Steit.Codec;
 
 namespace Steit.State {
     public static class State {
-        public static IState? GetNested(this IState? state, IEnumerable<UInt32> path) {
+        // public static IState? GetNested(this IState? state, IEnumerable<UInt32> path) {
+        public static IState GetNested(this IState state, IEnumerable<UInt32> path) {
             foreach (var tag in path) {
                 state = state?.GetNested(tag);
             }

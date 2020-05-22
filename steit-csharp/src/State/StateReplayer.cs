@@ -22,7 +22,8 @@ namespace Steit.State {
                     tag = path[path.Count - 1];
                     path.RemoveAt(path.Count - 1);
                 } else {
-                    var reader = new ByteReader(entry.UpdateVariant!.Value);
+                    // var reader = new ByteReader(entry.UpdateVariant!.Value);
+                    var reader = new ByteReader(entry.UpdateVariant.Value);
                     root = StateFactory.Deserialize<T>(reader, root.Path);
                     return;
                 }
@@ -38,13 +39,15 @@ namespace Steit.State {
                 case LogEntry.UpdateTag: {
                         var wireType = container.GetWireType(tag);
                         if (wireType == null) { return; }
-                        var reader = new ByteReader(entry.UpdateVariant!.Value);
+                        // var reader = new ByteReader(entry.UpdateVariant!.Value);
+                        var reader = new ByteReader(entry.UpdateVariant.Value);
                         container.ReplaceAt(tag, wireType.Value, reader, shouldNotify: true);
                         break;
                     }
 
                 case LogEntry.ListPushTag: {
-                        var reader = new ByteReader(entry.ListPushVariant!.Item);
+                        // var reader = new ByteReader(entry.ListPushVariant!.Item);
+                        var reader = new ByteReader(entry.ListPushVariant.Item);
                         container.ReplayListPush(reader);
                         break;
                     }
@@ -55,7 +58,8 @@ namespace Steit.State {
                     }
 
                 case LogEntry.MapRemoveTag: {
-                        var key = entry.MapRemoveVariant!.Key;
+                        // var key = entry.MapRemoveVariant!.Key;
+                        var key = entry.MapRemoveVariant.Key;
                         container.ReplayMapRemove(key);
                         break;
                     }
@@ -66,10 +70,14 @@ namespace Steit.State {
 
         private static Vector<UInt32> GetPath(LogEntry entry) {
             switch (entry.Tag) {
-                case LogEntry.UpdateTag: return entry.UpdateVariant!.FlattenPath;
-                case LogEntry.ListPushTag: return entry.ListPushVariant!.FlattenPath;
-                case LogEntry.ListPopTag: return entry.ListPopVariant!.FlattenPath;
-                case LogEntry.MapRemoveTag: return entry.MapRemoveVariant!.FlattenPath;
+                // case LogEntry.UpdateTag: return entry.UpdateVariant!.FlattenPath;
+                case LogEntry.UpdateTag: return entry.UpdateVariant.FlattenPath;
+                // case LogEntry.ListPushTag: return entry.ListPushVariant!.FlattenPath;
+                case LogEntry.ListPushTag: return entry.ListPushVariant.FlattenPath;
+                // case LogEntry.ListPopTag: return entry.ListPopVariant!.FlattenPath;
+                case LogEntry.ListPopTag: return entry.ListPopVariant.FlattenPath;
+                // case LogEntry.MapRemoveTag: return entry.MapRemoveVariant!.FlattenPath;
+                case LogEntry.MapRemoveTag: return entry.MapRemoveVariant.FlattenPath;
                 default: throw new InvalidOperationException(String.Format("Unknown log entry tag {0}", entry.Tag));
             }
         }

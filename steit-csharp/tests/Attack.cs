@@ -15,17 +15,17 @@ namespace Just.To.Test {
         public ActionsOr<Vector<ActionsOr<Hit>>> Hits { get; private set; }
         public Vector<Action> AfterHits { get; private set; }
 
-        public Attack(Path? path = null) {
+        public Attack(Path path = null) {
             this.Path = path ?? Path.Root;
             this.BeforeHits = new Vector<Action>(this.Path.GetNested(1));
             this.Hits = new ActionsOr<Vector<ActionsOr<Hit>>>(this.Path.GetNested(2));
             this.AfterHits = new Vector<Action>(this.Path.GetNested(3));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<UInt16, Attack>>? OnTargetIndexUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>>? OnBeforeHitsUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Hit>>>, Attack>>? OnHitsUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>>? OnAfterHitsUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<UInt16, Attack>> OnTargetIndexUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>> OnBeforeHitsUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Hit>>>, Attack>> OnHitsUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>> OnAfterHitsUpdate;
 
         public static void ClearTargetIndexUpdateHandlers() { OnTargetIndexUpdate = null; }
         public static void ClearBeforeHitsUpdateHandlers() { OnBeforeHitsUpdate = null; }
@@ -39,7 +39,7 @@ namespace Just.To.Test {
             OnAfterHitsUpdate = null;
         }
 
-        public static Attack Deserialize(IReader reader, Path? path = null) {
+        public static Attack Deserialize(IReader reader, Path path = null) {
             var attack = new Attack(path);
             attack.Replace(reader);
             return attack;
@@ -55,7 +55,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 1: return this.BeforeHits;
                 case 2: return this.Hits;
@@ -82,7 +82,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Attack>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Attack>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

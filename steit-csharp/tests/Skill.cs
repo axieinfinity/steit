@@ -15,17 +15,17 @@ namespace Just.To.Test {
         public Vector<Action> Cast { get; private set; }
         public Vector<Sure<Action>> PostCast { get; private set; }
 
-        public Skill(Path? path = null) {
+        public Skill(Path path = null) {
             this.Path = path ?? Path.Root;
             this.PreCast = new Vector<Action>(this.Path.GetNested(1));
             this.Cast = new Vector<Action>(this.Path.GetNested(2));
             this.PostCast = new Vector<Sure<Action>>(this.Path.GetNested(3));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<UInt16, Skill>>? OnTargetIndexUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>>? OnPreCastUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>>? OnCastUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Sure<Action>>, Skill>>? OnPostCastUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<UInt16, Skill>> OnTargetIndexUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>> OnPreCastUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>> OnCastUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Sure<Action>>, Skill>> OnPostCastUpdate;
 
         public static void ClearTargetIndexUpdateHandlers() { OnTargetIndexUpdate = null; }
         public static void ClearPreCastUpdateHandlers() { OnPreCastUpdate = null; }
@@ -39,7 +39,7 @@ namespace Just.To.Test {
             OnPostCastUpdate = null;
         }
 
-        public static Skill Deserialize(IReader reader, Path? path = null) {
+        public static Skill Deserialize(IReader reader, Path path = null) {
             var skill = new Skill(path);
             skill.Replace(reader);
             return skill;
@@ -55,7 +55,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 1: return this.PreCast;
                 case 2: return this.Cast;
@@ -82,7 +82,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Skill>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Skill>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

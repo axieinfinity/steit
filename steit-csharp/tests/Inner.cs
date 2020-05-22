@@ -13,12 +13,12 @@ namespace Just.To.Test {
         public Int32 Foo { get; private set; }
         public Boolean Bar { get; private set; }
 
-        public Inner(Path? path = null) {
+        public Inner(Path path = null) {
             this.Path = path ?? Path.Root;
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<Int32, Inner>>? OnFooUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Boolean, Inner>>? OnBarUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Int32, Inner>> OnFooUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Boolean, Inner>> OnBarUpdate;
 
         public static void ClearFooUpdateHandlers() { OnFooUpdate = null; }
         public static void ClearBarUpdateHandlers() { OnBarUpdate = null; }
@@ -28,7 +28,7 @@ namespace Just.To.Test {
             OnBarUpdate = null;
         }
 
-        public static Inner Deserialize(IReader reader, Path? path = null) {
+        public static Inner Deserialize(IReader reader, Path path = null) {
             var inner = new Inner(path);
             inner.Replace(reader);
             return inner;
@@ -42,7 +42,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 default: return null;
             }
@@ -64,7 +64,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Inner>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Inner>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

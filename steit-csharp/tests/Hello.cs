@@ -13,14 +13,14 @@ namespace Just.To.Test {
         public StateList<Int32> Numbers { get; private set; }
         public Vector<Int32> Others { get; private set; }
 
-        public Hello(Path? path = null) {
+        public Hello(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Numbers = new StateList<Int32>(this.Path.GetNested(0));
             this.Others = new Vector<Int32>(this.Path.GetNested(1));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<StateList<Int32>, Hello>>? OnNumbersUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Vector<Int32>, Hello>>? OnOthersUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<StateList<Int32>, Hello>> OnNumbersUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Vector<Int32>, Hello>> OnOthersUpdate;
 
         public static void ClearNumbersUpdateHandlers() { OnNumbersUpdate = null; }
         public static void ClearOthersUpdateHandlers() { OnOthersUpdate = null; }
@@ -30,7 +30,7 @@ namespace Just.To.Test {
             OnOthersUpdate = null;
         }
 
-        public static Hello Deserialize(IReader reader, Path? path = null) {
+        public static Hello Deserialize(IReader reader, Path path = null) {
             var hello = new Hello(path);
             hello.Replace(reader);
             return hello;
@@ -44,7 +44,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 0: return this.Numbers;
                 case 1: return this.Others;
@@ -68,7 +68,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Hello>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Hello>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

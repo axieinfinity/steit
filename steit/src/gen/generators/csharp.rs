@@ -87,7 +87,8 @@ impl Generator for CSharpGenerator {
         writer
             .newline()
             .writeln(format!(
-                "{} {}(Path? path = null) {{",
+                // "{} {}(Path? path = null) {{",
+                "{} {}(Path path = null) {{",
                 variant_accessibility, name,
             ))
             .indent();
@@ -133,7 +134,8 @@ impl Generator for CSharpGenerator {
         // Declare events
         for field in &fields {
             writer.writeln(format!(
-                "public static event EventHandler<FieldUpdateEventArgs<{}, {}>>? On{}Update;",
+                // "public static event EventHandler<FieldUpdateEventArgs<{}, {}>>? On{}Update;",
+                "public static event EventHandler<FieldUpdateEventArgs<{}, {}>> On{}Update;",
                 field.type_name, type_name, field.upper_camel_case_name,
             ));
         }
@@ -198,7 +200,8 @@ impl Generator for CSharpGenerator {
             .newline()
             .newline()
             .writeln(format!(
-                "{} static {} Deserialize(IReader reader, Path? path = null) {{",
+                // "{} static {} Deserialize(IReader reader, Path? path = null) {{",
+                "{} static {} Deserialize(IReader reader, Path path = null) {{",
                 variant_accessibility, type_name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
@@ -229,7 +232,8 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public IState? GetNested(UInt32 tag) {")
+            // .writeln("public IState? GetNested(UInt32 tag) {")
+            .writeln("public IState GetNested(UInt32 tag) {")
             .indent_writeln("switch (tag) {")
             .indent();
 
@@ -309,7 +313,8 @@ impl Generator for CSharpGenerator {
             .writeln("TValue newValue,")
             .writeln("TValue oldValue,")
             .writeln(format!(
-                "EventHandler<FieldUpdateEventArgs<TValue, {}>>? handler,",
+                // "EventHandler<FieldUpdateEventArgs<TValue, {}>>? handler,",
+                "EventHandler<FieldUpdateEventArgs<TValue, {}>> handler,",
                 type_name
             ))
             .writeln("bool shouldNotify")
@@ -372,14 +377,16 @@ impl Generator for CSharpGenerator {
         // Return variant values
         for variant in r#enum.variants {
             writer.writeln(format!(
-                "public {0}? {0}Variant {{ get {{ return this.Variant as {0}; }} }}",
+                // "public {0}? {0}Variant {{ get {{ return this.Variant as {0}; }} }}",
+                "public {0} {0}Variant {{ get {{ return this.Variant as {0}; }} }}",
                 variant.ty.name.csharp(String::from),
             ));
         }
 
         writer
             .newline()
-            .writeln(format!("public {}(Path? path = null) {{", name))
+            // .writeln(format!("public {}(Path? path = null) {{", name))
+            .writeln(format!("public {}(Path path = null) {{", name))
             .indent();
 
         for type_param in r#enum.type_params {
@@ -409,7 +416,8 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .newline()
             .writeln(format!(
-                "public static event EventHandler<VariantUpdateEventArgs<{}>>? OnUpdate;",
+                // "public static event EventHandler<VariantUpdateEventArgs<{}>>? OnUpdate;",
+                "public static event EventHandler<VariantUpdateEventArgs<{}>> OnUpdate;",
                 type_name,
             ))
             .newline()
@@ -418,7 +426,8 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .newline()
             .writeln(format!(
-                "public static {} Deserialize(IReader reader, Path? path = null) {{",
+                // "public static {} Deserialize(IReader reader, Path? path = null) {{",
+                "public static {} Deserialize(IReader reader, Path path = null) {{",
                 type_name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
@@ -440,7 +449,8 @@ impl Generator for CSharpGenerator {
             .outdent_writeln("}")
             .outdent_writeln("}")
             .newline()
-            .writeln("public IState? GetNested(UInt32 tag) {")
+            // .writeln("public IState? GetNested(UInt32 tag) {")
+            .writeln("public IState GetNested(UInt32 tag) {")
             .indent_writeln("return tag == this.Tag ? this.Variant : null;")
             .outdent_writeln("}")
             .newline()

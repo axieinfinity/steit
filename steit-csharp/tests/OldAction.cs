@@ -16,22 +16,22 @@ namespace Just.To.Test {
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public Raw? RawVariant { get { return this.Variant as Raw; } }
-        public Attack? AttackVariant { get { return this.Variant as Attack; } }
+        public Raw RawVariant { get { return this.Variant as Raw; } }
+        public Attack AttackVariant { get { return this.Variant as Attack; } }
 
-        public OldAction(Path? path = null) {
+        public OldAction(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Tag = 0;
             this.Variant = new Raw(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<OldAction>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<OldAction>> OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static OldAction Deserialize(IReader reader, Path? path = null) {
+        public static OldAction Deserialize(IReader reader, Path path = null) {
             var oldAction = new OldAction(path);
             oldAction.Replace(reader);
             return oldAction;
@@ -45,7 +45,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag == this.Tag ? this.Variant : null;
         }
 
@@ -77,12 +77,12 @@ namespace Just.To.Test {
             public Path Path { get; }
             public StateList<Byte> LogEntries { get; private set; }
 
-            internal Raw(Path? path = null) {
+            internal Raw(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.LogEntries = new StateList<Byte>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<StateList<Byte>, Raw>>? OnLogEntriesUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<StateList<Byte>, Raw>> OnLogEntriesUpdate;
 
             public static void ClearLogEntriesUpdateHandlers() {
                 OnLogEntriesUpdate = null;
@@ -92,7 +92,7 @@ namespace Just.To.Test {
                 OnLogEntriesUpdate = null;
             }
 
-            internal static Raw Deserialize(IReader reader, Path? path = null) {
+            internal static Raw Deserialize(IReader reader, Path path = null) {
                 var raw = new Raw(path);
                 raw.Replace(reader);
                 return raw;
@@ -105,7 +105,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.LogEntries;
                     default: return null;
@@ -127,7 +127,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Raw>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Raw>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -148,14 +148,14 @@ namespace Just.To.Test {
             public Byte Defender { get; private set; }
             public StateList<OldHit> Hits { get; private set; }
 
-            internal Attack(Path? path = null) {
+            internal Attack(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.Hits = new StateList<OldHit>(this.Path.GetNested(2));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Byte, Attack>>? OnAttackerUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Byte, Attack>>? OnDefenderUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<StateList<OldHit>, Attack>>? OnHitsUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Byte, Attack>> OnAttackerUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Byte, Attack>> OnDefenderUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<StateList<OldHit>, Attack>> OnHitsUpdate;
 
             public static void ClearAttackerUpdateHandlers() { OnAttackerUpdate = null; }
             public static void ClearDefenderUpdateHandlers() { OnDefenderUpdate = null; }
@@ -167,7 +167,7 @@ namespace Just.To.Test {
                 OnHitsUpdate = null;
             }
 
-            internal static Attack Deserialize(IReader reader, Path? path = null) {
+            internal static Attack Deserialize(IReader reader, Path path = null) {
                 var attack = new Attack(path);
                 attack.Replace(reader);
                 return attack;
@@ -182,7 +182,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 2: return this.Hits;
                     default: return null;
@@ -206,7 +206,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Attack>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Attack>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {

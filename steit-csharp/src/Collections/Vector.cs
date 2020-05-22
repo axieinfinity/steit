@@ -9,13 +9,16 @@ namespace Steit.Collections {
     public sealed class Vector<T> : ReadOnlyCollection<T>, IState {
         public Path Path { get; }
 
-        public Vector(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {
+        // public Vector(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {
+        public Vector(Path path = null, IList<T> items = null) : base(items ?? new List<T>()) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
         }
 
-        public static Vector<T> Deserialize(IReader reader, Path? path = null) {
-            path ??= Path.Root;
+        // public static Vector<T> Deserialize(IReader reader, Path? path = null) {
+        public static Vector<T> Deserialize(IReader reader, Path path = null) {
+            // path ??= Path.Root;
+            path = path ?? Path.Root;
 
             var items = new List<T>();
             var tag = 0U;
@@ -29,7 +32,8 @@ namespace Steit.Collections {
         }
 
         public WireType? GetWireType(UInt32 tag) { return null; }
-        public IState? GetNested(UInt32 tag) { return null; }
+        // public IState? GetNested(UInt32 tag) { return null; }
+        public IState GetNested(UInt32 tag) { return null; }
 
         public void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify) {
             throw new NotSupportedException();

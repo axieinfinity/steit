@@ -11,12 +11,12 @@ namespace Just.To.Test {
         public Path Path { get; }
         public StateMap<Int32> Map { get; private set; }
 
-        public Woof(Path? path = null) {
+        public Woof(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Map = new StateMap<Int32>(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<StateMap<Int32>, Woof>>? OnMapUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<StateMap<Int32>, Woof>> OnMapUpdate;
 
         public static void ClearMapUpdateHandlers() {
             OnMapUpdate = null;
@@ -26,7 +26,7 @@ namespace Just.To.Test {
             OnMapUpdate = null;
         }
 
-        public static Woof Deserialize(IReader reader, Path? path = null) {
+        public static Woof Deserialize(IReader reader, Path path = null) {
             var woof = new Woof(path);
             woof.Replace(reader);
             return woof;
@@ -39,7 +39,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 0: return this.Map;
                 default: return null;
@@ -61,7 +61,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Woof>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Woof>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

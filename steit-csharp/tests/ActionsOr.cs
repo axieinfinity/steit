@@ -16,23 +16,23 @@ namespace Just.To.Test {
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public Actions? ActionsVariant { get { return this.Variant as Actions; } }
-        public Value? ValueVariant { get { return this.Variant as Value; } }
+        public Actions ActionsVariant { get { return this.Variant as Actions; } }
+        public Value ValueVariant { get { return this.Variant as Value; } }
 
-        public ActionsOr(Path? path = null) {
+        public ActionsOr(Path path = null) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
             this.Tag = 0;
             this.Variant = new Actions(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<ActionsOr<T>>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<ActionsOr<T>>> OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static ActionsOr<T> Deserialize(IReader reader, Path? path = null) {
+        public static ActionsOr<T> Deserialize(IReader reader, Path path = null) {
             var actionsOr = new ActionsOr<T>(path);
             actionsOr.Replace(reader);
             return actionsOr;
@@ -46,7 +46,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag == this.Tag ? this.Variant : null;
         }
 
@@ -78,12 +78,12 @@ namespace Just.To.Test {
             public Path Path { get; }
             public Vector<Action> F0 { get; private set; }
 
-            internal Actions(Path? path = null) {
+            internal Actions(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.F0 = new Vector<Action>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Actions>>? OnF0Update;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Actions>> OnF0Update;
 
             public static void ClearF0UpdateHandlers() {
                 OnF0Update = null;
@@ -93,7 +93,7 @@ namespace Just.To.Test {
                 OnF0Update = null;
             }
 
-            internal static Actions Deserialize(IReader reader, Path? path = null) {
+            internal static Actions Deserialize(IReader reader, Path path = null) {
                 var actions = new Actions(path);
                 actions.Replace(reader);
                 return actions;
@@ -106,7 +106,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.F0;
                     default: return null;
@@ -128,7 +128,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Actions>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Actions>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -146,12 +146,12 @@ namespace Just.To.Test {
             public Path Path { get; }
             public T F0 { get; private set; }
 
-            internal Value(Path? path = null) {
+            internal Value(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.F0 = StateFactory.Construct<T>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<T, Value>>? OnF0Update;
+            public static event EventHandler<FieldUpdateEventArgs<T, Value>> OnF0Update;
 
             public static void ClearF0UpdateHandlers() {
                 OnF0Update = null;
@@ -161,7 +161,7 @@ namespace Just.To.Test {
                 OnF0Update = null;
             }
 
-            internal static Value Deserialize(IReader reader, Path? path = null) {
+            internal static Value Deserialize(IReader reader, Path path = null) {
                 var value = new Value(path);
                 value.Replace(reader);
                 return value;
@@ -174,7 +174,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.F0 as IState;
                     default: return null;
@@ -196,7 +196,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Value>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Value>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {

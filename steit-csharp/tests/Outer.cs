@@ -14,14 +14,14 @@ namespace Just.To.Test {
         public Boolean Bar { get; private set; }
         public Inner Inner { get; private set; }
 
-        public Outer(Path? path = null) {
+        public Outer(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Inner = new Inner(this.Path.GetNested(2));
         }
 
-        public static event EventHandler<FieldUpdateEventArgs<Int32, Outer>>? OnFooUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Boolean, Outer>>? OnBarUpdate;
-        public static event EventHandler<FieldUpdateEventArgs<Inner, Outer>>? OnInnerUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Int32, Outer>> OnFooUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Boolean, Outer>> OnBarUpdate;
+        public static event EventHandler<FieldUpdateEventArgs<Inner, Outer>> OnInnerUpdate;
 
         public static void ClearFooUpdateHandlers() { OnFooUpdate = null; }
         public static void ClearBarUpdateHandlers() { OnBarUpdate = null; }
@@ -33,7 +33,7 @@ namespace Just.To.Test {
             OnInnerUpdate = null;
         }
 
-        public static Outer Deserialize(IReader reader, Path? path = null) {
+        public static Outer Deserialize(IReader reader, Path path = null) {
             var outer = new Outer(path);
             outer.Replace(reader);
             return outer;
@@ -48,7 +48,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             switch (tag) {
                 case 2: return this.Inner;
                 default: return null;
@@ -72,7 +72,7 @@ namespace Just.To.Test {
             UInt32 tag,
             TValue newValue,
             TValue oldValue,
-            EventHandler<FieldUpdateEventArgs<TValue, Outer>>? handler,
+            EventHandler<FieldUpdateEventArgs<TValue, Outer>> handler,
             bool shouldNotify
         ) {
             if (shouldNotify) {

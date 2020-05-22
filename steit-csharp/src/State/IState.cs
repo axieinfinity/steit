@@ -7,7 +7,8 @@ namespace Steit.State {
         Path Path { get; }
 
         WireType? GetWireType(UInt32 tag);
-        IState? GetNested(UInt32 tag);
+        // IState? GetNested(UInt32 tag);
+        IState GetNested(UInt32 tag);
 
         void ReplaceAt(UInt32 tag, WireType wireType, IReader reader, bool shouldNotify);
 

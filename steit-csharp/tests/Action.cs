@@ -19,25 +19,25 @@ namespace Just.To.Test {
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public Raw? RawVariant { get { return this.Variant as Raw; } }
-        public CardDraw? CardDrawVariant { get { return this.Variant as CardDraw; } }
-        public CardDiscard? CardDiscardVariant { get { return this.Variant as CardDiscard; } }
-        public Attack? AttackVariant { get { return this.Variant as Attack; } }
-        public Skill? SkillVariant { get { return this.Variant as Skill; } }
+        public Raw RawVariant { get { return this.Variant as Raw; } }
+        public CardDraw CardDrawVariant { get { return this.Variant as CardDraw; } }
+        public CardDiscard CardDiscardVariant { get { return this.Variant as CardDiscard; } }
+        public Attack AttackVariant { get { return this.Variant as Attack; } }
+        public Skill SkillVariant { get { return this.Variant as Skill; } }
 
-        public Action(Path? path = null) {
+        public Action(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Tag = 0;
             this.Variant = new Raw(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<Action>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<Action>> OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static Action Deserialize(IReader reader, Path? path = null) {
+        public static Action Deserialize(IReader reader, Path path = null) {
             var action = new Action(path);
             action.Replace(reader);
             return action;
@@ -54,7 +54,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag == this.Tag ? this.Variant : null;
         }
 
@@ -88,13 +88,13 @@ namespace Just.To.Test {
         public sealed class Raw : IState {
             public Path Path { get; }
 
-            internal Raw(Path? path = null) {
+            internal Raw(Path path = null) {
                 this.Path = path ?? Path.Root;
             }
 
             public static void ClearUpdateHandlers() { }
 
-            internal static Raw Deserialize(IReader reader, Path? path = null) {
+            internal static Raw Deserialize(IReader reader, Path path = null) {
                 var raw = new Raw(path);
                 raw.Replace(reader);
                 return raw;
@@ -106,7 +106,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     default: return null;
                 }
@@ -126,7 +126,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Raw>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Raw>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -147,15 +147,15 @@ namespace Just.To.Test {
             public Vector<Action> Draw { get; private set; }
             public Vector<Action> PostDraw { get; private set; }
 
-            internal CardDraw(Path? path = null) {
+            internal CardDraw(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.Draw = new Vector<Action>(this.Path.GetNested(1));
                 this.PostDraw = new Vector<Action>(this.Path.GetNested(2));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<UInt16, CardDraw>>? OnPlayerIndexUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, CardDraw>>? OnDrawUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, CardDraw>>? OnPostDrawUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt16, CardDraw>> OnPlayerIndexUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, CardDraw>> OnDrawUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, CardDraw>> OnPostDrawUpdate;
 
             public static void ClearPlayerIndexUpdateHandlers() { OnPlayerIndexUpdate = null; }
             public static void ClearDrawUpdateHandlers() { OnDrawUpdate = null; }
@@ -167,7 +167,7 @@ namespace Just.To.Test {
                 OnPostDrawUpdate = null;
             }
 
-            internal static CardDraw Deserialize(IReader reader, Path? path = null) {
+            internal static CardDraw Deserialize(IReader reader, Path path = null) {
                 var cardDraw = new CardDraw(path);
                 cardDraw.Replace(reader);
                 return cardDraw;
@@ -182,7 +182,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 1: return this.Draw;
                     case 2: return this.PostDraw;
@@ -207,7 +207,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, CardDraw>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, CardDraw>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -224,13 +224,13 @@ namespace Just.To.Test {
         public sealed class CardDiscard : IState {
             public Path Path { get; }
 
-            internal CardDiscard(Path? path = null) {
+            internal CardDiscard(Path path = null) {
                 this.Path = path ?? Path.Root;
             }
 
             public static void ClearUpdateHandlers() { }
 
-            internal static CardDiscard Deserialize(IReader reader, Path? path = null) {
+            internal static CardDiscard Deserialize(IReader reader, Path path = null) {
                 var cardDiscard = new CardDiscard(path);
                 cardDiscard.Replace(reader);
                 return cardDiscard;
@@ -242,7 +242,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     default: return null;
                 }
@@ -262,7 +262,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, CardDiscard>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, CardDiscard>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -285,18 +285,18 @@ namespace Just.To.Test {
             public ActionsOr<Vector<ActionsOr<Attack>>> Attacks { get; private set; }
             public Vector<Action> AfterAttacks { get; private set; }
 
-            internal Attack(Path? path = null) {
+            internal Attack(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.BeforeAttacks = new Vector<Action>(this.Path.GetNested(2));
                 this.Attacks = new ActionsOr<Vector<ActionsOr<Attack>>>(this.Path.GetNested(3));
                 this.AfterAttacks = new Vector<Action>(this.Path.GetNested(4));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<UInt16, Attack>>? OnAttackerIndexUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<UInt32, Attack>>? OnCardIdUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>>? OnBeforeAttacksUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Attack>>>, Attack>>? OnAttacksUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>>? OnAfterAttacksUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt16, Attack>> OnAttackerIndexUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt32, Attack>> OnCardIdUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>> OnBeforeAttacksUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Attack>>>, Attack>> OnAttacksUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Attack>> OnAfterAttacksUpdate;
 
             public static void ClearAttackerIndexUpdateHandlers() { OnAttackerIndexUpdate = null; }
             public static void ClearCardIdUpdateHandlers() { OnCardIdUpdate = null; }
@@ -312,7 +312,7 @@ namespace Just.To.Test {
                 OnAfterAttacksUpdate = null;
             }
 
-            internal static Attack Deserialize(IReader reader, Path? path = null) {
+            internal static Attack Deserialize(IReader reader, Path path = null) {
                 var attack = new Attack(path);
                 attack.Replace(reader);
                 return attack;
@@ -329,7 +329,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 2: return this.BeforeAttacks;
                     case 3: return this.Attacks;
@@ -357,7 +357,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Attack>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Attack>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -380,18 +380,18 @@ namespace Just.To.Test {
             public ActionsOr<Vector<ActionsOr<Skill>>> Skills { get; private set; }
             public Vector<Action> AfterSkills { get; private set; }
 
-            internal Skill(Path? path = null) {
+            internal Skill(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.BeforeSkills = new Vector<Action>(this.Path.GetNested(2));
                 this.Skills = new ActionsOr<Vector<ActionsOr<Skill>>>(this.Path.GetNested(3));
                 this.AfterSkills = new Vector<Action>(this.Path.GetNested(4));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<UInt16, Skill>>? OnCasterIndexUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<UInt32, Skill>>? OnCardIdUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>>? OnBeforeSkillsUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Skill>>>, Skill>>? OnSkillsUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>>? OnAfterSkillsUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt16, Skill>> OnCasterIndexUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt32, Skill>> OnCardIdUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>> OnBeforeSkillsUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<ActionsOr<Vector<ActionsOr<Skill>>>, Skill>> OnSkillsUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<Action>, Skill>> OnAfterSkillsUpdate;
 
             public static void ClearCasterIndexUpdateHandlers() { OnCasterIndexUpdate = null; }
             public static void ClearCardIdUpdateHandlers() { OnCardIdUpdate = null; }
@@ -407,7 +407,7 @@ namespace Just.To.Test {
                 OnAfterSkillsUpdate = null;
             }
 
-            internal static Skill Deserialize(IReader reader, Path? path = null) {
+            internal static Skill Deserialize(IReader reader, Path path = null) {
                 var skill = new Skill(path);
                 skill.Replace(reader);
                 return skill;
@@ -424,7 +424,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 2: return this.BeforeSkills;
                     case 3: return this.Skills;
@@ -452,7 +452,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Skill>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Skill>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {

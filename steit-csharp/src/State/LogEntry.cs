@@ -18,24 +18,24 @@ namespace Steit.State {
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public Update? UpdateVariant { get { return this.Variant as Update; } }
-        public ListPush? ListPushVariant { get { return this.Variant as ListPush; } }
-        public ListPop? ListPopVariant { get { return this.Variant as ListPop; } }
-        public MapRemove? MapRemoveVariant { get { return this.Variant as MapRemove; } }
+        public Update UpdateVariant { get { return this.Variant as Update; } }
+        public ListPush ListPushVariant { get { return this.Variant as ListPush; } }
+        public ListPop ListPopVariant { get { return this.Variant as ListPop; } }
+        public MapRemove MapRemoveVariant { get { return this.Variant as MapRemove; } }
 
-        public LogEntry(Path? path = null) {
+        public LogEntry(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Tag = 0;
             this.Variant = new Update(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<LogEntry>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<LogEntry>> OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static LogEntry Deserialize(IReader reader, Path? path = null) {
+        public static LogEntry Deserialize(IReader reader, Path path = null) {
             var logEntry = new LogEntry(path);
             logEntry.Replace(reader);
             return logEntry;
@@ -51,7 +51,7 @@ namespace Steit.State {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag == this.Tag ? this.Variant : null;
         }
 
@@ -87,14 +87,14 @@ namespace Steit.State {
             public Vector<UInt32> FlattenPath { get; private set; }
             public Bytes Value { get; private set; }
 
-            internal Update(Path? path = null) {
+            internal Update(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
                 this.Value = new Bytes(this.Path.GetNested(1));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, Update>>? OnFlattenPathUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Bytes, Update>>? OnValueUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, Update>> OnFlattenPathUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Bytes, Update>> OnValueUpdate;
 
             public static void ClearFlattenPathUpdateHandlers() { OnFlattenPathUpdate = null; }
             public static void ClearValueUpdateHandlers() { OnValueUpdate = null; }
@@ -104,7 +104,7 @@ namespace Steit.State {
                 OnValueUpdate = null;
             }
 
-            internal static Update Deserialize(IReader reader, Path? path = null) {
+            internal static Update Deserialize(IReader reader, Path path = null) {
                 var update = new Update(path);
                 update.Replace(reader);
                 return update;
@@ -118,7 +118,7 @@ namespace Steit.State {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.FlattenPath;
                     case 1: return this.Value;
@@ -142,7 +142,7 @@ namespace Steit.State {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, Update>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, Update>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -162,14 +162,14 @@ namespace Steit.State {
             public Vector<UInt32> FlattenPath { get; private set; }
             public Bytes Item { get; private set; }
 
-            internal ListPush(Path? path = null) {
+            internal ListPush(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
                 this.Item = new Bytes(this.Path.GetNested(1));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, ListPush>>? OnFlattenPathUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Bytes, ListPush>>? OnItemUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, ListPush>> OnFlattenPathUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Bytes, ListPush>> OnItemUpdate;
 
             public static void ClearFlattenPathUpdateHandlers() { OnFlattenPathUpdate = null; }
             public static void ClearItemUpdateHandlers() { OnItemUpdate = null; }
@@ -179,7 +179,7 @@ namespace Steit.State {
                 OnItemUpdate = null;
             }
 
-            internal static ListPush Deserialize(IReader reader, Path? path = null) {
+            internal static ListPush Deserialize(IReader reader, Path path = null) {
                 var listPush = new ListPush(path);
                 listPush.Replace(reader);
                 return listPush;
@@ -193,7 +193,7 @@ namespace Steit.State {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.FlattenPath;
                     case 1: return this.Item;
@@ -217,7 +217,7 @@ namespace Steit.State {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, ListPush>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, ListPush>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -235,12 +235,12 @@ namespace Steit.State {
             public Path Path { get; }
             public Vector<UInt32> FlattenPath { get; private set; }
 
-            internal ListPop(Path? path = null) {
+            internal ListPop(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, ListPop>>? OnFlattenPathUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, ListPop>> OnFlattenPathUpdate;
 
             public static void ClearFlattenPathUpdateHandlers() {
                 OnFlattenPathUpdate = null;
@@ -250,7 +250,7 @@ namespace Steit.State {
                 OnFlattenPathUpdate = null;
             }
 
-            internal static ListPop Deserialize(IReader reader, Path? path = null) {
+            internal static ListPop Deserialize(IReader reader, Path path = null) {
                 var listPop = new ListPop(path);
                 listPop.Replace(reader);
                 return listPop;
@@ -263,7 +263,7 @@ namespace Steit.State {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.FlattenPath;
                     default: return null;
@@ -285,7 +285,7 @@ namespace Steit.State {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, ListPop>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, ListPop>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -305,13 +305,13 @@ namespace Steit.State {
             public Vector<UInt32> FlattenPath { get; private set; }
             public UInt32 Key { get; private set; }
 
-            internal MapRemove(Path? path = null) {
+            internal MapRemove(Path path = null) {
                 this.Path = path ?? Path.Root;
                 this.FlattenPath = new Vector<UInt32>(this.Path.GetNested(0));
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, MapRemove>>? OnFlattenPathUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<UInt32, MapRemove>>? OnKeyUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Vector<UInt32>, MapRemove>> OnFlattenPathUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<UInt32, MapRemove>> OnKeyUpdate;
 
             public static void ClearFlattenPathUpdateHandlers() { OnFlattenPathUpdate = null; }
             public static void ClearKeyUpdateHandlers() { OnKeyUpdate = null; }
@@ -321,7 +321,7 @@ namespace Steit.State {
                 OnKeyUpdate = null;
             }
 
-            internal static MapRemove Deserialize(IReader reader, Path? path = null) {
+            internal static MapRemove Deserialize(IReader reader, Path path = null) {
                 var mapRemove = new MapRemove(path);
                 mapRemove.Replace(reader);
                 return mapRemove;
@@ -335,7 +335,7 @@ namespace Steit.State {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     case 0: return this.FlattenPath;
                     default: return null;
@@ -358,7 +358,7 @@ namespace Steit.State {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, MapRemove>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, MapRemove>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {

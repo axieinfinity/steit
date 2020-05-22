@@ -10,21 +10,27 @@ namespace Steit.Collections {
     public sealed class StateList<T> : ReadOnlyCollection<T>, IState {
         public Path Path { get; }
 
-        public StateList(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {
+        // public StateList(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {
+        public StateList(Path path = null, IList<T> items = null) : base(items ?? new List<T>()) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
         }
 
-        public event EventHandler<FieldUpdateEventArgs<T, StateList<T>>>? OnUpdate;
-        public event EventHandler<ListPushEventArgs<T, StateList<T>>>? OnPush;
-        public event EventHandler<ListPopEventArgs<T, StateList<T>>>? OnPop;
+        // public event EventHandler<FieldUpdateEventArgs<T, StateList<T>>>? OnUpdate;
+        public event EventHandler<FieldUpdateEventArgs<T, StateList<T>>> OnUpdate;
+        // public event EventHandler<ListPushEventArgs<T, StateList<T>>>? OnPush;
+        public event EventHandler<ListPushEventArgs<T, StateList<T>>> OnPush;
+        // public event EventHandler<ListPopEventArgs<T, StateList<T>>>? OnPop;
+        public event EventHandler<ListPopEventArgs<T, StateList<T>>> OnPop;
 
         public void ClearUpdateHandlers() { this.OnUpdate = null; }
         public void ClearPushHandlers() { this.OnPush = null; }
         public void ClearPopHandlers() { this.OnPop = null; }
 
-        public static StateList<T> Deserialize(IReader reader, Path? path = null) {
-            path ??= Path.Root;
+        // public static StateList<T> Deserialize(IReader reader, Path? path = null) {
+        public static StateList<T> Deserialize(IReader reader, Path path = null) {
+            // path ??= Path.Root;
+            path = path ?? Path.Root;
 
             var items = new List<T>();
             var tag = 0U;
@@ -40,7 +46,8 @@ namespace Steit.Collections {
             return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
         }
 
-        public IState? GetNested(UInt32 tag) {
+        // public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag < this.Count ? this[(int) tag] as IState : null;
         }
 

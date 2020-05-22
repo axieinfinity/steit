@@ -16,22 +16,22 @@ namespace Just.To.Test {
         public UInt32 Tag { get; private set; }
         public IState Variant { get; private set; }
 
-        public FirstCase? FirstCaseVariant { get { return this.Variant as FirstCase; } }
-        public SecondCase? SecondCaseVariant { get { return this.Variant as SecondCase; } }
+        public FirstCase FirstCaseVariant { get { return this.Variant as FirstCase; } }
+        public SecondCase SecondCaseVariant { get { return this.Variant as SecondCase; } }
 
-        public Multicase(Path? path = null) {
+        public Multicase(Path path = null) {
             this.Path = path ?? Path.Root;
             this.Tag = 0;
             this.Variant = new FirstCase(this.Path.GetNested(0));
         }
 
-        public static event EventHandler<VariantUpdateEventArgs<Multicase>>? OnUpdate;
+        public static event EventHandler<VariantUpdateEventArgs<Multicase>> OnUpdate;
 
         public static void ClearUpdateHandlers() {
             OnUpdate = null;
         }
 
-        public static Multicase Deserialize(IReader reader, Path? path = null) {
+        public static Multicase Deserialize(IReader reader, Path path = null) {
             var multicase = new Multicase(path);
             multicase.Replace(reader);
             return multicase;
@@ -45,7 +45,7 @@ namespace Just.To.Test {
             }
         }
 
-        public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return tag == this.Tag ? this.Variant : null;
         }
 
@@ -79,12 +79,12 @@ namespace Just.To.Test {
             public Int32 Counter { get; private set; }
             public Boolean Enabled { get; private set; }
 
-            internal FirstCase(Path? path = null) {
+            internal FirstCase(Path path = null) {
                 this.Path = path ?? Path.Root;
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Int32, FirstCase>>? OnCounterUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Boolean, FirstCase>>? OnEnabledUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Int32, FirstCase>> OnCounterUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Boolean, FirstCase>> OnEnabledUpdate;
 
             public static void ClearCounterUpdateHandlers() { OnCounterUpdate = null; }
             public static void ClearEnabledUpdateHandlers() { OnEnabledUpdate = null; }
@@ -94,7 +94,7 @@ namespace Just.To.Test {
                 OnEnabledUpdate = null;
             }
 
-            internal static FirstCase Deserialize(IReader reader, Path? path = null) {
+            internal static FirstCase Deserialize(IReader reader, Path path = null) {
                 var firstCase = new FirstCase(path);
                 firstCase.Replace(reader);
                 return firstCase;
@@ -108,7 +108,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     default: return null;
                 }
@@ -130,7 +130,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, FirstCase>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, FirstCase>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {
@@ -150,12 +150,12 @@ namespace Just.To.Test {
             public Int32 Counter { get; private set; }
             public Boolean Enabled { get; private set; }
 
-            internal SecondCase(Path? path = null) {
+            internal SecondCase(Path path = null) {
                 this.Path = path ?? Path.Root;
             }
 
-            public static event EventHandler<FieldUpdateEventArgs<Int32, SecondCase>>? OnCounterUpdate;
-            public static event EventHandler<FieldUpdateEventArgs<Boolean, SecondCase>>? OnEnabledUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Int32, SecondCase>> OnCounterUpdate;
+            public static event EventHandler<FieldUpdateEventArgs<Boolean, SecondCase>> OnEnabledUpdate;
 
             public static void ClearCounterUpdateHandlers() { OnCounterUpdate = null; }
             public static void ClearEnabledUpdateHandlers() { OnEnabledUpdate = null; }
@@ -165,7 +165,7 @@ namespace Just.To.Test {
                 OnEnabledUpdate = null;
             }
 
-            internal static SecondCase Deserialize(IReader reader, Path? path = null) {
+            internal static SecondCase Deserialize(IReader reader, Path path = null) {
                 var secondCase = new SecondCase(path);
                 secondCase.Replace(reader);
                 return secondCase;
@@ -179,7 +179,7 @@ namespace Just.To.Test {
                 }
             }
 
-            public IState? GetNested(UInt32 tag) {
+            public IState GetNested(UInt32 tag) {
                 switch (tag) {
                     default: return null;
                 }
@@ -201,7 +201,7 @@ namespace Just.To.Test {
                 UInt32 tag,
                 TValue newValue,
                 TValue oldValue,
-                EventHandler<FieldUpdateEventArgs<TValue, SecondCase>>? handler,
+                EventHandler<FieldUpdateEventArgs<TValue, SecondCase>> handler,
                 bool shouldNotify
             ) {
                 if (shouldNotify) {

@@ -10,21 +10,27 @@ namespace Steit.Collections {
     public sealed class StateMap<T> : ReadOnlyDictionary<UInt32, T>, IState {
         public Path Path { get; }
 
-        public StateMap(Path? path = null, IDictionary<UInt32, T>? items = null) : base(items ?? new Dictionary<UInt32, T>()) {
+        // public StateMap(Path? path = null, IDictionary<UInt32, T>? items = null) : base(items ?? new Dictionary<UInt32, T>()) {
+        public StateMap(Path path = null, IDictionary<UInt32, T> items = null) : base(items ?? new Dictionary<UInt32, T>()) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
         }
 
-        public event EventHandler<FieldUpdateEventArgs<T, StateMap<T>>>? OnUpdate;
-        public event EventHandler<MapInsertEventArgs<T, StateMap<T>>>? OnInsert;
-        public event EventHandler<MapRemoveEventArgs<T, StateMap<T>>>? OnRemove;
+        // public event EventHandler<FieldUpdateEventArgs<T, StateMap<T>>>? OnUpdate;
+        public event EventHandler<FieldUpdateEventArgs<T, StateMap<T>>> OnUpdate;
+        // public event EventHandler<MapInsertEventArgs<T, StateMap<T>>>? OnInsert;
+        public event EventHandler<MapInsertEventArgs<T, StateMap<T>>> OnInsert;
+        // public event EventHandler<MapRemoveEventArgs<T, StateMap<T>>>? OnRemove;
+        public event EventHandler<MapRemoveEventArgs<T, StateMap<T>>> OnRemove;
 
         public void ClearUpdateHandlers() { this.OnUpdate = null; }
         public void ClearInsertHandlers() { this.OnInsert = null; }
         public void ClearRemoveHandlers() { this.OnRemove = null; }
 
-        public static StateMap<T> Deserialize(IReader reader, Path? path = null) {
-            path ??= Path.Root;
+        // public static StateMap<T> Deserialize(IReader reader, Path? path = null) {
+        public static StateMap<T> Deserialize(IReader reader, Path path = null) {
+            // path ??= Path.Root;
+            path = path ?? Path.Root;
 
             var entries = new Dictionary<UInt32, T>();
 
@@ -40,7 +46,8 @@ namespace Steit.Collections {
             return StateFactory.IsStateType(typeof(T)) ? WireType.Sized : WireType.Varint;
         }
 
-        public IState? GetNested(UInt32 tag) {
+        // public IState? GetNested(UInt32 tag) {
+        public IState GetNested(UInt32 tag) {
             return this.ContainsKey(tag) ? this[tag] as IState : null;
         }
 
