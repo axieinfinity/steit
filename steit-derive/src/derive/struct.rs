@@ -608,13 +608,13 @@ fn add_field(fields: &mut syn::Fields, name: String, ty: syn::Type, index: usize
     match fields {
         syn::Fields::Named(fields) => {
             let field = Field::new(Some(format_ident!("{}", name)), ty, index);
-            fields.named.extend(field.declare());
+            fields.named.extend(field.declare(true));
             field
         }
 
         syn::Fields::Unnamed(fields) => {
             let field = Field::new(None, ty, index);
-            fields.unnamed.extend(field.declare());
+            fields.unnamed.extend(field.declare(true));
             field
         }
 

@@ -96,14 +96,23 @@ impl Field {
         &self.ty
     }
 
-    pub fn declare(&self) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
+    pub fn declare(
+        &self,
+        doc_hidden: bool,
+    ) -> syn::punctuated::Punctuated<syn::Field, syn::Token![,]> {
+        let doc_hidden = if doc_hidden {
+            Some(quote!(#[doc(hidden)]))
+        } else {
+            None
+        };
+
         let ty = &self.ty;
 
         if let Some(name) = &self.name {
-            let fields: syn::FieldsNamed = syn::parse_quote!({ #name: #ty });
+            let fields: syn::FieldsNamed = syn::parse_quote!({ #doc_hidden #name: #ty });
             fields.named
         } else {
-            let fields: syn::FieldsUnnamed = syn::parse_quote!((#ty));
+            let fields: syn::FieldsUnnamed = syn::parse_quote!((#doc_hidden #ty));
             fields.unnamed
         }
     }
