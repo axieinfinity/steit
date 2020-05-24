@@ -2,6 +2,7 @@ use std::io;
 
 use crate::{
     de::{Deserialize, Reader},
+    meta::{FieldTypeMeta, HasMeta, MetaLink, NameMeta, TypeMeta},
     rt::SizeCache,
     ser::Serialize,
     wire_fmt::{HasWireType, WireType},
@@ -47,6 +48,21 @@ impl<T: Deserialize> Deserialize for Option<T> {
 
         Ok(())
     }
+}
+
+impl<T: HasMeta> HasMeta for Option<T> {
+    const NAME: &'static NameMeta = &NameMeta {
+        rust: "Option",
+        csharp: Some("Option"),
+    };
+
+    const TYPE: &'static TypeMeta = &TypeMeta::Ref(Self::NAME, &[FieldTypeMeta::Type(T::TYPE)]);
+
+    const LINK: &'static MetaLink = &MetaLink {
+        r#type: Self::TYPE,
+        msg: None,
+        links: || &[T::LINK],
+    };
 }
 
 #[cfg(test)]
