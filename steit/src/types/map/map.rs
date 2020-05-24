@@ -1,4 +1,4 @@
-use std::{hash::Hash, io, marker::PhantomData, ops};
+use std::{hash::Hash, io, iter::FromIterator, marker::PhantomData, ops};
 
 use indexmap::map::IndexMap;
 
@@ -34,6 +34,12 @@ impl<K: MapKey, V: State> Map<K, V> {
             runtime,
             _marker: PhantomData,
         }
+    }
+
+    pub fn from_iter(runtime: Runtime, iter: impl IntoIterator<Item = (K, V)>) -> Self {
+        let mut map: Self = FromIterator::from_iter(iter);
+        map.set_runtime(runtime);
+        map
     }
 
     #[inline]
@@ -107,6 +113,21 @@ impl<K: MapKey, V: State> Default for Map<K, V> {
     #[inline]
     fn default() -> Self {
         Self::new(Runtime::default())
+    }
+}
+
+impl<K: MapKey, V: State> FromIterator<(K, V)> for Map<K, V> {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        Self {
+            entries: iter
+                .into_iter()
+                .map(|(key, value)| {
+                    let key = key.as_field_number();
+                    (key, value)
+                })
+                .collect(),
+            ..Default::default()
+        }
     }
 }
 

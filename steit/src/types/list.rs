@@ -1,5 +1,6 @@
 use std::{
     io,
+    iter::FromIterator,
     ops::{self, Deref},
     slice,
 };
@@ -37,6 +38,12 @@ impl<T: State> List<T> {
             runtime,
             ..Default::default()
         }
+    }
+
+    pub fn from_iter(runtime: Runtime, iter: impl IntoIterator<Item = T>) -> Self {
+        let mut list: Self = FromIterator::from_iter(iter);
+        list.set_runtime(runtime);
+        list
     }
 
     #[inline]
@@ -116,6 +123,15 @@ impl<T: State> ops::IndexMut<usize> for List<T> {
     #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.items[index]
+    }
+}
+
+impl<T: State> FromIterator<T> for List<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self {
+            items: iter.into_iter().collect(),
+            ..Default::default()
+        }
     }
 }
 
