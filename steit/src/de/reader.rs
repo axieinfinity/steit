@@ -11,26 +11,22 @@ pub struct Reader<R: io::Read> {
 }
 
 impl<R: io::Read> Reader<R> {
-    #[inline]
     pub fn new(inner: R) -> Self {
         Self {
             inner: Eof::new(inner),
         }
     }
 
-    #[inline]
     pub fn eof(&mut self) -> io::Result<bool> {
         self.inner.eof()
     }
 
-    #[inline]
     pub fn nested(&mut self) -> io::Result<Reader<io::Take<&mut Self>>> {
         let size = u64::deserialize(self)?;
         let reader = self.by_ref().take(size);
         Ok(reader.into())
     }
 
-    #[inline]
     pub fn read_tag(&mut self) -> io::Result<(u32, WireType)> {
         let value = u32::deserialize(self)?;
         wire_fmt::parse_tag(value)
@@ -52,21 +48,18 @@ impl<R: io::Read> Reader<R> {
         Ok(())
     }
 
-    #[inline]
     pub fn into_inner(self) -> R {
         self.inner.into_inner()
     }
 }
 
 impl<R: io::Read> io::Read for Reader<R> {
-    #[inline]
     fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
         self.inner.read(buf)
     }
 }
 
 impl<R: io::Read> From<R> for Reader<R> {
-    #[inline]
     fn from(inner: R) -> Self {
         Self::new(inner)
     }

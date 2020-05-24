@@ -15,26 +15,22 @@ use crate::{
 pub struct Bytes(Vec<u8>);
 
 impl Bytes {
-    #[inline]
     pub fn from_raw(bytes: Vec<u8>) -> Self {
         Self(bytes)
     }
 
-    #[inline]
     pub fn from_value(value: &impl Serialize) -> Self {
         let mut bytes = Vec::new();
         value.serialize(&mut bytes).unwrap();
         Self(bytes)
     }
 
-    #[inline]
     pub fn into_raw(self) -> Vec<u8> {
         self.0
     }
 }
 
 impl fmt::Debug for Bytes {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
@@ -45,24 +41,20 @@ impl HasWireType for Bytes {
 }
 
 impl Serialize for Bytes {
-    #[inline]
     fn compute_size(&self) -> u32 {
         self.0.len() as u32
     }
 
-    #[inline]
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()> {
         writer.write_all(&self.0)
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         None
     }
 }
 
 impl Deserialize for Bytes {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         reader.read_to_end(&mut self.0)?;
         Ok(())

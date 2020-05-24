@@ -208,7 +208,6 @@ impl<'a> Struct<'a> {
         };
 
         quote! {
-            #[inline]
             pub fn #ctor_name(#params) -> Self {
                 #set_variant_runtime
                 #name #qual { #(#inits,)* }
@@ -274,7 +273,6 @@ impl<'a> Struct<'a> {
             "Default",
             self.trait_bounds(&["Default"]),
             quote! {
-                #[inline]
                 fn default() -> Self {
                     Self::#ctor_name(#args)
                 }
@@ -348,7 +346,6 @@ impl<'a> Struct<'a> {
                     Ok(())
                 }
 
-                #[inline]
                 fn size_cache(&self) -> Option<&SizeCache> {
                     #size_cache
                 }
@@ -453,12 +450,10 @@ impl<'a> Struct<'a> {
         self.impler.impl_for(
             "State",
             quote! {
-                #[inline]
                 fn with_runtime(runtime: Runtime) -> Self {
                     Self::#ctor_name(runtime)
                 }
 
-                #[inline]
                 fn runtime(&self) -> &Runtime {
                     &#runtime
                 }

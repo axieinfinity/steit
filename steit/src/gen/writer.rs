@@ -5,7 +5,6 @@ pub struct Writer {
 }
 
 impl Writer {
-    #[inline]
     pub fn new(indent_size: usize) -> Self {
         Self {
             indent_size,
@@ -14,18 +13,15 @@ impl Writer {
         }
     }
 
-    #[inline]
     pub fn end(self) -> String {
         self.out
     }
 
-    #[inline]
     pub fn indent(&mut self) -> &mut Self {
         self.current_indent_level += 1;
         self
     }
 
-    #[inline]
     pub fn outdent(&mut self) -> &mut Self {
         if self.current_indent_level > 0 {
             self.current_indent_level -= 1;
@@ -34,34 +30,28 @@ impl Writer {
         self
     }
 
-    #[inline]
     pub fn write(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.out.push_str(s.as_ref());
         self
     }
 
-    #[inline]
     pub fn write_indentation(&mut self) -> &mut Self {
         self.write(" ".repeat(self.current_indent_level * self.indent_size))
     }
 
-    #[inline]
     pub fn newline(&mut self) -> &mut Self {
         self.out.push('\n');
         self
     }
 
-    #[inline]
     pub fn writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.write_indentation().write(s).newline()
     }
 
-    #[inline]
     pub fn indent_writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.indent().writeln(s)
     }
 
-    #[inline]
     pub fn outdent_writeln(&mut self, s: impl AsRef<str>) -> &mut Self {
         self.outdent().writeln(s)
     }

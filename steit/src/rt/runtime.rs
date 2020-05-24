@@ -23,7 +23,6 @@ pub struct Runtime {
 
 macro_rules! impl_entry {
     ($entry:ident, $new_entry:ident $(, $param_name:ident : $param_type:ty )* $(,)?) => {
-        #[inline]
         pub fn $entry(&self $(, $param_name: $param_type )*) -> LogEntry {
             LogEntry::$new_entry(&self.path $(, $param_name )*)
         }
@@ -32,7 +31,6 @@ macro_rules! impl_entry {
 
 macro_rules! impl_log {
     ($log:ident, $entry:ident $(, $param_name:ident : $param_type:ty )* $(,)?) => {
-        #[inline]
         pub fn $log(&self $(, $param_name: $param_type)*) -> io::Result<()> {
             self.log(self.$entry($($param_name ),*))
         }
@@ -40,12 +38,10 @@ macro_rules! impl_log {
 }
 
 impl Runtime {
-    #[inline]
     pub fn new() -> Self {
         Self::with_logger(WriterLogger::stdout())
     }
 
-    #[inline]
     pub fn with_logger_returned<T: Logger + 'static>(logger: T) -> (Self, LoggerHandle<T>) {
         let logger = Arc::new(Mutex::new(RuntimeLogger::new(logger)));
 
@@ -58,12 +54,10 @@ impl Runtime {
         )
     }
 
-    #[inline]
     pub fn with_logger<T: Logger + 'static>(logger: T) -> Self {
         Self::with_logger_returned(logger).0
     }
 
-    #[inline]
     pub fn nested(&self, field_number: u32) -> Self {
         Self {
             logger: self.logger.clone(),
@@ -71,7 +65,6 @@ impl Runtime {
         }
     }
 
-    #[inline]
     pub fn parent(&self) -> Self {
         Self {
             logger: self.logger.clone(),
@@ -79,12 +72,10 @@ impl Runtime {
         }
     }
 
-    #[inline]
     pub fn path(&self) -> &Arc<Node<u32>> {
         &self.path
     }
 
-    #[inline]
     pub fn is_root(&self) -> bool {
         match &*self.path {
             Node::Root { .. } => true,
@@ -92,42 +83,34 @@ impl Runtime {
         }
     }
 
-    #[inline]
     pub fn is_child(&self) -> bool {
         !self.is_root()
     }
 
-    #[inline]
     pub fn get_field_number(&self) -> Option<u32> {
         self.path.get_value().copied()
     }
 
-    #[inline]
     pub fn field_number(&self) -> u32 {
         *self.path.value()
     }
 
-    #[inline]
     pub fn logger(&self) -> &Arc<Mutex<dyn PausableLogger>> {
         &self.logger
     }
 
-    #[inline]
     pub fn pause_logger(&self) -> u32 {
         self.logger.lock().unwrap().pause()
     }
 
-    #[inline]
     pub fn unpause_logger(&self) -> u32 {
         self.logger.lock().unwrap().unpause()
     }
 
-    #[inline]
     pub fn log(&self, entry: LogEntry) -> io::Result<()> {
         self.logger.lock().unwrap().log(entry)
     }
 
-    #[inline]
     pub fn log_multi(&self, entries: Vec<LogEntry>) -> io::Result<()> {
         self.logger.lock().unwrap().log_multi(entries)
     }
@@ -137,7 +120,6 @@ impl Runtime {
     impl_entry!(entry_list_pop, new_list_pop);
     impl_entry!(entry_map_remove, new_map_remove, key: u32);
 
-    #[inline]
     pub fn entry_update_child(&self, field_number: u32, value: &impl Serialize) -> LogEntry {
         LogEntry::new_update(&Node::child(&self.path, field_number), value)
     }
@@ -155,7 +137,6 @@ impl Runtime {
 }
 
 impl PartialEq for Runtime {
-    #[inline]
     fn eq(&self, _other: &Self) -> bool {
         true
     }
@@ -164,7 +145,6 @@ impl PartialEq for Runtime {
 impl Eq for Runtime {}
 
 impl Default for Runtime {
-    #[inline]
     fn default() -> Self {
         Self::new()
     }
@@ -175,7 +155,6 @@ impl Hash for Runtime {
 }
 
 impl fmt::Debug for Runtime {
-    #[inline]
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.debug_struct("Runtime")
             .field("logger", &"<logger>")

@@ -110,7 +110,6 @@ impl<'a> Enum<'a> {
         self.impler.impl_with(
             self.trait_bounds(&["Default"]),
             quote! {
-                #[inline]
                 pub fn #default_ctor_name(#default_ctor_params) -> Self {
                     #default_ctor
                 }
@@ -152,7 +151,6 @@ impl<'a> Enum<'a> {
         self.impler.impl_for(
             "PartialEq",
             quote! {
-                #[inline]
                 fn eq(&self, other: &Self) -> bool {
                     match self { #(#eqs,)* }
                 }
@@ -173,7 +171,6 @@ impl<'a> Enum<'a> {
             "Default",
             self.trait_bounds(&["Default"]),
             quote! {
-                #[inline]
                 fn default() -> Self {
                     Self::#ctor_name(#args)
                 }
@@ -403,7 +400,6 @@ impl<'a> Enum<'a> {
         self.impler.impl_for(
             "State",
             quote! {
-                #[inline]
                 fn with_runtime(runtime: Runtime) -> Self {
                     Self::#ctor_name(runtime)
                 }
@@ -416,12 +412,10 @@ impl<'a> Enum<'a> {
                     match self { #(#runtime_setters)* }
                 }
 
-                #[inline]
                 fn is_root(&self) -> bool {
                     self.runtime().parent().is_root()
                 }
 
-                #[inline]
                 fn handle_update(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
                     *self = Self::with_runtime(self.runtime().parent());
                     self.merge(reader)

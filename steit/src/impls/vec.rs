@@ -31,7 +31,6 @@ impl<T: Serialize> Serialize for Vec<T> {
         Ok(())
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         None
     }

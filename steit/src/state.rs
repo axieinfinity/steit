@@ -21,17 +21,14 @@ pub trait State: Serialize + Deserialize {
         reader: &mut Reader<impl io::Read>,
     ) -> io::Result<()>;
 
-    #[inline]
     fn is_root(&self) -> bool {
         self.runtime().is_root()
     }
 
-    #[inline]
     fn is_child(&self) -> bool {
         !self.is_root()
     }
 
-    #[inline]
     fn handle_update(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         *self = Self::with_runtime(self.runtime().clone());
         self.merge(reader)

@@ -8,7 +8,6 @@ pub struct MapIter<'a, K: MapKey, V: 'a> {
 }
 
 impl<'a, K: MapKey, V> MapIter<'a, K, V> {
-    #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u32, &'a V)> + 'a) -> Self {
         Self {
             inner: Box::new(inner),
@@ -20,7 +19,6 @@ impl<'a, K: MapKey, V> MapIter<'a, K, V> {
 impl<'a, K: MapKey, V> Iterator for MapIter<'a, K, V> {
     type Item = (K, &'a V);
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(&field_number, value)| {
             let key = K::try_from_field_number(field_number).unwrap();
@@ -35,7 +33,6 @@ pub struct MapIterMut<'a, K: MapKey, V: 'a> {
 }
 
 impl<'a, K: MapKey, V> MapIterMut<'a, K, V> {
-    #[inline]
     pub(super) fn new(inner: impl Iterator<Item = (&'a u32, &'a mut V)> + 'a) -> Self {
         Self {
             inner: Box::new(inner),
@@ -47,7 +44,6 @@ impl<'a, K: MapKey, V> MapIterMut<'a, K, V> {
 impl<'a, K: MapKey, V> Iterator for MapIterMut<'a, K, V> {
     type Item = (K, &'a mut V);
 
-    #[inline]
     fn next(&mut self) -> Option<Self::Item> {
         self.inner.next().map(|(&field_number, value)| {
             let key = K::try_from_field_number(field_number).unwrap();

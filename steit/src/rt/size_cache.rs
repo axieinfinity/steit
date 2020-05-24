@@ -21,7 +21,6 @@ impl SizeCache {
     /// Creates a new [`SizeCache`] and initializes it to 0.
     ///
     /// [`SizeCache`]: struct.SizeCache.html
-    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -33,7 +32,6 @@ impl SizeCache {
     /// let size_cache = SizeCache::new();
     /// assert_eq!(size_cache.get(), 0);
     /// ```
-    #[inline]
     pub fn get(&self) -> u32 {
         self.size.load(Ordering::Relaxed)
     }
@@ -46,14 +44,12 @@ impl SizeCache {
     /// size_cache.set(1337);
     /// assert_eq!(size_cache.get(), 1337);
     /// ```
-    #[inline]
     pub fn set(&self, size: u32) {
         self.size.store(size, Ordering::Relaxed);
     }
 }
 
 impl Clone for SizeCache {
-    #[inline]
     fn clone(&self) -> Self {
         Self {
             size: AtomicU32::new(self.get()),
@@ -62,7 +58,6 @@ impl Clone for SizeCache {
 }
 
 impl PartialEq for SizeCache {
-    #[inline]
     fn eq(&self, _other: &SizeCache) -> bool {
         true
     }
@@ -71,7 +66,6 @@ impl PartialEq for SizeCache {
 impl Eq for SizeCache {}
 
 impl Hash for SizeCache {
-    #[inline]
     fn hash<H: Hasher>(&self, _state: &mut H) {}
 }
 

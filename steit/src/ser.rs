@@ -11,7 +11,6 @@ pub trait Serialize: HasWireType {
 
     fn size_cache(&self) -> Option<&SizeCache>;
 
-    #[inline]
     fn cache_size(&self) -> u32 {
         let size = self.compute_size();
 
@@ -22,7 +21,6 @@ pub trait Serialize: HasWireType {
         size
     }
 
-    #[inline]
     fn cached_size(&self) -> u32 {
         match self.size_cache() {
             Some(size_cache) => size_cache.get(),
@@ -30,18 +28,15 @@ pub trait Serialize: HasWireType {
         }
     }
 
-    #[inline]
     fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.cache_size();
         self.serialize_cached(writer)
     }
 
-    #[inline]
     fn is_omissible(&self) -> bool {
         self.compute_size() == 0
     }
 
-    #[inline]
     fn compute_size_nested(
         &self,
         field_number: impl Into<Option<u32>>,
@@ -67,7 +62,6 @@ pub trait Serialize: HasWireType {
         Ok(size)
     }
 
-    #[inline]
     fn serialize_nested(
         &self,
         field_number: impl Into<Option<u32>>,

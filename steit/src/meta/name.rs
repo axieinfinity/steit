@@ -5,7 +5,6 @@ pub struct NameMeta {
 }
 
 impl NameMeta {
-    #[inline]
     pub const fn new(rust_name: &'static str) -> Self {
         Self {
             rust: rust_name,
@@ -13,7 +12,6 @@ impl NameMeta {
         }
     }
 
-    #[inline]
     pub fn csharp(&self, transform: impl FnOnce(&'static str) -> String) -> String {
         match self.csharp {
             Some(csharp) => transform(csharp),

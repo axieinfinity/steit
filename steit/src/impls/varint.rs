@@ -14,12 +14,10 @@ macro_rules! impl_unsigned_varint {
                     $crate::wire_fmt::WireType::Varint;
             }
 
-            #[inline]
             fn compute_size(value: &$type) -> u32 {
                 $size_fn(*value as $size_type)
             }
 
-            #[inline]
             fn serialize(
                 value: &$type,
                 writer: &mut impl ::std::io::Write,
@@ -85,23 +83,19 @@ macro_rules! impl_signed_varint {
             // More about Zigzag encoding can be found at:
             // https://en.wikipedia.org/wiki/Variable-length_quantity#Zigzag_encoding
 
-            #[inline]
             fn encode(value: $type) -> $type {
                 (value << 1) ^ (value >> ((std::mem::size_of::<$type>() << 3) - 1))
             }
 
-            #[inline]
             fn decode(value: $type) -> $type {
                 (value >> 1) ^ -(value & 1)
             }
 
-            #[inline]
             fn compute_size(value: &$type) -> u32 {
                 use $crate::ser::Serialize;
                 (encode(*value) as $unsigned_type).compute_size()
             }
 
-            #[inline]
             fn serialize(
                 value: &$type,
                 writer: &mut impl ::std::io::Write,
@@ -113,7 +107,6 @@ macro_rules! impl_signed_varint {
             $crate::impl_serialize_primitive!($type, compute_size, serialize);
 
             impl $crate::de::Deserialize for $type {
-                #[inline]
                 fn merge(
                     &mut self,
                     reader: &mut $crate::de::Reader<impl ::std::io::Read>,
@@ -144,7 +137,6 @@ impl_signed_varint!(i64, _I64_IMPLS, u64, "Int64");
 /// [Protocol Buffers]: https://developers.google.com/protocol-buffers
 /// [repository]: https://github.com/protocolbuffers/protobuf
 /// [`CodedOutputStream`]: https://github.com/protocolbuffers/protobuf/blob/342a2d6/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L727-L741
-#[inline]
 fn size_32(value: i32) -> u32 {
     if value & (!0 << 7) == 0 {
         return 1;
@@ -174,7 +166,6 @@ fn size_32(value: i32) -> u32 {
 /// [Protocol Buffers]: https://developers.google.com/protocol-buffers
 /// [repository]: https://github.com/protocolbuffers/protobuf
 /// [`CodedOutputStream`]: https://github.com/protocolbuffers/protobuf/blob/342a2d6/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L770-L792
-#[inline]
 fn size_64(mut value: i64) -> u32 {
     // Handle two popular special cases upfront …
     if value & (!0i64 << 7) == 0 {

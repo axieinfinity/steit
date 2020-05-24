@@ -9,12 +9,10 @@ impl HasWireType for &str {
     const WIRE_TYPE: WireType = WireType::Sized;
 }
 
-#[inline]
 fn compute_size(value: &str) -> u32 {
     value.len() as u32
 }
 
-#[inline]
 fn serialize(value: &str, writer: &mut impl io::Write) -> io::Result<()> {
     writer.write_all(value.as_bytes())
 }

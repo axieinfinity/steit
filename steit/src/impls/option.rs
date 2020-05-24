@@ -27,14 +27,12 @@ impl<T: Serialize> Serialize for Option<T> {
         }
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         None
     }
 }
 
 impl<T: Deserialize> Deserialize for Option<T> {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             if self.is_none() {

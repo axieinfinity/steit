@@ -29,7 +29,6 @@ macro_rules! tuple_impls {
                 Ok(())
             }
 
-            #[inline]
             fn size_cache(&self) -> Option<&SizeCache> {
                 None
             }

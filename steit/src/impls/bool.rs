@@ -10,12 +10,10 @@ impl HasWireType for bool {
     const WIRE_TYPE: WireType = WireType::Varint;
 }
 
-#[inline]
 fn compute_size(_value: &bool) -> u32 {
     1
 }
 
-#[inline]
 fn serialize(value: &bool, writer: &mut impl io::Write) -> io::Result<()> {
     writer.write_all(&[*value as u8])
 }
@@ -23,7 +21,6 @@ fn serialize(value: &bool, writer: &mut impl io::Write) -> io::Result<()> {
 impl_serialize_primitive!(bool, compute_size, serialize);
 
 impl Deserialize for bool {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         let mut value = false;
         let mut buf = [0];

@@ -11,7 +11,6 @@ pub struct BufferLogger {
 }
 
 impl BufferLogger {
-    #[inline]
     pub fn new() -> Self {
         Self::default()
     }
@@ -27,17 +26,14 @@ impl BufferLogger {
         bytes
     }
 
-    #[inline]
     pub fn clear(&mut self) {
         self.entries.clear();
     }
 
-    #[inline]
     pub fn pluck(&mut self) -> Vec<LogEntry> {
         std::mem::replace(&mut self.entries, Vec::new())
     }
 
-    #[inline]
     pub fn pluck_bytes(&mut self) -> Vec<u8> {
         let bytes = self.bytes();
         self.clear();
@@ -46,7 +42,6 @@ impl BufferLogger {
 }
 
 impl Logger for BufferLogger {
-    #[inline]
     fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         self.entries.push(entry);
         Ok(())

@@ -15,46 +15,38 @@ impl<T: HasWireType> HasWireType for Box<T> {
 }
 
 impl<T: Serialize> Serialize for Box<T> {
-    #[inline]
     fn compute_size(&self) -> u32 {
         self.as_ref().compute_size()
     }
 
-    #[inline]
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.as_ref().serialize_cached(writer)
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         self.as_ref().size_cache()
     }
 }
 
 impl<T: Deserialize> Deserialize for Box<T> {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         self.as_mut().merge(reader)
     }
 }
 
 impl<T: State> State for Box<T> {
-    #[inline]
     fn with_runtime(runtime: Runtime) -> Self {
         Self::new(T::with_runtime(runtime))
     }
 
-    #[inline]
     fn runtime(&self) -> &Runtime {
         self.as_ref().runtime()
     }
 
-    #[inline]
     fn set_runtime(&mut self, runtime: Runtime) {
         self.as_mut().set_runtime(runtime)
     }
 
-    #[inline]
     fn handle(
         &mut self,
         path: impl Iterator<Item = u32>,

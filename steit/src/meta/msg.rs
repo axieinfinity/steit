@@ -7,7 +7,6 @@ pub enum MessageMeta {
 }
 
 impl MessageMeta {
-    #[inline]
     pub fn rust_name(&self) -> &'static str {
         match *self {
             MessageMeta::Struct(StructMeta { name, .. })
@@ -15,7 +14,6 @@ impl MessageMeta {
         }
     }
 
-    #[inline]
     pub fn is_builtin(&self) -> bool {
         match self {
             MessageMeta::Struct(StructMeta { builtin, .. })
@@ -47,7 +45,6 @@ pub struct VariantMeta {
 }
 
 impl VariantMeta {
-    #[inline]
     pub fn default(&self) -> bool {
         self.tag == 0
     }

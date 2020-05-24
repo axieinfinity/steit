@@ -27,12 +27,10 @@ impl WireType {
         }
     }
 
-    #[inline]
     pub fn value(&self) -> u8 {
         *self as u8
     }
 
-    #[inline]
     pub fn tag(self, field_number: u32) -> io::Result<u32> {
         tag(field_number, self)
     }
@@ -41,12 +39,10 @@ impl WireType {
 pub trait HasWireType {
     const WIRE_TYPE: WireType;
 
-    #[inline]
     fn wire_type(&self) -> WireType {
         Self::WIRE_TYPE
     }
 
-    #[inline]
     fn tag(&self, field_number: u32) -> io::Result<u32> {
         tag(field_number, Self::WIRE_TYPE)
     }

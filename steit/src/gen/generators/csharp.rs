@@ -8,7 +8,6 @@ pub struct CSharpSetting {
 }
 
 impl CSharpSetting {
-    #[inline]
     pub fn new(namespace: impl Into<String>) -> Self {
         Self {
             namespace: namespace.into(),
@@ -515,7 +514,6 @@ struct CSharpField {
 }
 
 impl CSharpField {
-    #[inline]
     pub fn from_meta(field: &'static FieldMeta) -> Self {
         Self {
             meta: field,
@@ -534,7 +532,6 @@ struct CSharpVariant {
 }
 
 impl CSharpVariant {
-    #[inline]
     pub fn from_meta(variant: &'static VariantMeta) -> Self {
         Self {
             meta: variant,

@@ -46,7 +46,6 @@ pub enum LogEntry {
 }
 
 impl LogEntry {
-    #[inline]
     pub fn new_update(path: &Node<u32>, value: &impl Serialize) -> Self {
         LogEntry::Update {
             path: path.collect_values(),
@@ -55,7 +54,6 @@ impl LogEntry {
         }
     }
 
-    #[inline]
     pub fn new_list_push(path: &Node<u32>, item: &impl Serialize) -> Self {
         LogEntry::ListPush {
             path: path.collect_values(),
@@ -64,7 +62,6 @@ impl LogEntry {
         }
     }
 
-    #[inline]
     pub fn new_list_pop(path: &Node<u32>) -> Self {
         LogEntry::ListPop {
             path: path.collect_values(),
@@ -72,7 +69,6 @@ impl LogEntry {
         }
     }
 
-    #[inline]
     pub fn new_map_remove(path: &Node<u32>, key: u32) -> Self {
         LogEntry::MapRemove {
             path: path.collect_values(),

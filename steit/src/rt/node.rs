@@ -6,7 +6,6 @@ pub enum Node<T> {
 }
 
 impl<T> Node<T> {
-    #[inline]
     pub fn child(parent: &Arc<Self>, value: T) -> Self {
         Node::Child {
             parent: parent.clone(),
@@ -14,7 +13,6 @@ impl<T> Node<T> {
         }
     }
 
-    #[inline]
     pub fn get_parent(&self) -> Option<Arc<Self>> {
         match self {
             Node::Root => None,
@@ -22,13 +20,11 @@ impl<T> Node<T> {
         }
     }
 
-    #[inline]
     pub fn parent(&self) -> Arc<Self> {
         self.get_parent()
             .expect("there is no parent node of the root")
     }
 
-    #[inline]
     pub fn get_value(&self) -> Option<&T> {
         match self {
             Node::Root => None,
@@ -36,7 +32,6 @@ impl<T> Node<T> {
         }
     }
 
-    #[inline]
     pub fn value(&self) -> &T {
         self.get_value().expect("root node doesn't have any value")
     }
@@ -53,7 +48,6 @@ impl<T: Copy> Node<T> {
         }
     }
 
-    #[inline]
     pub fn collect_values(&self) -> Vec<T> {
         let mut values = Vec::new();
         self.collect_values_to(&mut values);

@@ -19,7 +19,6 @@ pub enum Maybe<T: State> {
 }
 
 impl<T: State> Maybe<T> {
-    #[inline]
     pub fn some(runtime: Runtime, value: T) -> Self {
         Maybe::Some {
             value,
@@ -28,7 +27,6 @@ impl<T: State> Maybe<T> {
         }
     }
 
-    #[inline]
     pub fn none(runtime: Runtime) -> Self {
         Maybe::None { runtime }
     }
@@ -40,12 +38,10 @@ impl<T: State> Maybe<T> {
         }
     }
 
-    #[inline]
     pub fn is_some(&self) -> bool {
         matches!(self, Maybe::Some { .. })
     }
 
-    #[inline]
     pub fn is_none(&self) -> bool {
         !self.is_some()
     }

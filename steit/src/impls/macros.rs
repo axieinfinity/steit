@@ -2,12 +2,10 @@
 macro_rules! impl_serialize_primitive {
     ($type:ty, $compute_size:ident, $serialize:ident) => {
         impl $crate::ser::Serialize for $type {
-            #[inline]
             fn compute_size(&self) -> u32 {
                 $compute_size(self)
             }
 
-            #[inline]
             fn serialize_cached(
                 &self,
                 writer: &mut impl ::std::io::Write,
@@ -15,27 +13,22 @@ macro_rules! impl_serialize_primitive {
                 self.serialize(writer)
             }
 
-            #[inline]
             fn size_cache(&self) -> Option<&$crate::rt::SizeCache> {
                 None
             }
 
-            #[inline]
             fn cache_size(&self) -> u32 {
                 self.compute_size()
             }
 
-            #[inline]
             fn cached_size(&self) -> u32 {
                 self.compute_size()
             }
 
-            #[inline]
             fn serialize(&self, writer: &mut impl ::std::io::Write) -> ::std::io::Result<()> {
                 $serialize(self, writer)
             }
 
-            #[inline]
             fn is_omissible(&self) -> bool {
                 *self == Self::default()
             }
@@ -47,20 +40,16 @@ macro_rules! impl_serialize_primitive {
 macro_rules! impl_state_primitive {
     ($type:ty) => {
         impl $crate::state::State for $type {
-            #[inline]
             fn with_runtime(_runtime: $crate::rt::Runtime) -> Self {
                 Self::default()
             }
 
-            #[inline]
             fn runtime(&self) -> &$crate::rt::Runtime {
                 panic!("cannot get `Runtime` from `{}`", stringify!($type))
             }
 
-            #[inline]
             fn set_runtime(&mut self, _runtime: $crate::rt::Runtime) {}
 
-            #[inline]
             fn handle_update(
                 &mut self,
                 reader: &mut $crate::de::Reader<impl ::std::io::Read>,

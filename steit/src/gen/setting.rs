@@ -9,14 +9,12 @@ pub struct Setting<T> {
 impl<T> Deref for Setting<T> {
     type Target = T;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.inner
     }
 }
 
 impl<T> Setting<T> {
-    #[inline]
     pub fn new(out_dir: &impl AsRef<OsStr>, skip_builtins: bool, inner: T) -> Self {
         Self {
             out_dir: PathBuf::from(out_dir),

@@ -7,14 +7,12 @@ use super::reader::Reader;
 pub trait Deserialize: Default + HasWireType {
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()>;
 
-    #[inline]
     fn deserialize(reader: &mut Reader<impl io::Read>) -> io::Result<Self> {
         let mut value = Self::default();
         value.merge(reader)?;
         Ok(value)
     }
 
-    #[inline]
     fn merge_nested(
         &mut self,
         wire_type: WireType,
@@ -30,7 +28,6 @@ pub trait Deserialize: Default + HasWireType {
         }
     }
 
-    #[inline]
     fn deserialize_nested(
         wire_type: WireType,
         reader: &mut Reader<impl io::Read>,

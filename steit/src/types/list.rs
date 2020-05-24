@@ -25,14 +25,12 @@ pub struct List<T: State> {
 impl<T: State> Deref for List<T> {
     type Target = Vec<T>;
 
-    #[inline]
     fn deref(&self) -> &Self::Target {
         &self.items
     }
 }
 
 impl<T: State> List<T> {
-    #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
             runtime,
@@ -46,12 +44,10 @@ impl<T: State> List<T> {
         list
     }
 
-    #[inline]
     pub fn get_mut(&mut self, index: usize) -> Option<&mut T> {
         self.items.get_mut(index)
     }
 
-    #[inline]
     pub fn push(&mut self, mut item: T) -> usize {
         self.push_with(|runtime| {
             item.set_runtime(runtime);
@@ -104,7 +100,6 @@ impl<T: State> List<T> {
         Some(self.items.swap_remove(index))
     }
 
-    #[inline]
     pub fn iter_mut(&mut self) -> slice::IterMut<T> {
         self.items.iter_mut()
     }
@@ -113,14 +108,12 @@ impl<T: State> List<T> {
 impl<T: State> ops::Index<usize> for List<T> {
     type Output = T;
 
-    #[inline]
     fn index(&self, index: usize) -> &Self::Output {
         &self.items[index]
     }
 }
 
 impl<T: State> ops::IndexMut<usize> for List<T> {
-    #[inline]
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.items[index]
     }
@@ -139,7 +132,6 @@ impl<'a, T: State> IntoIterator for &'a List<T> {
     type Item = &'a T;
     type IntoIter = slice::Iter<'a, T>;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.items.iter()
     }
@@ -149,7 +141,6 @@ impl<'a, T: State> IntoIterator for &'a mut List<T> {
     type Item = &'a mut T;
     type IntoIter = slice::IterMut<'a, T>;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -160,24 +151,20 @@ impl<T: State> HasWireType for List<T> {
 }
 
 impl<T: State> Serialize for List<T> {
-    #[inline]
     fn compute_size(&self) -> u32 {
         self.items.compute_size()
     }
 
-    #[inline]
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.items.serialize_cached(writer)
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         Some(&self.size_cache)
     }
 }
 
 impl<T: State> Deserialize for List<T> {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         let mut field_number = self.items.len() as u32;
 
@@ -193,12 +180,10 @@ impl<T: State> Deserialize for List<T> {
 }
 
 impl<T: State> State for List<T> {
-    #[inline]
     fn with_runtime(runtime: Runtime) -> Self {
         Self::new(runtime)
     }
 
-    #[inline]
     fn runtime(&self) -> &Runtime {
         &self.runtime
     }

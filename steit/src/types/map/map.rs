@@ -26,7 +26,6 @@ pub struct Map<K: MapKey, V: State> {
 }
 
 impl<K: MapKey, V: State> Map<K, V> {
-    #[inline]
     pub fn new(runtime: Runtime) -> Self {
         Self {
             entries: IndexMap::new(),
@@ -42,24 +41,20 @@ impl<K: MapKey, V: State> Map<K, V> {
         map
     }
 
-    #[inline]
     pub fn get(&self, key: &K) -> Option<&V> {
         self.entries.get(&key.as_field_number())
     }
 
-    #[inline]
     pub fn get_mut(&mut self, key: &K) -> Option<&mut V> {
         self.entries.get_mut(&key.as_field_number())
     }
 
-    #[inline]
     pub fn insert(&mut self, key: K, value: V) -> Option<V> {
         let field_number = key.as_field_number();
         self.runtime.log_update_child(field_number, &value).unwrap();
         self.entries.insert(field_number, value)
     }
 
-    #[inline]
     pub fn insert_with(&mut self, key: K, get_value: impl FnOnce(Runtime) -> V) -> Option<V> {
         let tag = key.as_field_number();
         self.runtime.pause_logger();
@@ -68,19 +63,16 @@ impl<K: MapKey, V: State> Map<K, V> {
         self.insert(key, value)
     }
 
-    #[inline]
     pub fn remove(&mut self, key: &K) -> Option<V> {
         let field_number = key.as_field_number();
         self.runtime.log_map_remove(field_number).unwrap();
         self.entries.remove(&field_number)
     }
 
-    #[inline]
     pub fn iter(&self) -> MapIter<K, V> {
         MapIter::new(self.entries.iter())
     }
 
-    #[inline]
     pub fn iter_mut(&mut self) -> MapIterMut<K, V> {
         MapIterMut::new(self.entries.iter_mut())
     }
@@ -101,7 +93,6 @@ impl<K: MapKey, V: State> ops::IndexMut<&K> for Map<K, V> {
 }
 
 impl<K: Eq + Hash + MapKey, V: PartialEq + State> PartialEq for Map<K, V> {
-    #[inline]
     fn eq(&self, other: &Self) -> bool {
         self.entries == other.entries
     }
@@ -110,7 +101,6 @@ impl<K: Eq + Hash + MapKey, V: PartialEq + State> PartialEq for Map<K, V> {
 impl<K: Eq + Hash + MapKey, V: Eq + State> Eq for Map<K, V> {}
 
 impl<K: MapKey, V: State> Default for Map<K, V> {
-    #[inline]
     fn default() -> Self {
         Self::new(Runtime::default())
     }
@@ -135,7 +125,6 @@ impl<'a, K: MapKey, V: State> IntoIterator for &'a Map<K, V> {
     type Item = (K, &'a V);
     type IntoIter = MapIter<'a, K, V>;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter()
     }
@@ -145,7 +134,6 @@ impl<'a, K: MapKey, V: State> IntoIterator for &'a mut Map<K, V> {
     type Item = (K, &'a mut V);
     type IntoIter = MapIterMut<'a, K, V>;
 
-    #[inline]
     fn into_iter(self) -> Self::IntoIter {
         self.iter_mut()
     }
@@ -156,7 +144,6 @@ impl<K: MapKey, V: State> HasWireType for Map<K, V> {
 }
 
 impl<K: MapKey, V: State> Serialize for Map<K, V> {
-    #[inline]
     fn compute_size(&self) -> u32 {
         let mut size = 0;
 
@@ -167,7 +154,6 @@ impl<K: MapKey, V: State> Serialize for Map<K, V> {
         size
     }
 
-    #[inline]
     fn serialize_cached(&self, writer: &mut impl io::Write) -> io::Result<()> {
         for (&field_number, value) in &self.entries {
             value.serialize_nested(field_number, false, writer)?;
@@ -176,14 +162,12 @@ impl<K: MapKey, V: State> Serialize for Map<K, V> {
         Ok(())
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         Some(&self.size_cache)
     }
 }
 
 impl<K: MapKey, V: State> Deserialize for Map<K, V> {
-    #[inline]
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             let field_number = u32::deserialize(reader)?;
@@ -204,17 +188,14 @@ impl<K: MapKey, V: State> Deserialize for Map<K, V> {
 }
 
 impl<K: MapKey, V: State> State for Map<K, V> {
-    #[inline]
     fn with_runtime(runtime: Runtime) -> Self {
         Self::new(runtime)
     }
 
-    #[inline]
     fn runtime(&self) -> &Runtime {
         &self.runtime
     }
 
-    #[inline]
     fn set_runtime(&mut self, runtime: Runtime) {
         for (&field_number, value) in self.entries.iter_mut() {
             value.set_runtime(runtime.nested(field_number));

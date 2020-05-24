@@ -27,7 +27,6 @@ macro_rules! test_case {
 pub struct Foo(#[steit(tag = 0)] pub i32, #[steit(tag = 1)] pub i32);
 
 impl Foo {
-    #[inline]
     pub fn new(f0: i32, f1: i32) -> Self {
         Self {
             0: f0,
@@ -49,7 +48,6 @@ pub struct Point {
 }
 
 impl Point {
-    #[inline]
     pub fn new(runtime: Runtime, x: i32, y: i32, z: i32) -> Self {
         Self {
             x,

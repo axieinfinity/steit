@@ -23,7 +23,6 @@ macro_rules! impl_map_key {
                 }
             }
 
-            #[inline]
             fn as_field_number(&self) -> u32 {
                 *self as u32
             }

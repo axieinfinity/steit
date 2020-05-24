@@ -32,7 +32,6 @@ impl<K: Serialize, V: Serialize> Serialize for HashMap<K, V> {
         Ok(())
     }
 
-    #[inline]
     fn size_cache(&self) -> Option<&SizeCache> {
         None
     }
