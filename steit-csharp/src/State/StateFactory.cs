@@ -1,5 +1,6 @@
 using System;
-using System.Linq.Expressions;
+// using System.Linq.Expressions;
+using System.Reflection;
 
 using Steit.Codec;
 
@@ -97,12 +98,34 @@ namespace Steit.State {
             return state;
         }
 
+        // private sealed class Constructor<T> /* where T : IState */ {
+        //     // public static Func<Path?, T> Construct { get; private set; }
+        //     public static Func<Path, T> Construct { get; private set; }
+
+        //     static Constructor() {
+        //         var constructor = typeof(T).GetConstructor(new Type[] { typeof(Path) });
+
+        //         if (constructor == null) {
+        //             throw new MissingMethodException(String.Format(
+        //                 "Constructor which takes a `Path` on `{0}` is missing.",
+        //                 typeof(T).FullName
+        //             ));
+        //         }
+
+        //         var parameter = Expression.Parameter(typeof(Path));
+
+        //         Construct = Expression
+        //             // .Lambda<Func<Path?, T>>(Expression.New(constructor, parameter), parameter)
+        //             .Lambda<Func<Path, T>>(Expression.New(constructor, parameter), parameter)
+        //             .Compile();
+        //     }
+        // }
+
         private sealed class Constructor<T> /* where T : IState */ {
-            // public static Func<Path?, T> Construct { get; private set; }
-            public static Func<Path, T> Construct { get; private set; }
+            private static ConstructorInfo constructor;
 
             static Constructor() {
-                var constructor = typeof(T).GetConstructor(new Type[] { typeof(Path) });
+                constructor = typeof(T).GetConstructor(new Type[] { typeof(Path) });
 
                 if (constructor == null) {
                     throw new MissingMethodException(String.Format(
@@ -110,22 +133,44 @@ namespace Steit.State {
                         typeof(T).FullName
                     ));
                 }
+            }
 
-                var parameter = Expression.Parameter(typeof(Path));
-
-                Construct = Expression
-                    // .Lambda<Func<Path?, T>>(Expression.New(constructor, parameter), parameter)
-                    .Lambda<Func<Path, T>>(Expression.New(constructor, parameter), parameter)
-                    .Compile();
+            public static T Construct(Path path) {
+                return (T) constructor.Invoke(null, new object[] { path });
             }
         }
 
+        // private sealed class Deserializer<T> /* where T : IState */ {
+        //     // public static Func<IReader, Path?, T> Deserialize { get; private set; }
+        //     public static Func<IReader, Path, T> Deserialize { get; private set; }
+
+        //     static Deserializer() {
+        //         var deserializer = typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) });
+
+        //         if (deserializer == null) {
+        //             throw new MissingMethodException(String.Format(
+        //                 "`Deserialize(IReader, Path)` method on `{0}` is missing.",
+        //                 typeof(T).FullName
+        //             ));
+        //         }
+
+        //         var parameters = new ParameterExpression[] {
+        //             Expression.Parameter(typeof(IReader)),
+        //             Expression.Parameter(typeof(Path)),
+        //         };
+
+        //         Deserialize = Expression
+        //             // .Lambda<Func<IReader, Path?, T>>(Expression.Call(deserializer, parameters), parameters)
+        //             .Lambda<Func<IReader, Path, T>>(Expression.Call(deserializer, parameters), parameters)
+        //             .Compile();
+        //     }
+        // }
+
         private sealed class Deserializer<T> /* where T : IState */ {
-            // public static Func<IReader, Path?, T> Deserialize { get; private set; }
-            public static Func<IReader, Path, T> Deserialize { get; private set; }
+            private static MethodInfo deserializer;
 
             static Deserializer() {
-                var deserializer = typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) });
+                deserializer = typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) });
 
                 if (deserializer == null) {
                     throw new MissingMethodException(String.Format(
@@ -133,16 +178,10 @@ namespace Steit.State {
                         typeof(T).FullName
                     ));
                 }
+            }
 
-                var parameters = new ParameterExpression[] {
-                    Expression.Parameter(typeof(IReader)),
-                    Expression.Parameter(typeof(Path)),
-                };
-
-                Deserialize = Expression
-                    // .Lambda<Func<IReader, Path?, T>>(Expression.Call(deserializer, parameters), parameters)
-                    .Lambda<Func<IReader, Path, T>>(Expression.Call(deserializer, parameters), parameters)
-                    .Compile();
+            public static T Deserialize(IReader reader, Path path) {
+                return (T) deserializer.Invoke(null, new object[] { reader, path });
             }
         }
 

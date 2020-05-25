@@ -1,5 +1,4 @@
 using System;
-using System.Linq.Expressions;
 
 using Steit.State;
 
@@ -103,27 +102,6 @@ namespace Steit.Codec {
         public static IReader GetNested(this IReader reader) {
             var bytes = reader.Read(reader.ReadSize());
             return new ByteReader(bytes);
-        }
-
-        private sealed class Deserializer<T> {
-            // public static Func<IReader, Path?, T> Deserialize { get; private set; }
-            public static Func<IReader, Path, T> Deserialize { get; private set; }
-
-            static Deserializer() {
-                var parameters = new ParameterExpression[] {
-                    Expression.Parameter(typeof(IReader)),
-                    Expression.Parameter(typeof(Path)),
-                };
-
-                // Deserialize = Expression.Lambda<Func<IReader, Path?, T>>(
-                Deserialize = Expression.Lambda<Func<IReader, Path, T>>(
-                    Expression.Call(
-                        typeof(T).GetMethod("Deserialize", new Type[] { typeof(IReader), typeof(Path) }),
-                        parameters
-                    ),
-                    parameters
-                ).Compile();
-            }
         }
     }
 }
