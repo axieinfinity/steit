@@ -13,3 +13,9 @@ pub trait Logger: Send {
         Ok(())
     }
 }
+
+impl<T: ?Sized + Logger> Logger for Box<T> {
+    fn log(&mut self, entry: LogEntry) -> io::Result<()> {
+        self.as_mut().log(entry)
+    }
+}

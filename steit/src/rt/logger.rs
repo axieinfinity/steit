@@ -14,20 +14,24 @@ pub trait PausableLogger: Logger {
 }
 
 pub struct RuntimeLogger<T: Logger> {
-    logger: T,
+    inner: T,
     paused: u32,
 }
 
 impl<T: Logger> RuntimeLogger<T> {
-    pub(super) fn new(logger: T) -> Self {
-        Self { logger, paused: 0 }
+    pub(super) fn new(inner: T) -> Self {
+        Self { inner, paused: 0 }
+    }
+
+    pub fn replace(&mut self, inner: T) {
+        self.inner = inner;
     }
 }
 
 impl<T: Logger> Logger for RuntimeLogger<T> {
     fn log(&mut self, entry: LogEntry) -> io::Result<()> {
         if self.paused == 0 {
-            self.logger.log(entry)?;
+            self.inner.log(entry)?;
         }
 
         Ok(())
@@ -53,12 +57,12 @@ impl<T: Logger> Deref for RuntimeLogger<T> {
     type Target = T;
 
     fn deref(&self) -> &Self::Target {
-        &self.logger
+        &self.inner
     }
 }
 
 impl<T: Logger> DerefMut for RuntimeLogger<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.logger
+        &mut self.inner
     }
 }
