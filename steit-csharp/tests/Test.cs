@@ -214,6 +214,9 @@ namespace Just.To.Test {
                     17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 16,
                     17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 18,
             }));
+
+            Console.WriteLine("{0}", StateFactory.Deserialize<String>(new ByteReader(new byte[] { 2, 51, 51 })));
+            Console.WriteLine("{0}", StateFactory.Deserialize<String>(new ByteReader(new byte[] { 2, 207, 128 })));
         }
 
         private static String InnerToString(Inner inner) {

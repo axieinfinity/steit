@@ -6,12 +6,12 @@ using Steit.Codec;
 
 namespace Steit.State {
     public static class StateFactory {
-        // private static Trie<Func<IReader, ValueType>?> Deserializers;
-        private static Trie<Func<IReader, ValueType>> Deserializers;
+        // private static Trie<Func<IReader, object>?> Deserializers;
+        private static Trie<Func<IReader, object>> Deserializers;
 
         static StateFactory() {
-            // Deserializers = new Trie<Func<IReader, ValueType>?>();
-            Deserializers = new Trie<Func<IReader, ValueType>>();
+            // Deserializers = new Trie<Func<IReader, object>?>();
+            Deserializers = new Trie<Func<IReader, object>>();
             Deserializers["System.Byte"] = reader => reader.ReadByte();
             Deserializers["System.UInt16"] = reader => reader.ReadUInt16();
             Deserializers["System.UInt32"] = reader => reader.ReadUInt32();
@@ -21,6 +21,7 @@ namespace Steit.State {
             Deserializers["System.Int32"] = reader => reader.ReadInt32();
             Deserializers["System.Int64"] = reader => reader.ReadInt64();
             Deserializers["System.Boolean"] = reader => reader.ReadBoolean();
+            Deserializers["System.String"] = reader => reader.ReadString();
         }
 
         public static bool IsPrimitiveType(Type type) {
@@ -81,7 +82,7 @@ namespace Steit.State {
                 throw new NotSupportedException(String.Format("`{0}` deserialization is not supported.", typeof(T).FullName));
             }
 
-            return (T) (object) deserializer(reader);
+            return (T) deserializer(reader);
         }
 
         // private static T DeserializeState<T>(IReader reader, Path? path) /* where T : IState */{

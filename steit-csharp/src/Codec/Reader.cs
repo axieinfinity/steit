@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 
 using Steit.State;
 
@@ -63,6 +64,11 @@ namespace Steit.Codec {
                     return value;
                 }
             }
+        }
+
+        public static String ReadString(this IReader reader) {
+            var bytes = reader.GetNested().ReadToEnd();
+            return Encoding.UTF8.GetString(bytes);
         }
 
         public static (UInt32 Tag, WireType WireType) ReadKey(this IReader reader) {
