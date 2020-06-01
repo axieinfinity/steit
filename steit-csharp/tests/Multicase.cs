@@ -33,7 +33,7 @@ namespace Just.To.Test {
 
         public static Multicase Deserialize(IReader reader, Path path = null) {
             var multicase = new Multicase(path);
-            multicase.Replace(reader);
+            multicase.Replace(reader, shouldNotify: false);
             return multicase;
         }
 
@@ -96,7 +96,7 @@ namespace Just.To.Test {
 
             internal static FirstCase Deserialize(IReader reader, Path path = null) {
                 var firstCase = new FirstCase(path);
-                firstCase.Replace(reader);
+                firstCase.Replace(reader, shouldNotify: false);
                 return firstCase;
             }
 
@@ -167,7 +167,7 @@ namespace Just.To.Test {
 
             internal static SecondCase Deserialize(IReader reader, Path path = null) {
                 var secondCase = new SecondCase(path);
-                secondCase.Replace(reader);
+                secondCase.Replace(reader, shouldNotify: false);
                 return secondCase;
             }
 

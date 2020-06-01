@@ -34,7 +34,7 @@ namespace Just.To.Test {
 
         public static ActionsOr<T> Deserialize(IReader reader, Path path = null) {
             var actionsOr = new ActionsOr<T>(path);
-            actionsOr.Replace(reader);
+            actionsOr.Replace(reader, shouldNotify: false);
             return actionsOr;
         }
 
@@ -95,7 +95,7 @@ namespace Just.To.Test {
 
             internal static Actions Deserialize(IReader reader, Path path = null) {
                 var actions = new Actions(path);
-                actions.Replace(reader);
+                actions.Replace(reader, shouldNotify: false);
                 return actions;
             }
 
@@ -163,7 +163,7 @@ namespace Just.To.Test {
 
             internal static Value Deserialize(IReader reader, Path path = null) {
                 var value = new Value(path);
-                value.Replace(reader);
+                value.Replace(reader, shouldNotify: false);
                 return value;
             }
 

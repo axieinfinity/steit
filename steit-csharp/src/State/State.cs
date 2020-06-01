@@ -14,10 +14,10 @@ namespace Steit.State {
             return state;
         }
 
-        public static void Replace(this IState state, IReader reader) {
+        public static void Replace(this IState state, IReader reader, bool shouldNotify = true) {
             if (state is IEnumState) {
                 var variant = reader.ReadUInt32();
-                state.ReplaceAt(variant, WireType.Sized, reader, true);
+                state.ReplaceAt(variant, WireType.Sized, reader, shouldNotify);
                 return;
             }
 
@@ -56,7 +56,7 @@ namespace Steit.State {
                     tag,
                     wireType,
                     wireType == WireType.Sized ? reader.GetNested() : reader,
-                    shouldNotify: false
+                    shouldNotify
                 );
             }
         }

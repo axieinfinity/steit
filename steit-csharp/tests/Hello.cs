@@ -32,7 +32,7 @@ namespace Just.To.Test {
 
         public static Hello Deserialize(IReader reader, Path path = null) {
             var hello = new Hello(path);
-            hello.Replace(reader);
+            hello.Replace(reader, shouldNotify: false);
             return hello;
         }
 

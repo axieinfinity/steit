@@ -37,7 +37,7 @@ namespace Steit.State {
 
         public static LogEntry Deserialize(IReader reader, Path path = null) {
             var logEntry = new LogEntry(path);
-            logEntry.Replace(reader);
+            logEntry.Replace(reader, shouldNotify: false);
             return logEntry;
         }
 
@@ -106,7 +106,7 @@ namespace Steit.State {
 
             internal static Update Deserialize(IReader reader, Path path = null) {
                 var update = new Update(path);
-                update.Replace(reader);
+                update.Replace(reader, shouldNotify: false);
                 return update;
             }
 
@@ -181,7 +181,7 @@ namespace Steit.State {
 
             internal static ListPush Deserialize(IReader reader, Path path = null) {
                 var listPush = new ListPush(path);
-                listPush.Replace(reader);
+                listPush.Replace(reader, shouldNotify: false);
                 return listPush;
             }
 
@@ -252,7 +252,7 @@ namespace Steit.State {
 
             internal static ListPop Deserialize(IReader reader, Path path = null) {
                 var listPop = new ListPop(path);
-                listPop.Replace(reader);
+                listPop.Replace(reader, shouldNotify: false);
                 return listPop;
             }
 
@@ -323,7 +323,7 @@ namespace Steit.State {
 
             internal static MapRemove Deserialize(IReader reader, Path path = null) {
                 var mapRemove = new MapRemove(path);
-                mapRemove.Replace(reader);
+                mapRemove.Replace(reader, shouldNotify: false);
                 return mapRemove;
             }
 

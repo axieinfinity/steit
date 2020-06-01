@@ -29,7 +29,7 @@ namespace Just.To.Test {
 
         public static Sure<T> Deserialize(IReader reader, Path path = null) {
             var sure = new Sure<T>(path);
-            sure.Replace(reader);
+            sure.Replace(reader, shouldNotify: false);
             return sure;
         }
 

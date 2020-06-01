@@ -34,7 +34,7 @@ namespace Steit.Builtins {
 
         public static Maybe<T> Deserialize(IReader reader, Path path = null) {
             var maybe = new Maybe<T>(path);
-            maybe.Replace(reader);
+            maybe.Replace(reader, shouldNotify: false);
             return maybe;
         }
 
@@ -85,7 +85,7 @@ namespace Steit.Builtins {
 
             internal static None Deserialize(IReader reader, Path path = null) {
                 var none = new None(path);
-                none.Replace(reader);
+                none.Replace(reader, shouldNotify: false);
                 return none;
             }
 
@@ -150,7 +150,7 @@ namespace Steit.Builtins {
 
             internal static Some Deserialize(IReader reader, Path path = null) {
                 var some = new Some(path);
-                some.Replace(reader);
+                some.Replace(reader, shouldNotify: false);
                 return some;
             }
 

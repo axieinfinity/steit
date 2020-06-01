@@ -204,7 +204,10 @@ impl Generator for CSharpGenerator {
                 variant_accessibility, type_name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
-            .writeln(format!("{}.Replace(reader);", var_name))
+            .writeln(format!(
+                "{}.Replace(reader, shouldNotify: false);",
+                var_name
+            ))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()
@@ -430,7 +433,10 @@ impl Generator for CSharpGenerator {
                 type_name,
             ))
             .indent_writeln(format!("var {} = new {}(path);", var_name, type_name))
-            .writeln(format!("{}.Replace(reader);", var_name))
+            .writeln(format!(
+                "{}.Replace(reader, shouldNotify: false);",
+                var_name
+            ))
             .writeln(format!("return {};", var_name))
             .outdent_writeln("}")
             .newline()

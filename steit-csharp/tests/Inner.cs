@@ -30,7 +30,7 @@ namespace Just.To.Test {
 
         public static Inner Deserialize(IReader reader, Path path = null) {
             var inner = new Inner(path);
-            inner.Replace(reader);
+            inner.Replace(reader, shouldNotify: false);
             return inner;
         }
 

@@ -28,7 +28,7 @@ namespace Just.To.Test {
 
         public static Woof Deserialize(IReader reader, Path path = null) {
             var woof = new Woof(path);
-            woof.Replace(reader);
+            woof.Replace(reader, shouldNotify: false);
             return woof;
         }
 

@@ -51,7 +51,7 @@ namespace Just.To.Test {
 
         public static OldHit Deserialize(IReader reader, Path path = null) {
             var oldHit = new OldHit(path);
-            oldHit.Replace(reader);
+            oldHit.Replace(reader, shouldNotify: false);
             return oldHit;
         }
 

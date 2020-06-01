@@ -35,7 +35,7 @@ namespace Just.To.Test {
 
         public static Outer Deserialize(IReader reader, Path path = null) {
             var outer = new Outer(path);
-            outer.Replace(reader);
+            outer.Replace(reader, shouldNotify: false);
             return outer;
         }
 

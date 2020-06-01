@@ -39,7 +39,7 @@ namespace Just.To.Test {
 
         public static Action Deserialize(IReader reader, Path path = null) {
             var action = new Action(path);
-            action.Replace(reader);
+            action.Replace(reader, shouldNotify: false);
             return action;
         }
 
@@ -96,7 +96,7 @@ namespace Just.To.Test {
 
             internal static Raw Deserialize(IReader reader, Path path = null) {
                 var raw = new Raw(path);
-                raw.Replace(reader);
+                raw.Replace(reader, shouldNotify: false);
                 return raw;
             }
 
@@ -169,7 +169,7 @@ namespace Just.To.Test {
 
             internal static CardDraw Deserialize(IReader reader, Path path = null) {
                 var cardDraw = new CardDraw(path);
-                cardDraw.Replace(reader);
+                cardDraw.Replace(reader, shouldNotify: false);
                 return cardDraw;
             }
 
@@ -232,7 +232,7 @@ namespace Just.To.Test {
 
             internal static CardDiscard Deserialize(IReader reader, Path path = null) {
                 var cardDiscard = new CardDiscard(path);
-                cardDiscard.Replace(reader);
+                cardDiscard.Replace(reader, shouldNotify: false);
                 return cardDiscard;
             }
 
@@ -314,7 +314,7 @@ namespace Just.To.Test {
 
             internal static Attack Deserialize(IReader reader, Path path = null) {
                 var attack = new Attack(path);
-                attack.Replace(reader);
+                attack.Replace(reader, shouldNotify: false);
                 return attack;
             }
 
@@ -409,7 +409,7 @@ namespace Just.To.Test {
 
             internal static Skill Deserialize(IReader reader, Path path = null) {
                 var skill = new Skill(path);
-                skill.Replace(reader);
+                skill.Replace(reader, shouldNotify: false);
                 return skill;
             }
 

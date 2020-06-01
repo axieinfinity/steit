@@ -41,7 +41,7 @@ namespace Just.To.Test {
 
         public static Attack Deserialize(IReader reader, Path path = null) {
             var attack = new Attack(path);
-            attack.Replace(reader);
+            attack.Replace(reader, shouldNotify: false);
             return attack;
         }
 

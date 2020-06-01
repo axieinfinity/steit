@@ -41,7 +41,7 @@ namespace Just.To.Test {
 
         public static Skill Deserialize(IReader reader, Path path = null) {
             var skill = new Skill(path);
-            skill.Replace(reader);
+            skill.Replace(reader, shouldNotify: false);
             return skill;
         }
 
