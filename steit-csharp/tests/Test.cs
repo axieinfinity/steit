@@ -1,5 +1,6 @@
 using System;
 
+using Steit.Builtins;
 using Steit.Codec;
 using Steit.Collections;
 using Steit.State;
@@ -217,6 +218,9 @@ namespace Just.To.Test {
 
             Console.WriteLine("{0}", StateFactory.Deserialize<String>(new ByteReader(new byte[] { 2, 51, 51 })));
             Console.WriteLine("{0}", StateFactory.Deserialize<String>(new ByteReader(new byte[] { 2, 207, 128 })));
+
+            Console.WriteLine("{0}", Option<Int16>.Deserialize(new ByteReader(new byte[] { })));
+            Console.WriteLine("{0}", Option<Int16>.Deserialize(new ByteReader(new byte[] { 242, 20 })));
         }
 
         private static String InnerToString(Inner inner) {
