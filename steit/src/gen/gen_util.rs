@@ -2,23 +2,26 @@ use std::collections::{HashMap, HashSet};
 
 use crate::meta::{HasMeta, MessageMeta, MetaLink, TypeMeta};
 
-pub fn collect_meta<T: HasMeta>() -> HashMap<&'static str, &'static MessageMeta> {
+pub fn collect_meta<T: HasMeta>(
+    get_name: fn(&'static MessageMeta) -> String,
+) -> HashMap<String, &'static MessageMeta> {
     let mut visited_types = HashSet::new();
     let mut collected_msgs = HashMap::new();
-    visit_link(T::LINK, &mut visited_types, &mut collected_msgs);
+    visit_link(T::LINK, get_name, &mut visited_types, &mut collected_msgs);
     collected_msgs
 }
 
 fn visit_link(
     entry: &'static MetaLink,
+    get_name: fn(&'static MessageMeta) -> String,
     visited_types: &mut HashSet<&'static TypeMeta>,
-    collected_msgs: &mut HashMap<&'static str, &'static MessageMeta>,
+    collected_msgs: &mut HashMap<String, &'static MessageMeta>,
 ) {
     if let Some(msg) = &entry.msg {
-        let rust_name = msg.rust_name();
+        let name = get_name(msg);
 
-        if !collected_msgs.contains_key(rust_name) {
-            collected_msgs.insert(rust_name, msg);
+        if !collected_msgs.contains_key(&name) {
+            collected_msgs.insert(name, msg);
         }
     }
 
@@ -26,7 +29,7 @@ fn visit_link(
         visited_types.insert(entry.r#type);
 
         for &link in (entry.links)() {
-            visit_link(link, visited_types, collected_msgs);
+            visit_link(link, get_name, visited_types, collected_msgs);
         }
     }
 }

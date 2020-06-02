@@ -5,13 +5,20 @@ use crate::{
 
 pub struct CSharpSetting {
     namespace: String,
+    used_namespaces: Vec<String>,
 }
 
 impl CSharpSetting {
     pub fn new(namespace: impl Into<String>) -> Self {
         Self {
             namespace: namespace.into(),
+            used_namespaces: Vec::new(),
         }
+    }
+
+    pub fn using_namespaces(mut self, used_namespaces: Vec<String>) -> Self {
+        self.used_namespaces = used_namespaces;
+        self
     }
 }
 
@@ -19,14 +26,24 @@ pub struct CSharpGenerator;
 
 impl CSharpGenerator {
     pub fn gen_file_opening(&self, setting: &<Self as Generator>::Setting, writer: &mut Writer) {
+        writer.writeln("using System;").newline();
+
+        let mut used_namespaces = vec![
+            "Steit.Builtins".to_string(),
+            "Steit.Codec".to_string(),
+            "Steit.Collections".to_string(),
+            "Steit.State".to_string(),
+            "Steit.State.Event".to_string(),
+        ];
+
+        used_namespaces.extend_from_slice(&setting.used_namespaces);
+        used_namespaces.sort();
+
+        for used_namespace in used_namespaces {
+            writer.writeln(format!("using {};", used_namespace));
+        }
+
         writer
-            .writeln("using System;")
-            .newline()
-            .writeln("using Steit.Builtins;")
-            .writeln("using Steit.Codec;")
-            .writeln("using Steit.Collections;")
-            .writeln("using Steit.State;")
-            .writeln("using Steit.State.Event;")
             .newline()
             .writeln(format!("namespace {} {{", &setting.namespace))
             .indent();

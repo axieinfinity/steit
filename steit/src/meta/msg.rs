@@ -14,6 +14,13 @@ impl MessageMeta {
         }
     }
 
+    pub fn csharp_name(&self) -> String {
+        match *self {
+            MessageMeta::Struct(StructMeta { name, .. })
+            | MessageMeta::Enum(EnumMeta { name, .. }) => name.csharp(String::from),
+        }
+    }
+
     pub fn is_builtin(&self) -> bool {
         match self {
             MessageMeta::Struct(StructMeta { builtin, .. })

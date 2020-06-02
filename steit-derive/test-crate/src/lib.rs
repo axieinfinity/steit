@@ -248,21 +248,23 @@ mod tests {
         let base_dir = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../steit-csharp");
         let generator = CSharpGenerator;
 
-        let setting = CSharpSetting::new("Steit.State");
-        let out_dir = base_dir.join("src/State");
-        let setting = Setting::new(&out_dir, false, setting);
+        let setting = Setting::new(
+            &base_dir.join("src/State"),
+            CSharpSetting::new("Steit.State"),
+        )
+        .skip_builtins(false);
 
         generator.generate::<LogEntry>(&setting).unwrap();
 
-        let setting = CSharpSetting::new("Steit.Builtins");
-        let out_dir = base_dir.join("src/Builtins");
-        let setting = Setting::new(&out_dir, false, setting);
+        let setting = Setting::new(
+            &base_dir.join("src/Builtins"),
+            CSharpSetting::new("Steit.Builtins"),
+        )
+        .skip_builtins(false);
 
         generator.generate::<Maybe<u8>>(&setting).unwrap();
 
-        let setting = CSharpSetting::new("Just.To.Test");
-        let out_dir = base_dir.join("tests");
-        let setting = Setting::new(&out_dir, true, setting);
+        let setting = Setting::new(&base_dir.join("tests"), CSharpSetting::new("Just.To.Test"));
 
         generator.generate::<OldAction>(&setting).unwrap();
         generator.generate::<Action>(&setting).unwrap();
