@@ -14,7 +14,7 @@ pub enum LogEntryKind {
 }
 
 // `LogEntry` is flattened by putting `path` in each variant to save some serialization size.
-#[steit_derive(Debug, Serialize, Deserialize)]
+#[steit_derive(Clone, Debug, Serialize, Deserialize)]
 #[steit(steit_owned, ctor_prefix = "empty")]
 pub enum LogEntry {
     #[steit(tag = 0)]
