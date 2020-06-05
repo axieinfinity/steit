@@ -93,7 +93,7 @@ macro_rules! impl_state_primitive {
 
 #[macro_export]
 macro_rules! impl_meta_primitive {
-    ($type:ty, $csharp_name:literal) => {
+    ($type:ty, $csharp_name:literal, $wire_type:expr) => {
         impl $crate::meta::HasMeta for $type {
             const NAME: &'static $crate::meta::NameMeta = &$crate::meta::NameMeta {
                 rust: stringify!($type),
@@ -101,7 +101,7 @@ macro_rules! impl_meta_primitive {
             };
 
             const TYPE: &'static $crate::meta::TypeMeta =
-                &$crate::meta::TypeMeta::Primitive(Self::NAME);
+                &$crate::meta::TypeMeta::Primitive(Self::NAME, $wire_type);
 
             const LINK: &'static $crate::meta::MetaLink = &$crate::meta::MetaLink {
                 r#type: Self::TYPE,

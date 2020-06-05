@@ -1,3 +1,5 @@
+use crate::wire_fmt::WireType;
+
 use super::name::NameMeta;
 
 #[derive(PartialEq, Eq, Hash, Debug)]
@@ -8,7 +10,7 @@ pub enum FieldTypeMeta {
 
 #[derive(PartialEq, Eq, Hash, Debug)]
 pub enum TypeMeta {
-    Primitive(&'static NameMeta),
+    Primitive(&'static NameMeta, WireType),
     // In our scope, a type argument holds the same content as a field type.
     Ref(&'static NameMeta, &'static [FieldTypeMeta]),
 }

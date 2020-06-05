@@ -9,7 +9,7 @@ pub const WIRE_TYPE_MASK: u32 = (1u32 << WIRE_TYPE_BITS) - 1;
 /// Maximum possible field number.
 pub const FIELD_NUMBER_MAX: u32 = 0x1fffffff;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum WireType {
     Varint = 0,
     Sized = 2,

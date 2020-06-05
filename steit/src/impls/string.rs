@@ -29,7 +29,7 @@ impl Deserialize for String {
     }
 }
 
-impl_meta_primitive!(String, "String");
+impl_meta_primitive!(String, "String", WireType::Sized);
 
 fn from_utf8(bytes: Vec<u8>) -> io::Result<String> {
     String::from_utf8(bytes).map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))

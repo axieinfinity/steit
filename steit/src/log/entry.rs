@@ -5,7 +5,7 @@ use crate::{
     types::Bytes,
 };
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum LogEntryKind {
     Update = 0,
     ListPush = 8,

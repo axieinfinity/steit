@@ -38,7 +38,7 @@ impl Deserialize for bool {
 }
 
 impl_state_primitive!(bool);
-impl_meta_primitive!(bool, "Boolean");
+impl_meta_primitive!(bool, "Boolean", WireType::Varint);
 
 #[cfg(test)]
 mod tests {

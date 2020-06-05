@@ -67,8 +67,7 @@ namespace Steit.Codec {
         }
 
         public static String ReadString(this IReader reader) {
-            var bytes = reader.GetNested().ReadToEnd();
-            return Encoding.UTF8.GetString(bytes);
+            return Encoding.UTF8.GetString(reader.ReadToEnd());
         }
 
         public static (UInt32 Tag, WireType WireType) ReadKey(this IReader reader) {

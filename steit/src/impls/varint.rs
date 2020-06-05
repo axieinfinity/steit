@@ -63,7 +63,7 @@ macro_rules! impl_unsigned_varint {
             }
 
             $crate::impl_state_primitive!($type);
-            $crate::impl_meta_primitive!($type, $csharp_name);
+            $crate::impl_meta_primitive!($type, $csharp_name, $crate::wire_fmt::WireType::Varint);
         };
     };
 }
@@ -118,7 +118,7 @@ macro_rules! impl_signed_varint {
             }
 
             $crate::impl_state_primitive!($type);
-            $crate::impl_meta_primitive!($type, $csharp_name);
+            $crate::impl_meta_primitive!($type, $csharp_name, $crate::wire_fmt::WireType::Varint);
         };
     };
 }

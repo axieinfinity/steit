@@ -1,6 +1,7 @@
 use crate::{
     gen::{str_util, Generator, Writer},
     meta::*,
+    wire_fmt::WireType,
 };
 
 pub struct CSharpSetting {
@@ -129,7 +130,7 @@ impl Generator for CSharpGenerator {
         // Initiate nested states
         for field in &fields {
             let init = match field.meta.ty {
-                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => None,
+                FieldTypeMeta::Type(TypeMeta::Primitive(_, _)) => None,
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => Some(format!(
                     "new {}(this.Path.GetNested({}))",
                     field.type_name, field.meta.tag,
@@ -235,8 +236,13 @@ impl Generator for CSharpGenerator {
         // Return wire types
         for field in r#struct.fields {
             let wire_type = match field.ty {
-                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => "WireType.Varint".to_string(),
+                FieldTypeMeta::Type(TypeMeta::Primitive(_, wire_type)) => match wire_type {
+                    WireType::Varint => "WireType.Varint".to_string(),
+                    WireType::Sized => "WireType.Sized".to_string(),
+                },
+
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => "WireType.Sized".to_string(),
+
                 FieldTypeMeta::TypeParam(type_param) => format!(
                     "StateFactory.IsStateType(typeof({})) ? WireType.Sized : WireType.Varint",
                     type_param,
@@ -259,7 +265,7 @@ impl Generator for CSharpGenerator {
         // Return nested states
         for field in &fields {
             let nested = match field.meta.ty {
-                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => None,
+                FieldTypeMeta::Type(TypeMeta::Primitive(_, _)) => None,
                 FieldTypeMeta::Type(TypeMeta::Ref(_, _)) => {
                     Some(format!("this.{}", field.upper_camel_case_name))
                 }
@@ -285,12 +291,17 @@ impl Generator for CSharpGenerator {
         // Replace fields and notify event handlers
         for field in &fields {
             match field.meta.ty {
-                FieldTypeMeta::Type(TypeMeta::Primitive(_)) => {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_, wire_type)) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.Read{2}(), this.{1}, On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader{3}.Read{2}(), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
+                        if *wire_type == WireType::Sized {
+                            ".GetNested()"
+                        } else {
+                            ""
+                        },
                     ));
                 }
 
@@ -577,7 +588,7 @@ fn type_params(type_params: &'static [&'static str]) -> String {
 fn field_type(ty: &'static FieldTypeMeta) -> String {
     match *ty {
         FieldTypeMeta::Type(ty) => match ty {
-            TypeMeta::Primitive(name) => name
+            TypeMeta::Primitive(name, _) => name
                 .csharp
                 .expect("expected a C# name for every primitive type")
                 .to_string(),
