@@ -18,11 +18,7 @@ fn visit_link(
     collected_msgs: &mut HashMap<String, &'static MessageMeta>,
 ) {
     if let Some(msg) = &entry.msg {
-        let name = get_name(msg);
-
-        if !collected_msgs.contains_key(&name) {
-            collected_msgs.insert(name, msg);
-        }
+        collected_msgs.entry(get_name(msg)).or_insert(msg);
     }
 
     if !visited_types.contains(entry.r#type) {
