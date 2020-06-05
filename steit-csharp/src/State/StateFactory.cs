@@ -8,6 +8,7 @@ namespace Steit.State {
     public static class StateFactory {
         // private static Trie<Func<IReader, object>?> Deserializers;
         private static Trie<Func<IReader, object>> Deserializers;
+        private static Trie<bool> IsSized;
 
         static StateFactory() {
             // Deserializers = new Trie<Func<IReader, object>?>();
@@ -22,6 +23,9 @@ namespace Steit.State {
             Deserializers["System.Int64"] = reader => reader.ReadInt64();
             Deserializers["System.Boolean"] = reader => reader.ReadBoolean();
             Deserializers["System.String"] = reader => reader.ReadString();
+
+            IsSized = new Trie<bool>();
+            IsSized["System.String"] = true;
         }
 
         public static bool IsPrimitiveType(Type type) {
@@ -67,10 +71,12 @@ namespace Steit.State {
         }
 
         public static T DeserializeNested<T>(IReader reader, Path path, UInt32 tag) {
-            if (IsStateType(typeof(T))) {
+            var type = typeof(T);
+
+            if (IsStateType(type)) {
                 return DeserializeState<T>(reader.GetNested(), path.GetNested(tag));
             } else {
-                return DeserializePrimitive<T>(reader);
+                return DeserializePrimitive<T>(IsSized[type.FullName] ? reader.GetNested() : reader);
             }
         }
 
