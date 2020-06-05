@@ -35,7 +35,8 @@ namespace Steit.Collections {
             var entries = new Dictionary<UInt32, T>();
 
             while (!reader.EndOfStream()) {
-                var tag = reader.ReadUInt32();
+                var tag = reader.ReadKey().Tag;
+                // TODO: Wire type should be considered here.
                 entries[tag] = reader.ReadValue<T>(path, tag);
             }
 
