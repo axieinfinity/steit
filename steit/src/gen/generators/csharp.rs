@@ -291,17 +291,12 @@ impl Generator for CSharpGenerator {
         // Replace fields and notify event handlers
         for field in &fields {
             match field.meta.ty {
-                FieldTypeMeta::Type(TypeMeta::Primitive(_, wire_type)) => {
+                FieldTypeMeta::Type(TypeMeta::Primitive(_, _)) => {
                     writer.writeln(format!(
-                        "case {0}: this.{1} = this.MaybeNotify({0}, reader{3}.Read{2}(), this.{1}, On{1}Update, shouldNotify); break;",
+                        "case {0}: this.{1} = this.MaybeNotify({0}, reader.Read{2}(), this.{1}, On{1}Update, shouldNotify); break;",
                         field.meta.tag,
                         field.upper_camel_case_name,
                         field.type_name,
-                        if *wire_type == WireType::Sized {
-                            ".GetNested()"
-                        } else {
-                            ""
-                        },
                     ));
                 }
 
