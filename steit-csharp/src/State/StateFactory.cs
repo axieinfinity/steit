@@ -143,7 +143,7 @@ namespace Steit.State {
             }
 
             public static T Construct(Path path) {
-                return (T) constructor.Invoke(null, new object[] { path });
+                return (T) constructor.Invoke(new object[] { path });
             }
         }
 
