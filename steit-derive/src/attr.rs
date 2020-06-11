@@ -229,11 +229,9 @@ impl AttributeParse for &mut Vec<syn::Attribute> {
             }
 
             match attr.parse_meta() {
-                Ok(syn::Meta::List(meta)) => unknown.extend(meta.nested.parse(
-                    ctx,
-                    error_on_unknown,
-                    |meta| should_accept(meta),
-                )),
+                Ok(syn::Meta::List(meta)) => {
+                    unknown.extend(meta.nested.parse(ctx, error_on_unknown, &mut should_accept));
+                }
 
                 Ok(other) => ctx.error(other, "expected `#[steit(...)]`"),
                 Err(error) => ctx.syn_error(error),
@@ -250,7 +248,7 @@ fn parse_meta(
     meta: syn::NestedMeta,
     ctx: &Context,
     error_on_unknown: bool,
-    should_accept: &mut impl FnMut(&syn::Meta) -> bool,
+    mut should_accept: impl FnMut(&syn::Meta) -> bool,
 ) -> Option<syn::NestedMeta> {
     match &meta {
         syn::NestedMeta::Meta(meta) if should_accept(meta) => return None,
