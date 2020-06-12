@@ -84,7 +84,10 @@ impl Generator for CSharpGenerator {
         }
 
         writer
-            .writeln(format!("public sealed class {} : IState {{", &type_name))
+            .writeln(format!(
+                "public sealed partial class {} : IState {{",
+                &type_name
+            ))
             .indent();
 
         writer.writeln("public Path Path { get; }");
@@ -380,7 +383,10 @@ impl Generator for CSharpGenerator {
         self.gen_file_opening(setting, writer);
 
         writer
-            .writeln(format!("public sealed class {} : IEnumState {{", type_name))
+            .writeln(format!(
+                "public sealed partial class {} : IEnumState {{",
+                type_name
+            ))
             .indent();
 
         // Declare variant tag constants
