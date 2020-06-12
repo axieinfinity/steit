@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Steit.Collections {
-    public sealed class StateList<T> : ReadOnlyCollection<T>, IState {
+    public sealed partial class StateList<T> : ReadOnlyCollection<T>, IState {
         public Path Path { get; }
 
         // public StateList(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {

@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Steit.Collections {
-    public sealed class StateMap<T> : ReadOnlyDictionary<UInt32, T>, IState {
+    public sealed partial class StateMap<T> : ReadOnlyDictionary<UInt32, T>, IState {
         public Path Path { get; }
 
         // public StateMap(Path? path = null, IDictionary<UInt32, T>? items = null) : base(items ?? new Dictionary<UInt32, T>()) {

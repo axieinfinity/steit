@@ -6,7 +6,7 @@ using Steit.Codec;
 using Steit.State;
 
 namespace Steit.Collections {
-    public sealed class Vector<T> : ReadOnlyCollection<T>, IState {
+    public sealed partial class Vector<T> : ReadOnlyCollection<T>, IState {
         public Path Path { get; }
 
         // public Vector(Path? path = null, IList<T>? items = null) : base(items ?? new List<T>()) {

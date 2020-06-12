@@ -4,7 +4,7 @@ using Steit.Codec;
 using Steit.State;
 
 namespace Steit.Builtins {
-    public sealed class Option<T> : IState {
+    public sealed partial class Option<T> : IState {
         public Path Path { get; }
 
         public bool IsSome { get; }

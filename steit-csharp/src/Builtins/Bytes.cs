@@ -5,7 +5,7 @@ using Steit.Codec;
 using Steit.State;
 
 namespace Steit.Builtins {
-    public sealed class Bytes : ReadOnlyCollection<Byte>, IState {
+    public sealed partial class Bytes : ReadOnlyCollection<Byte>, IState {
         public Path Path { get; }
 
         // public Bytes(Path? path = null, byte[]? bytes = null) : base(bytes ?? new byte[0]) {
