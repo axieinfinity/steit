@@ -41,6 +41,13 @@ impl<K: MapKey, V: State> Map<K, V> {
         map
     }
 
+    pub fn contains(&self, key: &K) -> bool
+    where
+        K: Eq + Hash,
+    {
+        self.entries.contains_key(&key.as_field_number())
+    }
+
     pub fn get(&self, key: &K) -> Option<&V> {
         self.entries.get(&key.as_field_number())
     }
@@ -92,13 +99,13 @@ impl<K: MapKey, V: State> ops::IndexMut<&K> for Map<K, V> {
     }
 }
 
-impl<K: Eq + Hash + MapKey, V: PartialEq + State> PartialEq for Map<K, V> {
+impl<K: MapKey + Eq + Hash, V: State + PartialEq> PartialEq for Map<K, V> {
     fn eq(&self, other: &Self) -> bool {
         self.entries == other.entries
     }
 }
 
-impl<K: Eq + Hash + MapKey, V: Eq + State> Eq for Map<K, V> {}
+impl<K: MapKey + Eq + Hash, V: State + Eq> Eq for Map<K, V> {}
 
 impl<K: MapKey, V: State> Default for Map<K, V> {
     fn default() -> Self {
