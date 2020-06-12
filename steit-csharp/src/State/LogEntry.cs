@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Steit.State {
-    public sealed class LogEntry : IEnumState {
+    public sealed partial class LogEntry : IEnumState {
         public const UInt32 UpdateTag = 0;
         public const UInt32 ListPushTag = 8;
         public const UInt32 ListPopTag = 9;
@@ -81,7 +81,7 @@ namespace Steit.State {
 
         // Variant (0): Update
 
-        public sealed class Update : IState {
+        public sealed partial class Update : IState {
             public Path Path { get; }
 
             public Vector<UInt32> FlattenPath { get; private set; }
@@ -156,7 +156,7 @@ namespace Steit.State {
 
         // Variant (8): ListPush
 
-        public sealed class ListPush : IState {
+        public sealed partial class ListPush : IState {
             public Path Path { get; }
 
             public Vector<UInt32> FlattenPath { get; private set; }
@@ -231,7 +231,7 @@ namespace Steit.State {
 
         // Variant (9): ListPop
 
-        public sealed class ListPop : IState {
+        public sealed partial class ListPop : IState {
             public Path Path { get; }
             public Vector<UInt32> FlattenPath { get; private set; }
 
@@ -299,7 +299,7 @@ namespace Steit.State {
 
         // Variant (12): MapRemove
 
-        public sealed class MapRemove : IState {
+        public sealed partial class MapRemove : IState {
             public Path Path { get; }
 
             public Vector<UInt32> FlattenPath { get; private set; }

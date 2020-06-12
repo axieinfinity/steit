@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class OldAction : IEnumState {
+    public sealed partial class OldAction : IEnumState {
         public const UInt32 RawTag = 0;
         public const UInt32 AttackTag = 1;
 
@@ -73,7 +73,7 @@ namespace Just.To.Test {
 
         // Variant (0): Raw
 
-        public sealed class Raw : IState {
+        public sealed partial class Raw : IState {
             public Path Path { get; }
             public StateList<Byte> LogEntries { get; private set; }
 
@@ -141,7 +141,7 @@ namespace Just.To.Test {
 
         // Variant (1): Attack
 
-        public sealed class Attack : IState {
+        public sealed partial class Attack : IState {
             public Path Path { get; }
 
             public Byte Attacker { get; private set; }

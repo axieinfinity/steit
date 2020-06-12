@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class OldHit : IState {
+    public sealed partial class OldHit : IState {
         public Path Path { get; }
 
         public OldAction BeforeAttacking { get; private set; }

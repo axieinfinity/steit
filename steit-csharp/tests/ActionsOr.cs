@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class ActionsOr<T> : IEnumState {
+    public sealed partial class ActionsOr<T> : IEnumState {
         public const UInt32 ActionsTag = 0;
         public const UInt32 ValueTag = 1;
 
@@ -74,7 +74,7 @@ namespace Just.To.Test {
 
         // Variant (0): Actions
 
-        public sealed class Actions : IState {
+        public sealed partial class Actions : IState {
             public Path Path { get; }
             public Vector<Action> F0 { get; private set; }
 
@@ -142,7 +142,7 @@ namespace Just.To.Test {
 
         // Variant (1): Value
 
-        public sealed class Value : IState {
+        public sealed partial class Value : IState {
             public Path Path { get; }
             public T F0 { get; private set; }
 

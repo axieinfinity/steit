@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Multicase : IEnumState {
+    public sealed partial class Multicase : IEnumState {
         public const UInt32 FirstCaseTag = 0;
         public const UInt32 SecondCaseTag = 1;
 
@@ -73,7 +73,7 @@ namespace Just.To.Test {
 
         // Variant (0): FirstCase
 
-        public sealed class FirstCase : IState {
+        public sealed partial class FirstCase : IState {
             public Path Path { get; }
 
             public Int32 Counter { get; private set; }
@@ -144,7 +144,7 @@ namespace Just.To.Test {
 
         // Variant (1): SecondCase
 
-        public sealed class SecondCase : IState {
+        public sealed partial class SecondCase : IState {
             public Path Path { get; }
 
             public Int32 Counter { get; private set; }

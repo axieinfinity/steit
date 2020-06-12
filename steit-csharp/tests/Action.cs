@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Action : IEnumState {
+    public sealed partial class Action : IEnumState {
         public const UInt32 RawTag = 0;
         public const UInt32 CardDrawTag = 1;
         public const UInt32 CardDiscardTag = 2;
@@ -85,7 +85,7 @@ namespace Just.To.Test {
 
         // Variant (0): Raw
 
-        public sealed class Raw : IState {
+        public sealed partial class Raw : IState {
             public Path Path { get; }
 
             internal Raw(Path path = null) {
@@ -140,7 +140,7 @@ namespace Just.To.Test {
 
         // Variant (1): CardDraw
 
-        public sealed class CardDraw : IState {
+        public sealed partial class CardDraw : IState {
             public Path Path { get; }
 
             public UInt16 PlayerIndex { get; private set; }
@@ -221,7 +221,7 @@ namespace Just.To.Test {
 
         // Variant (2): CardDiscard
 
-        public sealed class CardDiscard : IState {
+        public sealed partial class CardDiscard : IState {
             public Path Path { get; }
 
             internal CardDiscard(Path path = null) {
@@ -276,7 +276,7 @@ namespace Just.To.Test {
 
         // Variant (3): Attack
 
-        public sealed class Attack : IState {
+        public sealed partial class Attack : IState {
             public Path Path { get; }
 
             public UInt16 AttackerIndex { get; private set; }
@@ -371,7 +371,7 @@ namespace Just.To.Test {
 
         // Variant (4): Skill
 
-        public sealed class Skill : IState {
+        public sealed partial class Skill : IState {
             public Path Path { get; }
 
             public UInt16 CasterIndex { get; private set; }

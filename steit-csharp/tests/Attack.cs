@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Attack : IState {
+    public sealed partial class Attack : IState {
         public Path Path { get; }
 
         public UInt16 TargetIndex { get; private set; }

@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Woof : IState {
+    public sealed partial class Woof : IState {
         public Path Path { get; }
         public StateMap<Int32> Map { get; private set; }
 

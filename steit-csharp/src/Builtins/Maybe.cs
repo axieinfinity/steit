@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Steit.Builtins {
-    public sealed class Maybe<T> : IEnumState {
+    public sealed partial class Maybe<T> : IEnumState {
         public const UInt32 NoneTag = 0;
         public const UInt32 SomeTag = 1;
 
@@ -74,7 +74,7 @@ namespace Steit.Builtins {
 
         // Variant (0): None
 
-        public sealed class None : IState {
+        public sealed partial class None : IState {
             public Path Path { get; }
 
             internal None(Path path = null) {
@@ -129,7 +129,7 @@ namespace Steit.Builtins {
 
         // Variant (1): Some
 
-        public sealed class Some : IState {
+        public sealed partial class Some : IState {
             public Path Path { get; }
             public T F0 { get; private set; }
 

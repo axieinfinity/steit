@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Skill : IState {
+    public sealed partial class Skill : IState {
         public Path Path { get; }
 
         public UInt16 TargetIndex { get; private set; }

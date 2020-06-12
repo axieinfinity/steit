@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Hit : IState {
+    public sealed partial class Hit : IState {
         public Path Path { get; }
 
         public Boolean IsMiss { get; private set; }

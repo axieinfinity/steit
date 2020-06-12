@@ -7,7 +7,7 @@ using Steit.State;
 using Steit.State.Event;
 
 namespace Just.To.Test {
-    public sealed class Hello : IState {
+    public sealed partial class Hello : IState {
         public Path Path { get; }
 
         public StateList<Int32> Numbers { get; private set; }
