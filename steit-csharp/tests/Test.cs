@@ -9,9 +9,9 @@ namespace Just.To.Test {
     public sealed class Test {
         public static void Main(string[] args) {
             var hello = Hello.Deserialize(new ByteReader(new byte[] {
-                // Numbers: 1, 2, 1337
+                // Numbers: 1, 2, 1337.
                 2, 4, 2, 4, 242, 20,
-                // Others: -1, -2, 1337
+                // Others: -1, -2, 1337.
                 10, 4, 1, 3, 242, 20,
             }));
 
@@ -202,13 +202,13 @@ namespace Just.To.Test {
             var action = new OldAction();
 
             StateReplayer.Replay<OldAction>(ref action, new ByteReader(new byte[] {
-                // Set variant from to `Action::Attack`
+                // Set variant from `OldAction::Raw` to `OldAction::Attack`.
                 4, 0, 10, 1, 1,
-                // Set attacker to 1
+                // Set attacker to 1.
                 8, 0, 2, 2, 1, 0, 10, 1, 1,
-                // Set defender to 2
+                // Set defender to 2.
                 8, 0, 2, 2, 1, 1, 10, 1, 2,
-                // Add 4 hits with dummy values from 6 to 9, inclusive
+                // Add 4 hits with dummy values from 6 to 9, inclusive.
                 79, 0, 2, 2, 1, 2, 10, 72,
                     17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 12,
                     17, 2, 1, 0, 10, 1, 0, 18, 1, 0, 26, 1, 0, 34, 1, 0, 40, 14,

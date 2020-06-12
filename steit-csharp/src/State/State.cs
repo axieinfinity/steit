@@ -24,6 +24,7 @@ namespace Steit.State {
             while (!reader.EndOfStream()) {
                 var (tag, wireType) = reader.ReadKey();
                 var expectedWireType = state.GetWireType(tag);
+                var fieldReader = wireType == WireType.Sized ? reader.GetNested() : reader;
 
                 // `expectedWireType` being `null` means that `state` either:
                 // (1) doesn't recognize this field;
@@ -48,16 +49,11 @@ namespace Steit.State {
                 if (expectedWireType != null && wireType != expectedWireType) {
                     var path = state.Path.GetNested(tag);
                     Console.Error.WriteLine("Expected wire type {0} for path {1}, got {2}.", expectedWireType, path, wireType);
-                    reader.SkipField(wireType);
+                    fieldReader.SkipField(wireType);
                     continue;
                 }
 
-                state.ReplaceAt(
-                    tag,
-                    wireType,
-                    wireType == WireType.Sized ? reader.GetNested() : reader,
-                    shouldNotify
-                );
+                state.ReplaceAt(tag, wireType, fieldReader, shouldNotify);
             }
         }
     }

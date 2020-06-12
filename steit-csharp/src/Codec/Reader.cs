@@ -91,16 +91,9 @@ namespace Steit.Codec {
 
         public static void SkipField(this IReader reader, WireType wireType) {
             switch (wireType) {
-                case WireType.Varint:
-                    reader.ReadBoolean();
-                    break;
-
-                case WireType.Sized:
-                    reader.Skip(reader.ReadSize());
-                    break;
-
-                default:
-                    throw new NotSupportedException(String.Format("Unsupported wire type: {0}", wireType));
+                case WireType.Varint: reader.ReadBoolean(); break;
+                case WireType.Sized: reader.SkipToEnd(); break;
+                default: throw new NotSupportedException(String.Format("Unsupported wire type: {0}", wireType));
             }
         }
 
