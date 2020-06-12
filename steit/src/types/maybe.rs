@@ -47,6 +47,15 @@ impl<T: State> Maybe<T> {
     }
 }
 
+impl<T: State + Copy> Maybe<T> {
+    pub fn to_option(&self) -> Option<T> {
+        match *self {
+            Maybe::Some { value, .. } => Some(value),
+            Maybe::None { .. } => None,
+        }
+    }
+}
+
 impl<T: PartialEq + State> PartialEq<Option<T>> for Maybe<T> {
     fn eq(&self, other: &Option<T>) -> bool {
         match self {
