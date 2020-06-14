@@ -47,8 +47,12 @@ impl<T> Setting<T> {
         self
     }
 
-    pub fn skip_names(mut self, skip_names: Vec<String>) -> Self {
-        self.skip_names = skip_names.into_iter().collect();
+    pub fn skip_names(mut self, skip_names: impl IntoIterator<Item = impl ToString>) -> Self {
+        self.skip_names = skip_names
+            .into_iter()
+            .map(|name| name.to_string())
+            .collect();
+
         self
     }
 }
