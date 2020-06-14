@@ -530,11 +530,6 @@ fn parse_variants<'a>(
     let mut default_variant_index = None;
 
     for variant in variants.iter_mut() {
-        if variant.discriminant.is_some() {
-            ctx.error(variant, "discriminants are not supported yet");
-            continue;
-        }
-
         if let Ok((parsed_variant, unknown_attrs)) = Variant::parse(ctx, setting, variant) {
             let (tag, tag_tokens) = parsed_variant.tag_with_tokens();
 
