@@ -17,8 +17,15 @@ impl CSharpSetting {
         }
     }
 
-    pub fn using_namespaces(mut self, used_namespaces: Vec<String>) -> Self {
-        self.used_namespaces = used_namespaces;
+    pub fn using_namespaces(
+        mut self,
+        used_namespaces: impl IntoIterator<Item = impl ToString>,
+    ) -> Self {
+        self.used_namespaces = used_namespaces
+            .into_iter()
+            .map(|namespace| namespace.to_string())
+            .collect();
+
         self
     }
 }
