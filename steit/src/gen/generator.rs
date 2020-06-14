@@ -22,7 +22,9 @@ pub trait Generator {
 
     fn gen_enum(&self, r#enum: &EnumMeta, setting: &Self::Setting, writer: &mut Writer);
 
-    fn generate<T: HasMeta>(&self, setting: &Setting<Self::Setting>) -> io::Result<()> {
+    fn generate<T: HasMeta>(&self, setting: &Setting<Self::Setting>) -> io::Result<Vec<String>> {
+        let mut generated_names = Vec::new();
+
         for (name, meta) in gen_util::collect_meta::<T>(setting.get_name) {
             if meta.is_builtin() && setting.skip_builtins {
                 continue;
@@ -52,8 +54,9 @@ pub trait Generator {
             let mut writer = io::BufWriter::new(file);
 
             writer.write_all(source.as_bytes())?;
+            generated_names.push(name);
         }
 
-        Ok(())
+        Ok(generated_names)
     }
 }
