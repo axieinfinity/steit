@@ -1,3 +1,4 @@
+mod array;
 mod bool;
 mod r#box;
 mod hash_map;

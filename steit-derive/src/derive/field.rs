@@ -436,6 +436,7 @@ fn field_type_meta(
                 "this type is not supported, ",
                 "expected either paren `(T)`; ",
                 "reference `&'a T`, `&'a mut T`; ",
+                "array `[T; N]`; ",
                 "or path type `a::b::T`",
             ),
         );
@@ -457,6 +458,21 @@ fn field_type_meta(
         syn::Type::Paren(syn::TypeParen { elem, .. })
         | syn::Type::Reference(syn::TypeReference { elem, .. }) => {
             field_type_meta(&ctx, &*elem, type_params)
+        }
+
+        syn::Type::Array(syn::TypeArray { elem, .. }) => {
+            let elem_type_name = elem.to_token_stream().to_string();
+
+            let elem_meta = if is_type_param(&elem_type_name) {
+                quote!(FieldTypeMeta::TypeParam(#elem_type_name))
+            } else {
+                field_type_meta(ctx, elem, type_params)?
+            };
+
+            Ok(quote!(FieldTypeMeta::Type(&TypeMeta::Ref(
+                <[i8; 1] as HasMeta>::NAME,
+                &[#elem_meta],
+            ))))
         }
 
         syn::Type::Path(syn::TypePath { qself, path }) => {

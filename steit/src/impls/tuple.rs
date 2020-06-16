@@ -9,7 +9,7 @@ use crate::{
     wire_fmt::{HasWireType, WireType},
 };
 
-macro_rules! tuple_impls {
+macro_rules! impl_tuple {
     ( $( $name:ident )+ ) => {
         impl<$($name),+> HasWireType for ($($name),+) {
             const WIRE_TYPE: WireType = WireType::Sized;
@@ -48,9 +48,9 @@ macro_rules! tuple_impls {
     };
 }
 
-tuple_impls! { A B }
-tuple_impls! { A B C }
-tuple_impls! { A B C D }
-tuple_impls! { A B C D E }
-tuple_impls! { A B C D E F }
-tuple_impls! { A B C D E F G }
+impl_tuple! { A B }
+impl_tuple! { A B C }
+impl_tuple! { A B C D }
+impl_tuple! { A B C D E }
+impl_tuple! { A B C D E F }
+impl_tuple! { A B C D E F G }
