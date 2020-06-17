@@ -423,8 +423,10 @@ impl Generator for CSharpGenerator {
 
         writer
             .newline()
-            // .writeln(format!("public {}(Path? path = null) {{", name))
-            .writeln(format!("public {}(Path path = null) {{", name))
+            .writeln(format!(
+                "public {}(Path path = null, UInt32 tag = {}) {{",
+                name, default_variant.meta.tag,
+            ))
             .indent();
 
         for type_param in r#enum.type_params {
@@ -445,13 +447,37 @@ impl Generator for CSharpGenerator {
         }
 
         writer
-            .writeln(format!("this.Tag = {};", default_variant.meta.tag))
+            .writeln("this.Tag = tag;")
+            .newline()
+            .writeln("switch (tag) {")
+            .indent();
+
+        for variant in &variants {
+            writer.writeln(format!(
+                "case {0}: this.Variant = new {1}(this.Path.GetNested({0})); break;",
+                variant.meta.tag,
+                variant.meta.ty.name.csharp(String::from),
+            ));
+        }
+
+        writer
             .writeln(format!(
-                "this.Variant = new {}(this.Path.GetNested({}));",
+                "default: this.Variant = new {}(this.Path.GetNested({})); break;",
                 default_variant.meta.ty.name.csharp(String::from),
                 default_variant.meta.tag,
             ))
             .outdent_writeln("}")
+            .outdent_writeln("}")
+            .newline();
+
+        for variant in &variants {
+            writer.writeln(format!(
+                "public static {0} New{1}(Path path = null) {{ return new {0}(path, {2}); }}",
+                name, variant.upper_camel_case_name, variant.meta.tag,
+            ));
+        }
+
+        writer
             .newline()
             .writeln(format!(
                 // "public static event EventHandler<VariantUpdateEventArgs<{}>>? OnUpdate;",
