@@ -424,9 +424,11 @@ impl Generator for CSharpGenerator {
         writer
             .newline()
             .writeln(format!(
-                "public {}(Path path = null, UInt32 tag = {}) {{",
+                "public {}(Path path = null) : this(path, {}) {{ }}",
                 name, default_variant.meta.tag,
             ))
+            .newline()
+            .writeln(format!("public {}(Path path, UInt32 tag) {{", name))
             .indent();
 
         for type_param in r#enum.type_params {
