@@ -97,7 +97,15 @@ impl<T: State> List<T> {
             ])
             .unwrap();
 
-        Some(self.items.swap_remove(index))
+        let removed = self.items.swap_remove(index);
+        let swapped = &mut self.items[index];
+
+        if swapped.wire_type() == WireType::Sized {
+            let runtime = removed.runtime().sibling(index as u32);
+            swapped.set_runtime(runtime);
+        }
+
+        Some(removed)
     }
 
     pub fn iter_mut(&mut self) -> slice::IterMut<T> {
