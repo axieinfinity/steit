@@ -72,13 +72,6 @@ impl Runtime {
         }
     }
 
-    pub fn sibling(&self, field_number: u32) -> Self {
-        Self {
-            logger: self.logger.clone(),
-            path: Arc::new(Node::child(&self.path.parent(), field_number)),
-        }
-    }
-
     pub fn path(&self) -> &Arc<Node<u32>> {
         &self.path
     }
