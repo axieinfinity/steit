@@ -1,18 +1,18 @@
 package logentry
 
 import (
-	"github.com/axieinfinity/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit-go/pkg/path"
 	"github.com/axieinfinity/steit-go/pkg/reader"
 )
 
 type LogEntry struct {
-	path            *codec.Path
+	path            *path.Path
 	tag             uint32
 	listPushVariant *ListPush
 	updateVariant   *Update
 }
 
-func Deserialize(r reader.IReader, path *codec.Path) *LogEntry {
+func Deserialize(r reader.IReader, path *path.Path) *LogEntry {
 	logEntry := &LogEntry{path: path}
 	return logEntry
 }

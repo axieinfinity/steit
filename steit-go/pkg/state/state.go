@@ -4,11 +4,12 @@ import (
 	"log"
 
 	"github.com/axieinfinity/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 )
 
 type IState interface {
-	GetPath() *codec.Path
+	GetPath() *path.Path
 	GetWireType(uint32) *codec.WireType
 	GetNested(uint32) IState
 
@@ -19,11 +20,11 @@ type IState interface {
 }
 
 type State struct {
-	path     *codec.Path
+	path     *path.Path
 	wireType *codec.WireType
 }
 
-func (s *State) GetPath() *codec.Path {
+func (s *State) GetPath() *path.Path {
 	return s.path
 }
 
