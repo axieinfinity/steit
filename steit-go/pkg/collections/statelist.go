@@ -5,15 +5,18 @@ import (
 
 	"github.com/axieinfinity/steit-go/pkg/codec"
 	"github.com/axieinfinity/steit-go/pkg/eventhandler"
+	"github.com/axieinfinity/steit-go/pkg/path"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
 )
 
+var _ statepkg.IState = (*StateList)(nil)
+
 type StateList struct {
-	Path     *pathpkg.Path
-	Items    []interface{}
-	Count    int
+	path     *pathpkg.Path
+	items    []interface{}
+	count    int
 	OnUpdate eventhandler.EventHandler
 	OnPush   eventhandler.EventHandler
 	OnPop    eventhandler.EventHandler
@@ -23,17 +26,25 @@ func NewStateList(path *pathpkg.Path, items []interface{}) StateList {
 	stateList := StateList{}
 
 	if path != nil {
-		stateList.Path = path
+		stateList.path = path
 	} else {
-		stateList.Path = pathpkg.Root
+		stateList.path = pathpkg.Root
 	}
 
 	if len(items) > 0 {
-		stateList.Items = items
-		stateList.Count = len(items)
+		stateList.items = items
+		stateList.count = len(items)
 	}
 
 	return stateList
+}
+
+func (s *StateList) GetItems() []interface{} {
+	return s.items
+}
+
+func (s *StateList) GetCount() int {
+	return s.count
 }
 
 func (s *StateList) ClearUpdateHandlers() {
@@ -65,7 +76,7 @@ func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) StateList {
 }
 
 func (s *StateList) GetWireType(tag uint32) *codec.WireType {
-	if statepkg.IsStateType(reflect.TypeOf(s.Items).Elem()) {
+	if statepkg.IsStateType(reflect.TypeOf(s.items).Elem()) {
 		c := codec.WireTypeSized
 		return &c
 	} else {
@@ -75,25 +86,25 @@ func (s *StateList) GetWireType(tag uint32) *codec.WireType {
 }
 
 func (s *StateList) GetNested(tag uint32) statepkg.IState {
-	if int(tag) < s.Count {
-		if value, ok := s.Items[tag].(statepkg.IState); !ok {
+	if int(tag) < s.count {
+		if value, ok := s.items[tag].(statepkg.IState); !ok {
 			panic("item not istate type")
 		} else {
 			return value
 		}
-		return s.Items[tag].(statepkg.IState)
+		return s.items[tag].(statepkg.IState)
 	} else {
 		return nil
 	}
 }
 
 func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
-	if int(tag) >= s.Count {
+	if int(tag) >= s.count {
 		panic("index out of range")
 	}
 
-	newItem := statepkg.Deserialize(reader, s.Path, statepkg.DeserializeWithTag(tag))
-	oldItem := s.Items[tag]
+	newItem := statepkg.Deserialize(reader, s.path, statepkg.DeserializeWithTag(tag))
+	oldItem := s.items[tag]
 
 	if shouldNotify {
 		args := NewFieldUpdateEventArgs(tag, newItem, oldItem, s)
@@ -102,36 +113,40 @@ func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader reader
 		}
 	}
 
-	s.Items[tag] = newItem
+	s.items[tag] = newItem
 }
 
 func (s *StateList) ReplayListPush(reader readerpkg.IReader) {
-	tag := uint32(s.Count)
-	item := statepkg.Deserialize(reader, s.Path, tag)
+	tag := uint32(s.count)
+	item := statepkg.Deserialize(reader, s.path, statepkg.DeserializeWithTag(tag))
 
 	args := NewListPushEventArgs(tag, item, s)
 	if s.OnPush != nil {
 		s.OnPush(s, args)
 	}
 
-	s.Items = append(s.Items, item)
+	s.items = append(s.items, item)
 }
 
 func (s *StateList) ReplayListPop() {
-	if s.Count <= 0 {
+	if s.count <= 0 {
 		panic("Cannot pop from an empty `StateList`.")
 	}
 
-	tag := uint32(s.Count - 1)
+	tag := uint32(s.count - 1)
 
-	args := NewListPopEventArgs(tag, s.Items[tag], s)
+	args := NewListPopEventArgs(tag, s.items[tag], s)
 	if s.OnPop != nil {
 		s.OnPop(s, args)
 	}
 
-	s.Items = append(s.Items[:tag], s.Items[tag+1:]...)
+	s.items = append(s.items[:tag], s.items[tag+1:]...)
 }
 
 func (s *StateList) ReplayMapRemove(key uint32) {
 	panic("not supported")
+}
+
+func (s *StateList) GetPath() *path.Path {
+	return s.path
 }
