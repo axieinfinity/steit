@@ -33,6 +33,14 @@ type Maybe struct {
 	onUpdate    eventhandler.EventHandler
 }
 
+func (mb *Maybe) GetTag() uint32 {
+	return mb.tag
+}
+
+func (mb *Maybe) GetVariant() statepkg.IState {
+	return mb.variant
+}
+
 func NewMaybe(_type reflect.Type, path *path.Path) *Maybe {
 	maybe := &Maybe{}
 	err := statepkg.ValidateType(_type)

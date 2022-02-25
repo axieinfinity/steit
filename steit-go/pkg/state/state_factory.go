@@ -46,9 +46,3 @@ func ValidateType(_type reflect.Type) error {
 	}
 	return nil
 }
-
-// public static void ValidateType(Type type) {
-// 	if (!IsStateType(type) && !IsPrimitiveType(type)) {
-// 		throw new InvalidOperationException(String.Format("{0} is expected to be a primitive or an IState type.", type.FullName));
-// 	}
-// }
