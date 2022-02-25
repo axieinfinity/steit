@@ -2,7 +2,7 @@ package none
 
 import (
 	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/eventhandler"
+	"github.com/axieinfinity/steit-go/pkg/event"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
@@ -58,15 +58,9 @@ func (n *None) MaybeNotify(
 	tag uint32,
 	newValue interface{},
 	oldValue interface{},
-	handler eventhandler.EventHandler,
+	handler event.EventHandler,
 	shouldNotify bool,
 ) interface{} {
-	if shouldNotify {
-		var args = NewFieldUpdateEventArgs(tag, newValue, oldValue, n)
-		if handler != nil {
-			handler(n, args)
-		}
-	}
 
 	return newValue
 }

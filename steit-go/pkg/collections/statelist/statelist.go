@@ -1,10 +1,9 @@
-package collections
+package statelist
 
 import (
 	"reflect"
 
 	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/eventhandler"
 	"github.com/axieinfinity/steit-go/pkg/path"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
@@ -14,13 +13,10 @@ import (
 var _ statepkg.IState = (*StateList)(nil)
 
 type StateList struct {
-	path     *pathpkg.Path
-	items    []interface{}
-	_type    reflect.Type
-	count    int
-	OnUpdate eventhandler.EventHandler
-	OnPush   eventhandler.EventHandler
-	OnPop    eventhandler.EventHandler
+	path  *pathpkg.Path
+	items []interface{}
+	_type reflect.Type
+	count int
 }
 
 func NewStateList(path *pathpkg.Path, items []interface{}) StateList {
@@ -47,18 +43,6 @@ func (s *StateList) GetItems() []interface{} {
 
 func (s *StateList) GetCount() int {
 	return s.count
-}
-
-func (s *StateList) ClearUpdateHandlers() {
-	s.OnUpdate = nil
-}
-
-func (s *StateList) ClearPushHandlers() {
-	s.OnPush = nil
-}
-
-func (s *StateList) ClearPopHandlers() {
-	s.OnPop = nil
 }
 
 func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) StateList {
@@ -106,14 +90,7 @@ func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader reader
 	}
 
 	newItem := statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(tag))
-	oldItem := s.items[tag]
-
-	if shouldNotify {
-		args := NewFieldUpdateEventArgs(tag, newItem, oldItem, s)
-		if s.OnUpdate != nil {
-			s.OnUpdate(s, args)
-		}
-	}
+	_ = s.items[tag]
 
 	s.items[tag] = newItem
 }
@@ -121,11 +98,6 @@ func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader reader
 func (s *StateList) ReplayListPush(reader readerpkg.IReader) {
 	tag := uint32(s.count)
 	item := statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(tag))
-
-	args := NewListPushEventArgs(tag, item, s)
-	if s.OnPush != nil {
-		s.OnPush(s, args)
-	}
 
 	s.items = append(s.items, item)
 }
@@ -136,11 +108,6 @@ func (s *StateList) ReplayListPop() {
 	}
 
 	tag := uint32(s.count - 1)
-
-	args := NewListPopEventArgs(tag, s.items[tag], s)
-	if s.OnPop != nil {
-		s.OnPop(s, args)
-	}
 
 	s.items = append(s.items[:tag], s.items[tag+1:]...)
 }

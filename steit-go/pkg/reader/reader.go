@@ -6,8 +6,10 @@ func ReadToEnd(r IReader) []byte {
 	return nil
 }
 
-func ReadValue(IReader, *path.Path, uint32) interface{} {
+func ReadValue(r IReader, p *path.Path, tag uint32) interface{} {
 	return nil
 }
 
-func SkipToEnd(IReader) {}
+func SkipToEnd(r IReader) {
+
+}

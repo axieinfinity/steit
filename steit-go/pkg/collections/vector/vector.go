@@ -1,4 +1,4 @@
-package collections
+package vector
 
 import (
 	"github.com/axieinfinity/steit-go/pkg/codec"
@@ -33,7 +33,7 @@ func NewVector(path *pathpkg.Path, items []interface{}) *Vector {
 	return vector
 }
 
-func (v *Vector) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *Vector {
+func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *Vector {
 	if path == nil {
 		path = pathpkg.Root
 	}

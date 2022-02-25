@@ -7,7 +7,7 @@ import (
 	"github.com/axieinfinity/steit-go/pkg/builtin/maybe/none"
 	"github.com/axieinfinity/steit-go/pkg/builtin/maybe/some"
 	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/eventhandler"
+	"github.com/axieinfinity/steit-go/pkg/event"
 	"github.com/axieinfinity/steit-go/pkg/path"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	"github.com/axieinfinity/steit-go/pkg/reader"
@@ -30,7 +30,7 @@ type Maybe struct {
 	_type       reflect.Type
 	noneVariant *none.None
 	someVariant *some.Some
-	onUpdate    eventhandler.EventHandler
+	onUpdate    event.EventHandler
 }
 
 func (mb *Maybe) GetTag() uint32 {
@@ -117,13 +117,6 @@ func (mb *Maybe) ReplayMapRemove(_ uint32) {
 }
 
 func (mb *Maybe) UpdateAndNotify(newTag uint32, newVariant state.IState, shouldNotify bool) {
-	if shouldNotify {
-		args := NewVariantUpdateEventArgs(newTag, newVariant, mb.tag, mb.variant, mb)
-		if mb.onUpdate != nil {
-			mb.onUpdate(mb, args)
-		}
-	}
-
 	mb.tag = newTag
 	mb.variant = newVariant
 }

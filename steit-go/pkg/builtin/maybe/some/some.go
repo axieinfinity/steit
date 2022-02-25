@@ -4,7 +4,8 @@ import (
 	"reflect"
 
 	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/eventhandler"
+	"github.com/axieinfinity/steit-go/pkg/event"
+
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 	"github.com/axieinfinity/steit-go/pkg/state"
@@ -15,10 +16,9 @@ import (
 var _ statepkg.IState = (*Some)(nil)
 
 type Some struct {
-	path       *pathpkg.Path
-	f0         interface{}
-	_type      reflect.Type
-	onF0Update eventhandler.EventHandler
+	path  *pathpkg.Path
+	f0    interface{}
+	_type reflect.Type
 }
 
 func NewSome(path *pathpkg.Path, _type reflect.Type) *Some {
@@ -33,14 +33,6 @@ func NewSome(path *pathpkg.Path, _type reflect.Type) *Some {
 	some.f0 = statepkg.Construct(_type, some.path.GetNested(0))
 
 	return some
-}
-
-func (s *Some) ClearF0UpdateHandlers() {
-	s.onF0Update = nil
-}
-
-func (s *Some) ClearUpdateHandlers() {
-	s.onF0Update = nil
 }
 
 func Deserialize(_type reflect.Type, reader readerpkg.IReader, path *pathpkg.Path) *Some {
@@ -78,7 +70,7 @@ func (s *Some) GetNested(tag uint32) state.IState {
 func (s *Some) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
 	switch tag {
 	case 0:
-		s.f0 = s.MaybeNotify(0, statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(0)), s.f0, s.onF0Update, shouldNotify)
+		s.f0 = s.MaybeNotify(0, statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(0)), s.f0, nil, shouldNotify)
 	default:
 		reader.SkipField(wireType)
 	}
@@ -92,15 +84,9 @@ func (s *Some) MaybeNotify(
 	tag uint32,
 	newValue interface{},
 	oldValue interface{},
-	handler eventhandler.EventHandler,
+	handler event.EventHandler,
 	shouldNotify bool,
 ) interface{} {
-	if shouldNotify {
-		var args = NewFieldUpdateEventArgs(tag, newValue, oldValue, s)
-		if handler != nil {
-			handler(s, args)
-		}
-	}
 
 	return newValue
 }
