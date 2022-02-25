@@ -16,6 +16,7 @@ var _ statepkg.IState = (*StateList)(nil)
 type StateList struct {
 	path     *pathpkg.Path
 	items    []interface{}
+	_type    reflect.Type
 	count    int
 	OnUpdate eventhandler.EventHandler
 	OnPush   eventhandler.EventHandler
@@ -31,9 +32,10 @@ func NewStateList(path *pathpkg.Path, items []interface{}) StateList {
 		stateList.path = pathpkg.Root
 	}
 
-	if len(items) > 0 {
+	if items != nil {
 		stateList.items = items
 		stateList.count = len(items)
+		stateList._type = reflect.TypeOf(items).Elem()
 	}
 
 	return stateList
@@ -103,7 +105,7 @@ func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader reader
 		panic("index out of range")
 	}
 
-	newItem := statepkg.Deserialize(reader, s.path, statepkg.DeserializeWithTag(tag))
+	newItem := statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(tag))
 	oldItem := s.items[tag]
 
 	if shouldNotify {
@@ -118,7 +120,7 @@ func (s *StateList) ReplaceAt(tag uint32, wireType codec.WireType, reader reader
 
 func (s *StateList) ReplayListPush(reader readerpkg.IReader) {
 	tag := uint32(s.count)
-	item := statepkg.Deserialize(reader, s.path, statepkg.DeserializeWithTag(tag))
+	item := statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(tag))
 
 	args := NewListPushEventArgs(tag, item, s)
 	if s.OnPush != nil {

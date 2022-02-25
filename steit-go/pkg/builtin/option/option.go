@@ -2,6 +2,7 @@ package option
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/axieinfinity/steit-go/pkg/codec"
 	"github.com/axieinfinity/steit-go/pkg/path"
@@ -15,6 +16,7 @@ type Option struct {
 	path           *path.Path
 	isSome         bool
 	valueOrDefault interface{}
+	_type          reflect.Type
 }
 
 type optionOpts struct {
@@ -51,6 +53,7 @@ func NewOption(p *path.Path, opts ...OptionOptArgs) *Option {
 	if oo.value != nil {
 		res.isSome = true
 		res.valueOrDefault = oo.value
+		res._type = reflect.TypeOf(oo.value)
 	}
 
 	return res
@@ -70,9 +73,9 @@ func WithValue(value interface{}) OptionOptArgs {
 	}
 }
 
-func Deserialize(r reader.IReader, p *path.Path) *Option {
+func Deserialize(_type reflect.Type, r reader.IReader, p *path.Path) *Option {
 	if !r.EndOfStream() {
-		return Some(p, state.DeserializeNested(r, p, 0))
+		return Some(p, state.DeserializeNested(_type, r, p, 0))
 	} else {
 		return None(p)
 	}

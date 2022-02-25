@@ -9,3 +9,5 @@ func ReadToEnd(r IReader) []byte {
 func ReadValue(IReader, *path.Path, uint32) interface{} {
 	return nil
 }
+
+func SkipToEnd(IReader) {}

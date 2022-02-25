@@ -1,19 +1,21 @@
 package statereplayer
 
 import (
+	"reflect"
+
 	"github.com/axieinfinity/steit-go/pkg/logentry"
 	"github.com/axieinfinity/steit-go/pkg/reader"
 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
 )
 
-func Replay(root statepkg.IState, r reader.IReader) {
+func Replay(_type reflect.Type, root statepkg.IState, r reader.IReader) {
 	for !r.EndOfStream() {
 		var entry = logentry.Deserialize(r.GetNested(), nil)
-		ReplayByLogEntry(root, entry)
+		ReplayByLogEntry(_type, root, entry)
 	}
 }
 
-func ReplayByLogEntry(root statepkg.IState, entry *logentry.LogEntry) {
+func ReplayByLogEntry(_type reflect.Type, root statepkg.IState, entry *logentry.LogEntry) {
 	path := getPath(entry)
 	tag := uint32(0)
 
@@ -23,7 +25,7 @@ func ReplayByLogEntry(root statepkg.IState, entry *logentry.LogEntry) {
 			path = path[:len(path)-1]
 		} else {
 			r := reader.NewByteReader(entry.GetUpdateVariant().GetValue())
-			root = statepkg.Deserialize(r, root.GetPath())
+			root = statepkg.Deserialize(_type, r, root.GetPath())
 			return
 		}
 	}

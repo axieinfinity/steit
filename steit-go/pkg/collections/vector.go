@@ -2,7 +2,6 @@ package collections
 
 import (
 	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/eventhandler"
 	"github.com/axieinfinity/steit-go/pkg/path"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
@@ -12,13 +11,13 @@ import (
 var _ statepkg.IState = (*Vector)(nil)
 
 type Vector struct {
-	path     *pathpkg.Path
-	items    []interface{}
-	count    int
+	path  *pathpkg.Path
+	items []interface{}
+	count int
 }
 
-func NewVector(path *pathpkg.Path, items []interface{}) Vector {
-	vector := Vector{}
+func NewVector(path *pathpkg.Path, items []interface{}) *Vector {
+	vector := &Vector{}
 
 	if path != nil {
 		vector.path = path
@@ -34,7 +33,7 @@ func NewVector(path *pathpkg.Path, items []interface{}) Vector {
 	return vector
 }
 
-func (v *Vector) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) Vector {
+func (v *Vector) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *Vector {
 	if path == nil {
 		path = pathpkg.Root
 	}
@@ -50,16 +49,22 @@ func (v *Vector) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) Vecto
 	return NewVector(path, items)
 }
 
+func (v *Vector) GetPath() *path.Path {
+	return v.path
+}
+
 func (v *Vector) GetWireType(tag uint32) *codec.WireType {
 	return nil
 }
 
-
-func (v *Vector) GetNested(tag uint32) *statepkg.IState {
+func (v *Vector) GetNested(tag uint32) statepkg.IState {
 	return nil
 }
 
-func (v *Vector) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) { if int(tag) >= v.count { panic("index out of range") }
+func (v *Vector) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
+	if int(tag) >= v.count {
+		panic("index out of range")
+	}
 	panic("not supported")
 }
 

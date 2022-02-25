@@ -1,6 +1,7 @@
 package state
 
 import (
+	"errors"
 	"reflect"
 
 	"github.com/axieinfinity/steit-go/pkg/path"
@@ -13,7 +14,7 @@ type deserializeOptArgs struct {
 
 type DeserializeOptArgs func(*deserializeOptArgs)
 
-func Deserialize(r reader.IReader, path *path.Path, opts ...DeserializeOptArgs) IState {
+func Deserialize(_ reflect.Type, r reader.IReader, path *path.Path, opts ...DeserializeOptArgs) IState {
 	return nil
 }
 
@@ -23,10 +24,31 @@ func DeserializeWithTag(tag uint32) DeserializeOptArgs {
 	}
 }
 
-func DeserializeNested(r reader.IReader, path *path.Path, tag uint32) interface{} {
+func DeserializeNested(_ reflect.Type, r reader.IReader, path *path.Path, tag uint32) interface{} {
 	return nil
 }
 
 func IsStateType(_type reflect.Type) bool {
 	return false
 }
+
+func IsPrimitiveType(_type reflect.Type) bool {
+	return false
+}
+
+func Construct(reflect.Type, *path.Path) interface{} {
+	return nil
+}
+
+func ValidateType(_type reflect.Type) error {
+	if !IsStateType(_type) && !IsPrimitiveType(_type) {
+		return errors.New("type not supported, failed validate type")
+	}
+	return nil
+}
+
+// public static void ValidateType(Type type) {
+// 	if (!IsStateType(type) && !IsPrimitiveType(type)) {
+// 		throw new InvalidOperationException(String.Format("{0} is expected to be a primitive or an IState type.", type.FullName));
+// 	}
+// }

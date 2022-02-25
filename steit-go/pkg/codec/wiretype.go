@@ -9,6 +9,10 @@ const (
 	WireTypeVarint WireType = 0
 )
 
+func GetWireTypePtr(wireType WireType) *WireType {
+	return &wireType
+}
+
 func NewWireType(value uint32) WireType {
 	switch value {
 	case uint32(WireTypeVarint):
