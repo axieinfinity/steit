@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/axieinfinity/steit-go/origin"
@@ -19,7 +20,9 @@ func main() {
 	// fmt.Println(u)
 
 	// decodeBinaryMessage()
-	decodeHelloSample()
+	// decodeHelloSample()
+	// decodeCardPlayHint()
+	decodeActionMessage()
 }
 
 func decodeBinaryMessage() {
@@ -45,4 +48,30 @@ func decodeHelloSample() {
 	helloMsg.Deserialize(reader, nil)
 	fmt.Println(helloMsg.GetNested(0))
 	fmt.Println(helloMsg.GetNested(1))
+}
+
+func decodeCardPlayHint() {
+	data := []byte{
+		0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3,
+	}
+
+	bMsg := origin.CardPlayHint{}
+	reader := readerpkg.NewByteReader(data)
+	bMsg.Deserialize(reader, nil)
+
+	_json, _ := json.Marshal(bMsg)
+	fmt.Println(string(_json))
+}
+
+func decodeActionMessage() {
+	data := []byte{
+		0, 1, 18, 87, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 24, 142, 171, 204, 10, 32, 20,
+	}
+
+	bMsg := origin.ActionMessage{}
+	reader := readerpkg.NewByteReader(data)
+	bMsg.Deserialize(reader, nil)
+
+	_json, _ := json.Marshal(bMsg)
+	fmt.Println(string(_json))
 }

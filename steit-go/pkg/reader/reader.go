@@ -31,7 +31,7 @@ func ReadUnsignedVarint(reader IReader) uint64 {
 		octet = reader.ReadUint8()
 		value |= uint64((octet & 0x7f)) << offset
 
-		if octet&0x80 == 0 {
+		if (octet & 0x80) == 0 {
 			return value
 		}
 

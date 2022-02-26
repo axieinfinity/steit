@@ -14,8 +14,8 @@ var _ state.IState = (*OptionUint32)(nil)
 
 type OptionUint32 struct {
 	path           *path.Path
-	isSome         bool
-	valueOrDefault uint32
+	IsSomeValue    bool
+	ValueOrDefault uint32
 }
 
 type optionUint32Opts struct {
@@ -25,15 +25,15 @@ type optionUint32Opts struct {
 type OptionUint32OptArgs func(*optionUint32Opts)
 
 func (o *OptionUint32) GetValueOrDefault() uint32 {
-	return o.valueOrDefault
+	return o.ValueOrDefault
 }
 
 func (o *OptionUint32) IsSome() bool {
-	return o.isSome
+	return o.IsSomeValue
 }
 
 func (o *OptionUint32) IsNone() bool {
-	return !o.isSome
+	return !o.IsSomeValue
 }
 
 func NewOptionUint32(p *path.Path, opts ...OptionUint32OptArgs) *OptionUint32 {
@@ -50,8 +50,8 @@ func NewOptionUint32(p *path.Path, opts ...OptionUint32OptArgs) *OptionUint32 {
 	}
 
 	if oo.value != nil {
-		res.isSome = true
-		res.valueOrDefault = *oo.value
+		res.IsSomeValue = true
+		res.ValueOrDefault = *oo.value
 	}
 
 	return res
@@ -112,7 +112,7 @@ func (s *OptionUint32) ReplayMapRemove(uint32) {
 
 func (o *OptionUint32) String() string {
 	if o.IsSome() {
-		return fmt.Sprintf("Some(%v)", o.valueOrDefault)
+		return fmt.Sprintf("Some(%v)", o.ValueOrDefault)
 	}
 	return "None"
 }

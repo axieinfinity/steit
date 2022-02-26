@@ -13,7 +13,7 @@ var _ statepkg.IState = (*VecU32)(nil)
 
 type VecU32 struct {
 	path  *pathpkg.Path
-	items []uint32
+	Items []uint32
 	count int
 }
 
@@ -26,9 +26,9 @@ func NewVecU32(path *pathpkg.Path, items []uint32) *VecU32 {
 		vector.path = pathpkg.Root
 	}
 	if items == nil {
-		vector.items = make([]uint32, 0)
+		vector.Items = make([]uint32, 0)
 	} else {
-		vector.items = items
+		vector.Items = items
 		vector.count = len(items)
 	}
 
