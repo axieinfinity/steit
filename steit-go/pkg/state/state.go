@@ -44,8 +44,8 @@ func GetNested(state IState, path []uint32) IState {
 func Replace(state IState, reader readerpkg.IReader, shouldNotify bool) {
 	switch v := state.(type) {
 	case IEnumState:
-		variant := readerpkg.ReadUInt32(reader)
-		v.ReplaceAt(variant, codec.WireTypeSized, reader, shouldNotify)
+		tag := readerpkg.ReadUInt32(reader)
+		v.ReplaceAt(tag, codec.WireTypeSized, reader, shouldNotify)
 		return
 	default:
 		for !readerpkg.EndOfStream(reader) {

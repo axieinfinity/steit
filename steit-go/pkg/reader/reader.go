@@ -93,6 +93,7 @@ func ReadString(reader IReader) string {
 	panic("unimplemented")
 }
 
+// Tag(29 bits) | WireType (3 bits)
 func ReadKey(reader IReader) (uint32, codec.WireType) {
 	key := ReadUInt32(reader)
 	tag := key >> WireTypeBits

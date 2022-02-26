@@ -3,7 +3,7 @@ package reader
 var _ IReader = (*ByteReader)(nil)
 
 type ByteReader struct {
-	bytes []byte
+	bytes  []byte
 	offset int
 }
 
@@ -31,11 +31,11 @@ func (b *ByteReader) Read(count int) []byte {
 		panic("end of stream")
 	}
 
-	var bytes []byte
+	bytes := make([]byte, count)
 
 	for i := 0; i < count; i++ {
 		bytes[i] = b.bytes[b.offset]
-		b.offset = b.offset + 1
+		b.offset++
 	}
 
 	return bytes
@@ -47,4 +47,3 @@ func (b *ByteReader) Skip(count int) {
 	}
 	b.offset += count
 }
-

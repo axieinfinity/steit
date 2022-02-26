@@ -7,6 +7,8 @@ import (
 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
 )
 
+var _ statepkg.IEnumState = (*BinaryMessage)(nil)
+
 type BinaryMessageEnum uint32
 
 const (
@@ -21,6 +23,14 @@ type BinaryMessage struct {
 	Variant statepkg.IState
 }
 
+func (s *BinaryMessage) GetTag() uint32 {
+	return s.Tag
+}
+
+func (s *BinaryMessage) GetVariant() statepkg.IState {
+	return s.Variant
+}
+
 func (s *BinaryMessage) ActionMessageVariant() *BinaryMessageActionMessage {
 	v, ok := s.Variant.(*BinaryMessageActionMessage)
 	if !ok {
@@ -28,14 +38,6 @@ func (s *BinaryMessage) ActionMessageVariant() *BinaryMessageActionMessage {
 	}
 	return v
 }
-
-// func (s *BinaryMessage) CaptchaMessageVariant() BinaryMessageCaptchaMessage {
-// 	v, ok := s.Variant.(*BinaryMessageCaptchaMessage)
-// 	if !ok {
-// 		return nil
-// 	}
-// 	return v
-// }
 
 func NewBinaryMessage(p *path.Path, tag uint32) *BinaryMessage {
 	obj := &BinaryMessage{Tag: tag}
@@ -98,7 +100,8 @@ func (s *BinaryMessage) GetPath() *path.Path {
 func (s *BinaryMessage) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
 	switch tag {
 	case 0:
-
+		s.Variant.(*BinaryMessageActionMessage).Deserialize(reader, s.Path.GetNested(0))
+		// s.actionMsg.Deserialize(reader, s.Path.GetNested(0))
 		// BinaryMessageActionMessageDeserialize(reader, s.Path.GetNested(0))
 		// s.UpdateAndNotify(0, s, shouldNotify)
 	// case 1:
