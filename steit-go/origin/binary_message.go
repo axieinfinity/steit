@@ -172,6 +172,7 @@ func (s *BinaryMessageActionMessage) ReplaceAt(tag uint32, wireType codec.WireTy
 	case 0:
 		s.Message.Deserialize(reader, s.Path.GetNested(0))
 	default:
+		// readerpkg.SkipToEnd(reader)
 		readerpkg.SkipField(reader, wireType)
 	}
 }
