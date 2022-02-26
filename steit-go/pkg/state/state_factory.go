@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/axieinfinity/steit-go/pkg/path"
+	"github.com/axieinfinity/steit-go/pkg/reader"
 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 )
 
@@ -33,7 +34,13 @@ func DeserializeNested(value Deserializer, r readerpkg.IReader, path *path.Path,
 		return errors.New("nil value")
 	}
 
-	err := value.Deserialize(r, path)
+	var err error
+	if _, ok := value.(IState); ok {
+		err = value.Deserialize(reader.GetNested(r), path)
+	} else {
+		err = value.Deserialize(r, path)
+	}
+
 	if err != nil {
 		return err
 	}

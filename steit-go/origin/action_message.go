@@ -73,7 +73,7 @@ func (s *ActionMessage) ReplaceAt(tag uint32, wireType codec.WireType, reader re
 	switch tag {
 	case 0:
 		s.Index = readerpkg.ReadUInt32(reader)
-	// case 1:
+	case 1:
 	// s.Actions = s.MaybeNotify(1, Vector.Deserialize(reader, s.Path.GetNested(1)), s.Actions, s.OnActionsUpdate, shouldNotify)
 	case 2:
 		s.CardPlayHints.Deserialize(reader, s.Path.GetNested(2))

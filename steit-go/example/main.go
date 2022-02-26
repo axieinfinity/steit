@@ -19,10 +19,10 @@ func main() {
 	u.Deserialize()
 	// fmt.Println(u)
 
-	// decodeBinaryMessage()
+	decodeBinaryMessage()
 	// decodeHelloSample()
 	// decodeCardPlayHint()
-	decodeActionMessage()
+	// decodeActionMessage()
 }
 
 func decodeBinaryMessage() {
@@ -32,7 +32,8 @@ func decodeBinaryMessage() {
 
 	reader := readerpkg.NewByteReader(data)
 	bMsg.Deserialize(reader, nil)
-	fmt.Printf("%+v\n", bMsg.ActionMessageVariant())
+	fmt.Println(bMsg.GetNested(0).GetNested(0).GetNested(2))
+	// fmt.Printf("%+v\n", bMsg.ActionMessageVariant())
 
 }
 
@@ -54,7 +55,7 @@ func decodeCardPlayHint() {
 	data := []byte{
 		0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3,
 	}
-
+	fmt.Println(len(data))
 	bMsg := origin.CardPlayHint{}
 	reader := readerpkg.NewByteReader(data)
 	bMsg.Deserialize(reader, nil)
@@ -73,5 +74,6 @@ func decodeActionMessage() {
 	bMsg.Deserialize(reader, nil)
 
 	_json, _ := json.Marshal(bMsg)
+	fmt.Println(bMsg.GetNested(2))
 	fmt.Println(string(_json))
 }
