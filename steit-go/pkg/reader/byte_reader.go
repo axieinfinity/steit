@@ -21,7 +21,7 @@ func (b *ByteReader) ReadUint8() byte {
 	}
 
 	n := b.bytes[b.offset]
-	b.offset = b.offset + 1
+	b.offset++
 
 	return n
 }

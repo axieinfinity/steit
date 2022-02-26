@@ -24,13 +24,12 @@ func ReadToEnd(reader IReader) []byte {
 
 func ReadUnsignedVarint(reader IReader) uint64 {
 	var value uint64
-	value = 0
 	offset := 0
 	var octet byte
 
 	for {
 		octet = reader.ReadUint8()
-		value = value | uint64((octet&0x7f)<<offset)
+		value |= uint64((octet & 0x7f)) << offset
 
 		if octet&0x80 == 0 {
 			return value
