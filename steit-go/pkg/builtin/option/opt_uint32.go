@@ -3,11 +3,11 @@ package option
 import (
 	"fmt"
 
-	"github.com/axieinfinity/steit-go/pkg/builtin/primitive"
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	"github.com/axieinfinity/steit-go/pkg/state"
+	"github.com/axieinfinity/steit/steit-go/pkg/builtin/primitive"
+	"github.com/axieinfinity/steit/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit/steit-go/pkg/path"
+	"github.com/axieinfinity/steit/steit-go/pkg/reader"
+	"github.com/axieinfinity/steit/steit-go/pkg/state"
 )
 
 var _ state.IState = (*OptionUint32)(nil)

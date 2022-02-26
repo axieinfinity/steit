@@ -3,11 +3,11 @@ package statelist
 // import (
 // 	"reflect"
 
-// 	"github.com/axieinfinity/steit-go/pkg/codec"
-// 	"github.com/axieinfinity/steit-go/pkg/path"
-// 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
-// 	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
-// 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
+// 	"github.com/axieinfinity/steit/steit-go/pkg/codec"
+// 	"github.com/axieinfinity/steit/steit-go/pkg/path"
+// 	pathpkg "github.com/axieinfinity/steit/steit-go/pkg/path"
+// 	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
+// 	statepkg "github.com/axieinfinity/steit/steit-go/pkg/state"
 // )
 
 // var _ statepkg.IState = (*StateList)(nil)

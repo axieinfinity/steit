@@ -1,3 +1,3 @@
-module github.com/axieinfinity
+module github.com/axieinfinity/steit
 
 go 1.17

@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/axieinfinity/steit-go/origin"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
+	"github.com/axieinfinity/steit/steit-go/origin"
+	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
 )
 
 type Uint32 uint32

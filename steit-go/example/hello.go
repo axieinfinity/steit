@@ -1,12 +1,12 @@
 package main
 
 import (
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/collections/vector/vec_i32"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
-	statepkg "github.com/axieinfinity/steit-go/pkg/state"
+	"github.com/axieinfinity/steit/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit/steit-go/pkg/collections/vector/vec_i32"
+	"github.com/axieinfinity/steit/steit-go/pkg/path"
+	"github.com/axieinfinity/steit/steit-go/pkg/reader"
+	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
+	statepkg "github.com/axieinfinity/steit/steit-go/pkg/state"
 )
 
 type Hello struct {

@@ -3,10 +3,10 @@ package statereplayer
 import (
 	"reflect"
 
-	"github.com/axieinfinity/steit-go/pkg/logentry"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
-	statepkg "github.com/axieinfinity/steit-go/pkg/state"
+	"github.com/axieinfinity/steit/steit-go/pkg/logentry"
+	"github.com/axieinfinity/steit/steit-go/pkg/reader"
+	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
+	statepkg "github.com/axieinfinity/steit/steit-go/pkg/state"
 )
 
 func Replay(_type reflect.Type, root statepkg.IState, r readerpkg.IReader) {

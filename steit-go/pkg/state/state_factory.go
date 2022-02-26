@@ -4,9 +4,9 @@ import (
 	"errors"
 	"reflect"
 
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
+	"github.com/axieinfinity/steit/steit-go/pkg/path"
+	"github.com/axieinfinity/steit/steit-go/pkg/reader"
+	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
 )
 
 type deserializeOptArgs struct {

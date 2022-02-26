@@ -3,9 +3,9 @@ package state
 import (
 	"log"
 
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
+	"github.com/axieinfinity/steit/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit/steit-go/pkg/path"
+	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
 )
 
 type IState interface {

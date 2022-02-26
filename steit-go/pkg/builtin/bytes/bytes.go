@@ -1,10 +1,10 @@
 package bytes
 
 import (
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	"github.com/axieinfinity/steit-go/pkg/state"
+	"github.com/axieinfinity/steit/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit/steit-go/pkg/path"
+	"github.com/axieinfinity/steit/steit-go/pkg/reader"
+	"github.com/axieinfinity/steit/steit-go/pkg/state"
 )
 
 var _ state.IState = (*Bytes)(nil)

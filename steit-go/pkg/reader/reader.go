@@ -3,7 +3,7 @@ package reader
 import (
 	"fmt"
 
-	"github.com/axieinfinity/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit/steit-go/pkg/codec"
 )
 
 const (
