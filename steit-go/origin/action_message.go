@@ -1,109 +1,91 @@
 package origin
 
-import "github.com/axieinfinity/steit-go/pkg/path"
+import (
+	"github.com/axieinfinity/steit-go/pkg/codec"
+	"github.com/axieinfinity/steit-go/pkg/path"
+	"github.com/axieinfinity/steit-go/pkg/reader"
+	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
+	statepkg "github.com/axieinfinity/steit-go/pkg/state"
+)
 
 type ActionMessage struct {
-	Path          *path.Path
-	Index         uint32
-	Actions       collections.Vector
-	CardPlayHints collections.Vector
+	Path  *path.Path
+	Index uint32
+	// Actions       collections.Vector
+	CardPlayHints *VecCardPlayHint
 	Timestamp     int64
 	TimeToTurnEnd int32
 }
 
-func NewActionMessage(p *path.Path, tag uint32) ActionMessage {
-	obj := ActionMessage{}
+func NewActionMessage(p *path.Path, tag uint32) *ActionMessage {
+	obj := &ActionMessage{}
 
 	if p != nil {
 		obj.Path = p
 	} else {
 		obj.Path = path.Root
 	}
-	obj.Actions = collections.NewVector(obj.Path.GetNested(1), 0)
-	obj.CardPlayHints = collections.NewVector(obj.Path.GetNested(2), 0)
+	// obj.Actions = collections.NewVector(obj.Path.GetNested(1), 0)
+	obj.CardPlayHints = NewVecCardPlayHint(obj.Path.GetNested(2), nil)
 	return obj
 }
 
-func (s *ActionMessage) ClearIndexUpdateHandlers()         { s.OnIndexUpdate = nil }
-func (s *ActionMessage) ClearActionsUpdateHandlers()       { s.OnActionsUpdate = nil }
-func (s *ActionMessage) ClearCardPlayHintsUpdateHandlers() { s.OnCardPlayHintsUpdate = nil }
-func (s *ActionMessage) ClearTimestampUpdateHandlers()     { s.OnTimestampUpdate = nil }
-func (s *ActionMessage) ClearTimeToTurnEndUpdateHandlers() { s.OnTimeToTurnEndUpdate = nil }
-
-func (s *ActionMessage) ClearUpdateHandlers() {
-	s.OnIndexUpdate = nil
-	s.OnActionsUpdate = nil
-	s.OnCardPlayHintsUpdate = nil
-	s.OnTimestampUpdate = nil
-	s.OnTimeToTurnEndUpdate = nil
-}
-
-func (s *ActionMessage) Deserialize(reader IReader, path *Path) ActionMessage {
+func (s *ActionMessage) Deserialize(reader reader.IReader, path *path.Path) error {
 	actionMessage := NewActionMessage(path, 0)
-	actionMessage.Replace(reader, false)
-	return actionMessage
+	statepkg.Replace(actionMessage, reader, false)
+	*s = *actionMessage
+	return nil
 }
 
-func (s *ActionMessage) GetWireType(tag uint32) *WireType {
+func (s *ActionMessage) GetPath() *path.Path {
+	return s.Path
+}
+
+func (s *ActionMessage) GetWireType(tag uint32) *codec.WireType {
 	switch tag {
 	case 0:
-		return &WireType.Varint
+		return codec.GetWireTypePtr(codec.WireTypeVarint)
 	case 1:
-		return &WireType.Sized
+		return codec.GetWireTypePtr(codec.WireTypeSized)
 	case 2:
-		return &WireType.Sized
+		return codec.GetWireTypePtr(codec.WireTypeSized)
 	case 3:
-		return &WireType.Varint
+		return codec.GetWireTypePtr(codec.WireTypeVarint)
 	case 4:
-		return &WireType.Varint
+		return codec.GetWireTypePtr(codec.WireTypeVarint)
 	default:
 		return nil
 	}
 }
 
-func (s *ActionMessage) GetNested(tag uint32) *IState {
+func (s *ActionMessage) GetNested(tag uint32) statepkg.IState {
 	switch tag {
 	case 1:
-		return &s.Actions
+		return nil
 	case 2:
-		return &s.CardPlayHints
+		return s.CardPlayHints
 	default:
 		return nil
 	}
 }
 
-func (s *ActionMessage) ReplaceAt(tag uint32, wireType WireType, reader IReader, shouldNotify bool) {
+func (s *ActionMessage) ReplaceAt(tag uint32, wireType codec.WireType, reader reader.IReader, shouldNotify bool) {
 	switch tag {
 	case 0:
-		s.Index = s.MaybeNotify(0, reader.Readuint32(), s.Index, s.OnIndexUpdate, shouldNotify)
-	case 1:
-		s.Actions = s.MaybeNotify(1, Vector.Deserialize(reader, s.Path.GetNested(1)), s.Actions, s.OnActionsUpdate, shouldNotify)
+		s.Index = readerpkg.ReadUInt32(reader)
+	// case 1:
+	// s.Actions = s.MaybeNotify(1, Vector.Deserialize(reader, s.Path.GetNested(1)), s.Actions, s.OnActionsUpdate, shouldNotify)
 	case 2:
-		s.CardPlayHints = s.MaybeNotify(2, Vector.Deserialize(reader, s.Path.GetNested(2)), s.CardPlayHints, s.OnCardPlayHintsUpdate, shouldNotify)
+		s.CardPlayHints.Deserialize(reader, s.Path.GetNested(2))
 	case 3:
-		s.Timestamp = s.MaybeNotify(3, reader.Readint64(), s.Timestamp, s.OnTimestampUpdate, shouldNotify)
+		s.Timestamp = readerpkg.ReadInt64(reader)
 	case 4:
-		s.TimeToTurnEnd = s.MaybeNotify(4, reader.Readint32(), s.TimeToTurnEnd, s.OnTimeToTurnEndUpdate, shouldNotify)
+		s.TimeToTurnEnd = readerpkg.ReadInt32(reader)
 	default:
-		reader.SkipField(wireType)
+		readerpkg.SkipField(reader, wireType)
 	}
 }
 
-func (s *ActionMessage) ReplayListPush(reader IReader) { panic("") }
-func (s *ActionMessage) ReplayListPop()                { panic("") }
-func (s *ActionMessage) ReplayMapRemove(key uint32)    { panic("") }
-
-func (s *ActionMessage) MaybeNotify(
-	tag uint32,
-	newValue TValue,
-	oldValue TValue,
-	handler EventHandler,
-	shouldNotify bool,
-) TValue {
-	if shouldNotify {
-		args := FieldUpdateEventArgs(tag, newValue, oldValue, s)
-		handler.Invoke(s, args)
-	}
-
-	return newValue
-}
+func (s *ActionMessage) ReplayListPush(reader reader.IReader) { panic("") }
+func (s *ActionMessage) ReplayListPop()                       { panic("") }
+func (s *ActionMessage) ReplayMapRemove(key uint32)           { panic("") }

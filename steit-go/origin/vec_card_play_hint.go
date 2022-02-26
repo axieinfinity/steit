@@ -1,4 +1,4 @@
-package vec_card_play_hint
+package origin
 
 import (
 	"github.com/axieinfinity/steit-go/pkg/codec"
@@ -12,11 +12,11 @@ var _ statepkg.IState = (*VecCardPlayHint)(nil)
 
 type VecCardPlayHint struct {
 	path  *pathpkg.Path
-	items []CardPlayHint
+	items []*CardPlayHint
 	count int
 }
 
-func NewVecCardPlayHint(path *pathpkg.Path, items []CardPlayHint) *VecCardPlayHint {
+func NewVecCardPlayHint(path *pathpkg.Path, items []*CardPlayHint) *VecCardPlayHint {
 	vector := &VecCardPlayHint{}
 
 	if path != nil {
@@ -33,20 +33,27 @@ func NewVecCardPlayHint(path *pathpkg.Path, items []CardPlayHint) *VecCardPlayHi
 	return vector
 }
 
-func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *VecCardPlayHint {
+func (s *VecCardPlayHint) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) error {
 	if path == nil {
 		path = pathpkg.Root
 	}
 
-	var items []CardPlayHint
+	var items []*CardPlayHint
 	tag := uint32(0)
 
-	for !reader.EndOfStream() {
+	for !readerpkg.EndOfStream(reader) {
 		tag = tag + 1
-		items = append(items, readerpkg.ReadValue(reader, path, tag))
+		item := NewCardPlayHint(path)
+		err := statepkg.DeserializeNested(item, reader, path, tag)
+		if err != nil {
+			return err
+		}
+		items = append(items, item)
 	}
 
-	return NewVecCardPlayHint(path, items)
+	*s = *NewVecCardPlayHint(path, items)
+
+	return nil
 }
 
 func (v *VecCardPlayHint) GetPath() *path.Path {

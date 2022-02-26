@@ -1,92 +1,80 @@
 package some
 
-import (
-	"reflect"
+// var _ statepkg.IState = (*Some)(nil)
 
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/event"
+// type Some struct {
+// 	path  *pathpkg.Path
+// 	f0    interface{}
+// 	_type reflect.Type
+// }
 
-	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
-	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
-	"github.com/axieinfinity/steit-go/pkg/state"
-	statepkg "github.com/axieinfinity/steit-go/pkg/state"
-	"github.com/axieinfinity/steit-go/pkg/utils"
-)
+// func NewSome(path *pathpkg.Path, _type reflect.Type) *Some {
+// 	some := &Some{}
 
-var _ statepkg.IState = (*Some)(nil)
+// 	if path != nil {
+// 		some.path = path
+// 	} else {
+// 		some.path = pathpkg.Root
+// 	}
 
-type Some struct {
-	path  *pathpkg.Path
-	f0    interface{}
-	_type reflect.Type
-}
+// 	some.f0 = statepkg.Construct(_type, some.path.GetNested(0))
 
-func NewSome(path *pathpkg.Path, _type reflect.Type) *Some {
-	some := &Some{}
+// 	return some
+// }
 
-	if path != nil {
-		some.path = path
-	} else {
-		some.path = pathpkg.Root
-	}
+// func (s *Some) Deserialize(_type reflect.Type, reader readerpkg.IReader, path *pathpkg.Path) error {
+// 	some := NewSome(path, _type)
+// 	statepkg.Replace(some, reader, false)
+// 	*s = *some
+// 	return nil
+// }
 
-	some.f0 = statepkg.Construct(_type, some.path.GetNested(0))
+// func (s *Some) GetWireType(tag uint32) *codec.WireType {
+// 	switch tag {
+// 	case 0:
+// 		if state.IsStateType(reflect.TypeOf(s.f0)) {
+// 			return codec.GetWireTypePtr(codec.WireTypeSized)
+// 		} else {
+// 			return codec.GetWireTypePtr(codec.WireTypeVarint)
+// 		}
+// 	default:
+// 		return nil
+// 	}
+// }
 
-	return some
-}
+// func (s *Some) GetPath() *pathpkg.Path {
+// 	return s.path
+// }
 
-func Deserialize(_type reflect.Type, reader readerpkg.IReader, path *pathpkg.Path) *Some {
-	some := NewSome(path, _type)
-	statepkg.Replace(some, reader, false)
-	return some
-}
+// func (s *Some) GetNested(tag uint32) state.IState {
+// 	switch tag {
+// 	case 0:
+// 		return utils.AsIState(s.f0)
+// 	default:
+// 		return nil
+// 	}
+// }
 
-func (s *Some) GetWireType(tag uint32) *codec.WireType {
-	switch tag {
-	case 0:
-		if state.IsStateType(reflect.TypeOf(s.f0)) {
-			return codec.GetWireTypePtr(codec.WireTypeSized)
-		} else {
-			return codec.GetWireTypePtr(codec.WireTypeVarint)
-		}
-	default:
-		return nil
-	}
-}
+// func (s *Some) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
+// 	switch tag {
+// 	case 0:
+// 		s.f0 = s.MaybeNotify(0, statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(0)), s.f0, nil, shouldNotify)
+// 	default:
+// 		readerpkg.SkipField(reader, wireType)
+// 	}
+// }
 
-func (s *Some) GetPath() *pathpkg.Path {
-	return s.path
-}
+// func (s *Some) ReplayListPush(reader readerpkg.IReader) { panic("not supported") }
+// func (s *Some) ReplayListPop()                          { panic("not supported") }
+// func (s *Some) ReplayMapRemove(uint32)                  { panic("not supported") }
 
-func (s *Some) GetNested(tag uint32) state.IState {
-	switch tag {
-	case 0:
-		return utils.AsIState(s.f0)
-	default:
-		return nil
-	}
-}
+// func (s *Some) MaybeNotify(
+// 	tag uint32,
+// 	newValue interface{},
+// 	oldValue interface{},
+// 	handler event.EventHandler,
+// 	shouldNotify bool,
+// ) interface{} {
 
-func (s *Some) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
-	switch tag {
-	case 0:
-		s.f0 = s.MaybeNotify(0, statepkg.Deserialize(s._type, reader, s.path, statepkg.DeserializeWithTag(0)), s.f0, nil, shouldNotify)
-	default:
-		reader.SkipField(wireType)
-	}
-}
-
-func (s *Some) ReplayListPush(reader readerpkg.IReader) { panic("not supported") }
-func (s *Some) ReplayListPop()                          { panic("not supported") }
-func (s *Some) ReplayMapRemove(uint32)                  { panic("not supported") }
-
-func (s *Some) MaybeNotify(
-	tag uint32,
-	newValue interface{},
-	oldValue interface{},
-	handler event.EventHandler,
-	shouldNotify bool,
-) interface{} {
-
-	return newValue
-}
+// 	return newValue
+// }

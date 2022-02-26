@@ -29,11 +29,12 @@ func NewBytes(p *path.Path, data []byte) *Bytes {
 	return &Bytes{path: newPath, byteValues: data}
 }
 
-func Deserialize(r reader.IReader, p *path.Path) *Bytes {
-	return &Bytes{
+func (b *Bytes) Deserialize(r reader.IReader, p *path.Path) error {
+	*b = Bytes{
 		path:       p,
 		byteValues: reader.ReadToEnd(r),
 	}
+	return nil
 }
 
 func (s *Bytes) GetWireType(uint32) *codec.WireType {

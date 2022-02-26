@@ -2,8 +2,8 @@ package reader
 
 import (
 	"fmt"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"golang.org/x/text/encoding"
+
+	"github.com/axieinfinity/steit-go/pkg/codec"
 )
 
 const (
@@ -12,7 +12,6 @@ const (
 )
 
 type Reader struct {
-
 }
 
 func EndOfStream(reader IReader) bool {
@@ -31,9 +30,9 @@ func ReadUnsignedVarint(reader IReader) uint64 {
 
 	for {
 		octet = reader.ReadUint8()
-		value = value | uint64((octet & 0x7f) << offset)
+		value = value | uint64((octet&0x7f)<<offset)
 
-		if octet & 0x80 == 0 {
+		if octet&0x80 == 0 {
 			return value
 		}
 
@@ -94,10 +93,10 @@ func ReadString(reader IReader) string {
 	panic("unimplemented")
 }
 
-func ReadKey(reader IReader) (uint32, WireType) {
-	key := ReadUInt32(reader);
+func ReadKey(reader IReader) (uint32, codec.WireType) {
+	key := ReadUInt32(reader)
 	tag := key >> WireTypeBits
-	wireType := NewWireType(key & WireTypeMask)
+	wireType := codec.NewWireType(key & WireTypeMask)
 
 	return tag, wireType
 }
@@ -110,11 +109,11 @@ func SkipToEnd(reader IReader) {
 	reader.Skip(reader.Remaining())
 }
 
-func SkipField(reader IReader, wireType WireType) {
+func SkipField(reader IReader, wireType codec.WireType) {
 	switch wireType {
-	case WireTypeVarint:
+	case codec.WireTypeVarint:
 		ReadBoolean(reader)
-	case WireTypeSized:
+	case codec.WireTypeSized:
 		SkipToEnd(reader)
 	default:
 		panic(fmt.Sprintf("Unsupported wire type: %d", wireType))

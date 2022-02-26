@@ -28,10 +28,11 @@ func NewNone(path *pathpkg.Path) *None {
 
 func (n *None) ClearUpdateHandlers() {}
 
-func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *None {
+func (n *None) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) error {
 	none := NewNone(path)
 	statepkg.Replace(none, reader, false)
-	return none
+	*n = *none
+	return nil
 }
 
 func (n *None) GetPath() *pathpkg.Path {
@@ -47,7 +48,7 @@ func (n *None) GetNested(tag uint32) statepkg.IState {
 }
 
 func (n *None) ReplaceAt(tag uint32, wireType codec.WireType, reader readerpkg.IReader, shouldNotify bool) {
-	reader.SkipField(wireType)
+	readerpkg.SkipField(reader, wireType)
 }
 
 func (n *None) ReplayListPush(reader readerpkg.IReader) { panic("not supported") }

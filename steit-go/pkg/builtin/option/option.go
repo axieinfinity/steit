@@ -1,117 +1,107 @@
 package option
 
-import (
-	"fmt"
-	"reflect"
+// var _ state.IState = (*Option)(nil)
 
-	"github.com/axieinfinity/steit-go/pkg/codec"
-	"github.com/axieinfinity/steit-go/pkg/path"
-	"github.com/axieinfinity/steit-go/pkg/reader"
-	"github.com/axieinfinity/steit-go/pkg/state"
-)
+// type Option struct {
+// 	path           *path.Path
+// 	isSome         bool
+// 	valueOrDefault interface{}
+// 	_type          reflect.Type
+// }
 
-var _ state.IState = (*Option)(nil)
+// type optionOpts struct {
+// 	value interface{}
+// }
 
-type Option struct {
-	path           *path.Path
-	isSome         bool
-	valueOrDefault interface{}
-	_type          reflect.Type
-}
+// type OptionOptArgs func(*optionOpts)
 
-type optionOpts struct {
-	value interface{}
-}
+// func (o *Option) GetValueOrDefault() interface{} {
+// 	return o.valueOrDefault
+// }
 
-type OptionOptArgs func(*optionOpts)
+// func (o *Option) IsSome() bool {
+// 	return o.isSome
+// }
 
-func (o *Option) GetValueOrDefault() interface{} {
-	return o.valueOrDefault
-}
+// func (o *Option) IsNone() bool {
+// 	return !o.isSome
+// }
 
-func (o *Option) IsSome() bool {
-	return o.isSome
-}
+// func NewOption(p *path.Path, opts ...OptionOptArgs) *Option {
+// 	var res *Option
+// 	if p == nil {
+// 		res = &Option{path: path.Root}
+// 	} else {
+// 		res = &Option{path: p}
+// 	}
 
-func (o *Option) IsNone() bool {
-	return !o.isSome
-}
+// 	oo := &optionOpts{}
+// 	for _, opt := range opts {
+// 		opt(oo)
+// 	}
 
-func NewOption(p *path.Path, opts ...OptionOptArgs) *Option {
-	var res *Option
-	if p == nil {
-		res = &Option{path: path.Root}
-	} else {
-		res = &Option{path: p}
-	}
+// 	if oo.value != nil {
+// 		res.isSome = true
+// 		res.valueOrDefault = oo.value
+// 		res._type = reflect.TypeOf(oo.value)
+// 	}
 
-	oo := &optionOpts{}
-	for _, opt := range opts {
-		opt(oo)
-	}
+// 	return res
+// }
 
-	if oo.value != nil {
-		res.isSome = true
-		res.valueOrDefault = oo.value
-		res._type = reflect.TypeOf(oo.value)
-	}
+// func Some(p *path.Path, value interface{}) *Option {
+// 	return NewOption(p, WithValue(value))
+// }
 
-	return res
-}
+// func None(p *path.Path) *Option {
+// 	return NewOption(p)
+// }
 
-func Some(p *path.Path, value interface{}) *Option {
-	return NewOption(p, WithValue(value))
-}
+// func WithValue(value interface{}) OptionOptArgs {
+// 	return func(oo *optionOpts) {
+// 		oo.value = value
+// 	}
+// }
 
-func None(p *path.Path) *Option {
-	return NewOption(p)
-}
+// func Deserialize(_type reflect.Type, r reader.IReader, p *path.Path) *Option {
+// 	if !reader.EndOfStream(r) {
+// 		return Some(p, state.DeserializeNested(_type, r, p, 0))
+// 	} else {
+// 		return None(p)
+// 	}
+// }
 
-func WithValue(value interface{}) OptionOptArgs {
-	return func(oo *optionOpts) {
-		oo.value = value
-	}
-}
+// func (o *Option) GetPath() *path.Path {
+// 	return o.path
+// }
 
-func Deserialize(_type reflect.Type, r reader.IReader, p *path.Path) *Option {
-	if !r.EndOfStream() {
-		return Some(p, state.DeserializeNested(_type, r, p, 0))
-	} else {
-		return None(p)
-	}
-}
+// func (s *Option) GetWireType(uint32) *codec.WireType {
+// 	return nil
+// }
 
-func (o *Option) GetPath() *path.Path {
-	return o.path
-}
+// func (s *Option) GetNested(uint32) state.IState {
+// 	return nil
+// }
 
-func (s *Option) GetWireType(uint32) *codec.WireType {
-	return nil
-}
+// func (s *Option) ReplaceAt(tag uint32, wireType codec.WireType, reader reader.IReader, shouldNotify bool) {
+// 	panic("not supported")
+// }
 
-func (s *Option) GetNested(uint32) state.IState {
-	return nil
-}
+// func (s *Option) ReplayListPush(reader reader.IReader) {
+// 	panic("not supported")
+// }
 
-func (s *Option) ReplaceAt(tag uint32, wireType codec.WireType, reader reader.IReader, shouldNotify bool) {
-	panic("not supported")
-}
+// func (s *Option) ReplayListPop() {
+// 	panic("not supported")
+// }
 
-func (s *Option) ReplayListPush(reader reader.IReader) {
-	panic("not supported")
-}
+// func (s *Option) ReplayMapRemove(uint32) {
+// 	panic("not supported")
+// }
 
-func (s *Option) ReplayListPop() {
-	panic("not supported")
-}
-
-func (s *Option) ReplayMapRemove(uint32) {
-	panic("not supported")
-}
-
-func (o *Option) String() string {
-	if o.IsSome() {
-		return fmt.Sprintf("Some(%v)", o.valueOrDefault)
-	}
-	return "None"
-}
+// func (o *Option) String() string {
+// 	if o.IsSome() {
+// 		return fmt.Sprintf("Some(%v)", o.valueOrDefault)
+// 	}
+// 	return "None"
+// }

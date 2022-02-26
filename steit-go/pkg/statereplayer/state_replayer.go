@@ -5,12 +5,13 @@ import (
 
 	"github.com/axieinfinity/steit-go/pkg/logentry"
 	"github.com/axieinfinity/steit-go/pkg/reader"
+	readerpkg "github.com/axieinfinity/steit-go/pkg/reader"
 	statepkg "github.com/axieinfinity/steit-go/pkg/state"
 )
 
-func Replay(_type reflect.Type, root statepkg.IState, r reader.IReader) {
-	for !r.EndOfStream() {
-		var entry = logentry.Deserialize(r.GetNested(), nil)
+func Replay(_type reflect.Type, root statepkg.IState, r readerpkg.IReader) {
+	for !readerpkg.EndOfStream(r) {
+		var entry = logentry.Deserialize(readerpkg.GetNested(r), nil)
 		ReplayByLogEntry(_type, root, entry)
 	}
 }

@@ -17,6 +17,7 @@ type IState interface {
 	ReplayListPush(reader readerpkg.IReader)
 	ReplayListPop()
 	ReplayMapRemove(uint32)
+	Deserializer
 }
 
 type State struct {
@@ -43,16 +44,16 @@ func GetNested(state IState, path []uint32) IState {
 func Replace(state IState, reader readerpkg.IReader, shouldNotify bool) {
 	switch v := state.(type) {
 	case IEnumState:
-		variant := reader.ReadUint32()
+		variant := readerpkg.ReadUInt32(reader)
 		v.ReplaceAt(variant, codec.WireTypeSized, reader, shouldNotify)
 		return
 	default:
-		for !reader.EndOfStream() {
-			tag, wireType := reader.ReadKey()
+		for !readerpkg.EndOfStream(reader) {
+			tag, wireType := readerpkg.ReadKey(reader)
 			expectedWireType := state.GetWireType(tag)
 			var fieldReader readerpkg.IReader
 			if wireType == codec.WireTypeSized {
-				fieldReader = reader.GetNested()
+				fieldReader = readerpkg.GetNested(reader)
 			} else {
 				fieldReader = reader
 			}
@@ -60,7 +61,7 @@ func Replace(state IState, reader readerpkg.IReader, shouldNotify bool) {
 			if expectedWireType != nil && wireType != *expectedWireType {
 				var path = state.GetPath().GetNested(tag)
 				log.Printf("Expected wire type %v for path %v, got %v.\n", *expectedWireType, path, wireType)
-				fieldReader.SkipField(wireType)
+				readerpkg.SkipField(fieldReader, wireType)
 				continue
 			}
 

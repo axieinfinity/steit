@@ -1,6 +1,7 @@
 package vec_u32
 
 import (
+	"github.com/axieinfinity/steit-go/pkg/builtin/primitive"
 	"github.com/axieinfinity/steit-go/pkg/codec"
 	"github.com/axieinfinity/steit-go/pkg/path"
 	pathpkg "github.com/axieinfinity/steit-go/pkg/path"
@@ -24,8 +25,9 @@ func NewVecU32(path *pathpkg.Path, items []uint32) *VecU32 {
 	} else {
 		vector.path = pathpkg.Root
 	}
-
-	if len(items) > 0 {
+	if items == nil {
+		vector.items = make([]uint32, 0)
+	} else {
 		vector.items = items
 		vector.count = len(items)
 	}
@@ -33,7 +35,7 @@ func NewVecU32(path *pathpkg.Path, items []uint32) *VecU32 {
 	return vector
 }
 
-func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *VecU32 {
+func (v *VecU32) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) error {
 	if path == nil {
 		path = pathpkg.Root
 	}
@@ -41,12 +43,19 @@ func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *VecU32 {
 	var items []uint32
 	tag := uint32(0)
 
-	for !reader.EndOfStream() {
+	for !readerpkg.EndOfStream(reader) {
 		tag = tag + 1
-		items = append(items, readerpkg.ReadValue(reader, path, tag))
-	}
 
-	return NewVecU32(path, items)
+		var value primitive.Uint32
+		err := statepkg.DeserializeNested(&value, reader, path, tag)
+		if err != nil {
+			return err
+		}
+
+		items = append(items, uint32(value))
+	}
+	*v = *NewVecU32(path, items)
+	return nil
 }
 
 func (v *VecU32) GetPath() *path.Path {

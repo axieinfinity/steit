@@ -33,7 +33,7 @@ func NewVector(path *pathpkg.Path, items []interface{}) *Vector {
 	return vector
 }
 
-func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *Vector {
+func (v *Vector) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) error {
 	if path == nil {
 		path = pathpkg.Root
 	}
@@ -41,12 +41,12 @@ func Deserialize(reader readerpkg.IReader, path *pathpkg.Path) *Vector {
 	var items []interface{}
 	tag := uint32(0)
 
-	for !reader.EndOfStream() {
+	for !readerpkg.EndOfStream(reader) {
 		tag = tag + 1
-		items = append(items, readerpkg.ReadValue(reader, path, tag))
+		items = append(items, statepkg.DeserializeNested(nil, reader, path, tag))
 	}
-
-	return NewVector(path, items)
+	*v = *NewVector(path, items)
+	return nil
 }
 
 func (v *Vector) GetPath() *path.Path {
