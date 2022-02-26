@@ -12,11 +12,11 @@ import (
 func Replay(_type reflect.Type, root statepkg.IState, r readerpkg.IReader) {
 	for !readerpkg.EndOfStream(r) {
 		var entry = logentry.Deserialize(readerpkg.GetNested(r), nil)
-		ReplayByLogEntry(_type, root, entry)
+		ReplayByLogEntry(&root, entry)
 	}
 }
 
-func ReplayByLogEntry(_type reflect.Type, root statepkg.IState, entry *logentry.LogEntry) {
+func ReplayByLogEntry(root *statepkg.IState, entry *logentry.LogEntry) {
 	path := getPath(entry)
 	tag := uint32(0)
 
@@ -26,12 +26,14 @@ func ReplayByLogEntry(_type reflect.Type, root statepkg.IState, entry *logentry.
 			path = path[:len(path)-1]
 		} else {
 			r := reader.NewByteReader(entry.GetUpdateVariant().GetValue())
-			root = statepkg.Deserialize(_type, r, root.GetPath())
+			val := reflect.New(reflect.TypeOf(root)).Interface().(statepkg.IState)
+			statepkg.Deserialize(val, r, (*root).GetPath())
+			*root = val
 			return
 		}
 	}
 
-	container := statepkg.GetNested(root, path)
+	container := statepkg.GetNested(*root, path)
 
 	if container == nil {
 		return

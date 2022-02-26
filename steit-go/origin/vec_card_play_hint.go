@@ -33,6 +33,10 @@ func NewVecCardPlayHint(path *pathpkg.Path, items []*CardPlayHint) *VecCardPlayH
 	return vector
 }
 
+func (s *VecCardPlayHint) GetItems() []*CardPlayHint {
+	return s.items
+}
+
 func (s *VecCardPlayHint) Deserialize(reader readerpkg.IReader, path *pathpkg.Path) error {
 	if path == nil {
 		path = pathpkg.Root

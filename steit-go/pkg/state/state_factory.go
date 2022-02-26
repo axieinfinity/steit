@@ -15,8 +15,27 @@ type deserializeOptArgs struct {
 
 type DeserializeOptArgs func(*deserializeOptArgs)
 
-func Deserialize(_ reflect.Type, r readerpkg.IReader, path *path.Path, opts ...DeserializeOptArgs) IState {
-	return nil
+func Deserialize(value Deserializer, r readerpkg.IReader, path *path.Path, opts ...DeserializeOptArgs) error {
+	if value == nil {
+		return errors.New("nil value")
+	}
+	args := &deserializeOptArgs{}
+	for _, op := range opts {
+		op(args)
+	}
+	var err error
+	if args.tag != nil {
+		if _, ok := value.(IState); ok {
+			err = value.Deserialize(r, path.GetNested(*args.tag))
+		} else {
+			err = value.Deserialize(r, path)
+		}
+	} else {
+		err = value.Deserialize(r, path)
+	}
+
+	return err
+
 }
 
 func DeserializeWithTag(tag uint32) DeserializeOptArgs {
@@ -41,10 +60,7 @@ func DeserializeNested(value Deserializer, r readerpkg.IReader, path *path.Path,
 		err = value.Deserialize(r, path)
 	}
 
-	if err != nil {
-		return err
-	}
-	return nil
+	return err
 }
 
 func DeserializeState(value interface{}, r readerpkg.IReader, path *path.Path) IState {

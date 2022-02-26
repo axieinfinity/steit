@@ -8,21 +8,11 @@ import (
 	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
 )
 
-type Uint32 uint32
-
-func (u *Uint32) Deserialize() {
-	*u = 3
-}
-
 func main() {
-	u := Uint32(0)
-	u.Deserialize()
-	// fmt.Println(u)
-
 	decodeBinaryMessage()
-	// decodeHelloSample()
-	// decodeCardPlayHint()
-	// decodeActionMessage()
+	decodeHelloSample()
+	decodeCardPlayHint()
+	decodeActionMessage()
 }
 
 func decodeBinaryMessage() {
@@ -32,6 +22,7 @@ func decodeBinaryMessage() {
 
 	reader := readerpkg.NewByteReader(data)
 	bMsg.Deserialize(reader, nil)
+	fmt.Println(bMsg.Variant.(*origin.BinaryMessageActionMessage).Message.CardPlayHints.GetItems()[0])
 	fmt.Println(bMsg.GetNested(0).GetNested(0).GetNested(2))
 	// fmt.Printf("%+v\n", bMsg.ActionMessageVariant())
 
