@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/axieinfinity/steit/steit-go/origin"
+	"github.com/axieinfinity/steit/steit-go/pkg/core/origin"
 	readerpkg "github.com/axieinfinity/steit/steit-go/pkg/reader"
 )
 
 func main() {
 	decodeBinaryMessage()
-	decodeHelloSample()
 	decodeCardPlayHint()
 	decodeActionMessage()
 }
@@ -24,25 +23,23 @@ func decodeBinaryMessage() {
 	bMsg.Deserialize(reader, nil)
 	fmt.Println(bMsg.Variant.(*origin.BinaryMessageActionMessage).Message.CardPlayHints.GetItems()[0])
 	fmt.Println(bMsg.GetNested(0).GetNested(0).GetNested(2))
-	// fmt.Printf("%+v\n", bMsg.ActionMessageVariant())
-
-}
-
-func decodeHelloSample() {
-	data := []byte{
-		// Numbers: 1, 2, 1337.
-		2, 4, 2, 4, 242, 20,
-		// Others: -1, -2, 1337.
-		10, 4, 1, 3, 242, 20,
-	}
-	reader := readerpkg.NewByteReader(data)
-	helloMsg := Hello{}
-	helloMsg.Deserialize(reader, nil)
-	fmt.Println(helloMsg.GetNested(0))
-	fmt.Println(helloMsg.GetNested(1))
 }
 
 func decodeCardPlayHint() {
+	/*
+			CardPlayHint::new(
+		        1,
+		        true,
+		        vec![1, 2, 3],
+		        Some(1),
+		        Some(1),
+		        vec![1, 2, 3],
+		        None,
+		        Some(1),
+		        vec![1, 2, 3],
+		        None,
+		    )
+	*/
 	data := []byte{
 		0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3,
 	}
@@ -56,6 +53,18 @@ func decodeCardPlayHint() {
 }
 
 func decodeActionMessage() {
+	/*
+			ActionMessage::new_action_message(
+		        1,
+		        &vec![],
+		        &vec![
+		            card_play_hint.clone(),
+		            card_play_hint.clone(),
+		            card_play_hint,
+		        ],
+		        10,
+		    );
+	*/
 	data := []byte{
 		0, 1, 18, 87, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 28, 0, 1, 8, 1, 18, 3, 1, 2, 3, 26, 1, 1, 34, 1, 1, 42, 3, 1, 2, 3, 58, 1, 1, 66, 3, 1, 2, 3, 24, 142, 171, 204, 10, 32, 20,
 	}
