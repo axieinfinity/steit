@@ -19,11 +19,21 @@ namespace Just.To.Test {
         public Raw RawVariant { get { return this.Variant as Raw; } }
         public Attack AttackVariant { get { return this.Variant as Attack; } }
 
-        public OldAction(Path path = null) {
+        public OldAction(Path path = null) : this(path, 0) { }
+
+        public OldAction(Path path, UInt32 tag) {
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new Raw(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new Raw(this.Path.GetNested(0)); break;
+                case 1: this.Variant = new Attack(this.Path.GetNested(1)); break;
+                default: this.Variant = new Raw(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static OldAction NewRaw(Path path = null) { return new OldAction(path, 0); }
+        public static OldAction NewAttack(Path path = null) { return new OldAction(path, 1); }
 
         public static event EventHandler<VariantUpdateEventArgs<OldAction>> OnUpdate;
 

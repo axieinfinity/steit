@@ -19,12 +19,22 @@ namespace Steit.Builtins {
         public None NoneVariant { get { return this.Variant as None; } }
         public Some SomeVariant { get { return this.Variant as Some; } }
 
-        public Maybe(Path path = null) {
+        public Maybe(Path path = null) : this(path, 0) { }
+
+        public Maybe(Path path, UInt32 tag) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new None(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new None(this.Path.GetNested(0)); break;
+                case 1: this.Variant = new Some(this.Path.GetNested(1)); break;
+                default: this.Variant = new None(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static Maybe NewNone(Path path = null) { return new Maybe(path, 0); }
+        public static Maybe NewSome(Path path = null) { return new Maybe(path, 1); }
 
         public static event EventHandler<VariantUpdateEventArgs<Maybe<T>>> OnUpdate;
 

@@ -23,11 +23,25 @@ namespace Steit.State {
         public ListPop ListPopVariant { get { return this.Variant as ListPop; } }
         public MapRemove MapRemoveVariant { get { return this.Variant as MapRemove; } }
 
-        public LogEntry(Path path = null) {
+        public LogEntry(Path path = null) : this(path, 0) { }
+
+        public LogEntry(Path path, UInt32 tag) {
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new Update(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new Update(this.Path.GetNested(0)); break;
+                case 8: this.Variant = new ListPush(this.Path.GetNested(8)); break;
+                case 9: this.Variant = new ListPop(this.Path.GetNested(9)); break;
+                case 12: this.Variant = new MapRemove(this.Path.GetNested(12)); break;
+                default: this.Variant = new Update(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static LogEntry NewUpdate(Path path = null) { return new LogEntry(path, 0); }
+        public static LogEntry NewListPush(Path path = null) { return new LogEntry(path, 8); }
+        public static LogEntry NewListPop(Path path = null) { return new LogEntry(path, 9); }
+        public static LogEntry NewMapRemove(Path path = null) { return new LogEntry(path, 12); }
 
         public static event EventHandler<VariantUpdateEventArgs<LogEntry>> OnUpdate;
 
