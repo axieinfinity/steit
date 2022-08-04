@@ -19,11 +19,21 @@ namespace Just.To.Test {
         public FirstCase FirstCaseVariant { get { return this.Variant as FirstCase; } }
         public SecondCase SecondCaseVariant { get { return this.Variant as SecondCase; } }
 
-        public Multicase(Path path = null) {
+        public Multicase(Path path = null) : this(path, 0) { }
+
+        public Multicase(Path path, UInt32 tag) {
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new FirstCase(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new FirstCase(this.Path.GetNested(0)); break;
+                case 1: this.Variant = new SecondCase(this.Path.GetNested(1)); break;
+                default: this.Variant = new FirstCase(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static Multicase NewFirstCase(Path path = null) { return new Multicase(path, 0); }
+        public static Multicase NewSecondCase(Path path = null) { return new Multicase(path, 1); }
 
         public static event EventHandler<VariantUpdateEventArgs<Multicase>> OnUpdate;
 

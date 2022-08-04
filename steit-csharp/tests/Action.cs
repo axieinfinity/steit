@@ -25,11 +25,27 @@ namespace Just.To.Test {
         public Attack AttackVariant { get { return this.Variant as Attack; } }
         public Skill SkillVariant { get { return this.Variant as Skill; } }
 
-        public Action(Path path = null) {
+        public Action(Path path = null) : this(path, 0) { }
+
+        public Action(Path path, UInt32 tag) {
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new Raw(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new Raw(this.Path.GetNested(0)); break;
+                case 1: this.Variant = new CardDraw(this.Path.GetNested(1)); break;
+                case 2: this.Variant = new CardDiscard(this.Path.GetNested(2)); break;
+                case 3: this.Variant = new Attack(this.Path.GetNested(3)); break;
+                case 4: this.Variant = new Skill(this.Path.GetNested(4)); break;
+                default: this.Variant = new Raw(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static Action NewRaw(Path path = null) { return new Action(path, 0); }
+        public static Action NewCardDraw(Path path = null) { return new Action(path, 1); }
+        public static Action NewCardDiscard(Path path = null) { return new Action(path, 2); }
+        public static Action NewAttack(Path path = null) { return new Action(path, 3); }
+        public static Action NewSkill(Path path = null) { return new Action(path, 4); }
 
         public static event EventHandler<VariantUpdateEventArgs<Action>> OnUpdate;
 
