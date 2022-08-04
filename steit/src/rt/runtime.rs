@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    log::{loggers::WriterLogger, LogEntry, Logger},
+    log::{loggers::BufferLogger, LogEntry, Logger},
     ser::Serialize,
 };
 
@@ -39,7 +39,7 @@ macro_rules! impl_log {
 
 impl Runtime {
     pub fn new() -> Self {
-        Self::with_logger(WriterLogger::stdout())
+        Self::with_logger(BufferLogger::new())
     }
 
     pub fn with_logger_returned<T: Logger + 'static>(logger: T) -> (Self, LoggerHandle<T>) {
