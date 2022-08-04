@@ -19,12 +19,22 @@ namespace Just.To.Test {
         public Actions ActionsVariant { get { return this.Variant as Actions; } }
         public Value ValueVariant { get { return this.Variant as Value; } }
 
-        public ActionsOr(Path path = null) {
+        public ActionsOr(Path path = null) : this(path, 0) { }
+
+        public ActionsOr(Path path, UInt32 tag) {
             StateFactory.ValidateType(typeof(T));
             this.Path = path ?? Path.Root;
-            this.Tag = 0;
-            this.Variant = new Actions(this.Path.GetNested(0));
+            this.Tag = tag;
+
+            switch (tag) {
+                case 0: this.Variant = new Actions(this.Path.GetNested(0)); break;
+                case 1: this.Variant = new Value(this.Path.GetNested(1)); break;
+                default: this.Variant = new Actions(this.Path.GetNested(0)); break;
+            }
         }
+
+        public static ActionsOr NewActions(Path path = null) { return new ActionsOr(path, 0); }
+        public static ActionsOr NewValue(Path path = null) { return new ActionsOr(path, 1); }
 
         public static event EventHandler<VariantUpdateEventArgs<ActionsOr<T>>> OnUpdate;
 
