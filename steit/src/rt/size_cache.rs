@@ -3,6 +3,8 @@ use std::{
     sync::atomic::{AtomicU32, Ordering},
 };
 
+use serde::Serialize as JsonSerialize;
+
 /// Caches serialization size to prevent duplicate calculation.
 ///
 /// A [`SizeCache`] is always equal to itself so its containing object can use `#[derive(Eq)]`.
@@ -12,7 +14,7 @@ use std::{
 /// [`SizeCache`]: struct.SizeCache.html
 /// [rust-protobuf]: https://github.com/stepancheg/rust-protobuf
 /// [`CachedSize`]: https://github.com/stepancheg/rust-protobuf/blob/68c7a5a/protobuf/src/cached_size.rs
-#[derive(Default, Debug)]
+#[derive(Default, Debug, JsonSerialize)]
 pub struct SizeCache {
     size: AtomicU32,
 }

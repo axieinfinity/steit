@@ -3,6 +3,8 @@ use std::{
     io::{self, Read},
 };
 
+use serde::Serialize as JsonSerialize;
+
 use crate::{
     de::{Deserialize, Reader},
     meta::{HasMeta, MetaLink, NameMeta, TypeMeta},
@@ -11,7 +13,7 @@ use crate::{
     wire_fmt::{HasWireType, WireType},
 };
 
-#[derive(Clone, PartialEq, Eq, Default, Hash)]
+#[derive(Clone, PartialEq, Eq, Default, Hash, JsonSerialize)]
 pub struct Bytes(Vec<u8>);
 
 impl Bytes {
@@ -21,7 +23,7 @@ impl Bytes {
 
     pub fn from_value(value: &impl Serialize) -> Self {
         let mut bytes = Vec::new();
-        value.serialize(&mut bytes).unwrap();
+        value.steit_serialize(&mut bytes).unwrap();
         Self(bytes)
     }
 

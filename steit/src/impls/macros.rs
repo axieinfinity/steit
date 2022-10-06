@@ -10,7 +10,7 @@ macro_rules! impl_serialize_primitive {
                 &self,
                 writer: &mut impl ::std::io::Write,
             ) -> ::std::io::Result<()> {
-                self.serialize(writer)
+                self.steit_serialize(writer)
             }
 
             fn size_cache(&self) -> Option<&$crate::rt::SizeCache> {
@@ -25,7 +25,7 @@ macro_rules! impl_serialize_primitive {
                 self.compute_size()
             }
 
-            fn serialize(&self, writer: &mut impl ::std::io::Write) -> ::std::io::Result<()> {
+            fn steit_serialize(&self, writer: &mut impl ::std::io::Write) -> ::std::io::Result<()> {
                 $serialize(self, writer)
             }
 

@@ -289,7 +289,7 @@ mod tests {
             .set_others(vec![-1, -2, 1337]);
 
         let mut bytes = Vec::new();
-        hello.serialize(&mut bytes).unwrap();
+        hello.steit_serialize(&mut bytes).unwrap();
         println!("serialized: {:?}", bytes);
 
         println!("\nOUTER");
