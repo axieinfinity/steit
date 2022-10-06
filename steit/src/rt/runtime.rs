@@ -5,6 +5,8 @@ use std::{
     sync::{Arc, Mutex},
 };
 
+use serde::Serialize as JsonSerialize;
+
 use crate::{
     log::{loggers::BufferLogger, LogEntry, Logger},
     ser::Serialize,
@@ -15,9 +17,11 @@ use super::{
     node::Node,
 };
 
-#[derive(Clone)]
+#[derive(Clone, JsonSerialize)]
 pub struct Runtime {
+    #[serde(skip_serializing)]
     logger: Arc<Mutex<dyn PausableLogger>>,
+    #[serde(skip_serializing)]
     path: Arc<Node<u32>>,
 }
 

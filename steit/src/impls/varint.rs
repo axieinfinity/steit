@@ -101,7 +101,7 @@ macro_rules! impl_signed_varint {
                 writer: &mut impl ::std::io::Write,
             ) -> ::std::io::Result<()> {
                 use $crate::ser::Serialize;
-                (encode(*value) as $unsigned_type).serialize(writer)
+                (encode(*value) as $unsigned_type).steit_serialize(writer)
             }
 
             $crate::impl_serialize_primitive!($type, compute_size, serialize);
