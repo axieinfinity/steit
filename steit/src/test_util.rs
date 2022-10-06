@@ -65,7 +65,7 @@ pub fn assert_size(value: impl Serialize, size: u32) {
 
 pub fn serialize(value: impl Serialize) -> Vec<u8> {
     let mut bytes = Vec::new();
-    value.serialize(&mut bytes).unwrap();
+    value.steit_serialize(&mut bytes).unwrap();
     bytes
 }
 

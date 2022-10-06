@@ -28,7 +28,7 @@ pub trait Serialize: HasWireType {
         }
     }
 
-    fn serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
+    fn steit_serialize(&self, writer: &mut impl io::Write) -> io::Result<()> {
         self.cache_size();
         self.serialize_cached(writer)
     }
@@ -88,7 +88,7 @@ pub trait Serialize: HasWireType {
 
     fn to_bytes(&self) -> Vec<u8> {
         let mut bytes = Vec::new();
-        self.serialize(&mut bytes).unwrap();
+        self.steit_serialize(&mut bytes).unwrap();
         bytes
     }
 }
