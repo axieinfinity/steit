@@ -1,11 +1,12 @@
-use crate::steit_derive;
+use serde::Serialize as JsonSerialize;
 
 use crate::{
     rt::{Runtime, SizeCache},
     state::State,
+    steit_derive,
 };
 
-#[steit_derive(Clone, PartialEq, Eq, Hash, Debug, State)]
+#[steit_derive(Clone, PartialEq, Eq, Hash, Debug, State, JsonSerialize)]
 #[steit(steit_owned)]
 pub enum Maybe<T: State> {
     #[steit(tag = 0)]

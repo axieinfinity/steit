@@ -1,6 +1,7 @@
 use std::{hash::Hash, io, iter::FromIterator, marker::PhantomData, ops};
 
 use indexmap::map::IndexMap;
+use serde::Serialize as JsonSerialize;
 
 use crate::{
     de::{Deserialize, Reader},
@@ -17,8 +18,9 @@ use super::{
     key::MapKey,
 };
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, JsonSerialize)]
 pub struct Map<K: MapKey, V: State> {
+    #[serde(skip_serializing)]
     entries: IndexMap<u32, V>,
     size_cache: SizeCache,
     runtime: Runtime,
