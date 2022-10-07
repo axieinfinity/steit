@@ -5,6 +5,8 @@ use std::{
     slice,
 };
 
+use serde::Serialize as JsonSerialize;
+
 use crate::{
     de::{Deserialize, Reader},
     log::LogEntryKind,
@@ -15,7 +17,7 @@ use crate::{
     wire_fmt::{HasWireType, WireType},
 };
 
-#[derive(Clone, PartialEq, Eq, Default, Hash, Debug)]
+#[derive(Clone, PartialEq, Eq, Default, Hash, Debug, JsonSerialize)]
 pub struct List<T: State> {
     items: Vec<T>,
     size_cache: SizeCache,
