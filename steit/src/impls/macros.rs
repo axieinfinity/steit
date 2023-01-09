@@ -29,7 +29,7 @@ macro_rules! impl_serialize_primitive {
                 $serialize(self, writer)
             }
 
-            fn is_omissible(&self) -> bool {
+            fn is_omissible(&self, _computed_size: Option<u32>) -> bool {
                 *self == Self::default()
             }
         }

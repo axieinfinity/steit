@@ -33,8 +33,11 @@ pub trait Serialize: HasWireType {
         self.serialize_cached(writer)
     }
 
-    fn is_omissible(&self) -> bool {
-        self.compute_size() == 0
+    fn is_omissible(&self, computed_size: Option<u32>) -> bool {
+        match computed_size {
+            Some(size) => size == 0,
+            None => self.compute_size() == 0,
+        }
     }
 
     fn compute_size_nested(
@@ -42,13 +45,12 @@ pub trait Serialize: HasWireType {
         field_number: impl Into<Option<u32>>,
         is_omissible: bool,
     ) -> io::Result<u32> {
-        let field_number = field_number.into();
+        let mut size = self.cache_size();
 
-        if field_number.is_some() && is_omissible && self.is_omissible() {
+        let field_number = field_number.into();
+        if field_number.is_some() && is_omissible && self.is_omissible(Some(size)) {
             return Ok(0);
         }
-
-        let mut size = self.cache_size();
 
         match Self::WIRE_TYPE {
             WireType::Varint => (),
@@ -70,7 +72,7 @@ pub trait Serialize: HasWireType {
     ) -> io::Result<()> {
         let field_number = field_number.into();
 
-        if field_number.is_some() && is_omissible && self.is_omissible() {
+        if field_number.is_some() && is_omissible && self.is_omissible(None) {
             return Ok(());
         }
 
