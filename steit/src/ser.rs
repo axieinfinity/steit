@@ -33,10 +33,10 @@ pub trait Serialize: HasWireType {
         self.serialize_cached(writer)
     }
 
-    fn is_omissible(&self, computed_size: Option<u32>) -> bool {
-        match computed_size {
+    fn is_omissible(&self, size_hint: Option<u32>) -> bool {
+        match size_hint {
             Some(size) => size == 0,
-            None => self.compute_size() == 0,
+            None => self.cached_size() == 0,
         }
     }
 
@@ -45,9 +45,9 @@ pub trait Serialize: HasWireType {
         field_number: impl Into<Option<u32>>,
         is_omissible: bool,
     ) -> io::Result<u32> {
+        let field_number = field_number.into();
         let mut size = self.cache_size();
 
-        let field_number = field_number.into();
         if field_number.is_some() && is_omissible && self.is_omissible(Some(size)) {
             return Ok(0);
         }
