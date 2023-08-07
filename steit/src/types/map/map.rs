@@ -85,6 +85,10 @@ impl<K: MapKey, V: State> Map<K, V> {
     pub fn iter_mut(&mut self) -> MapIterMut<K, V> {
         MapIterMut::new(self.entries.iter_mut())
     }
+
+    pub fn len(&self) -> usize {
+        self.entries.len()
+    }
 }
 
 impl<K: MapKey, V: State> ops::Index<&K> for Map<K, V> {
