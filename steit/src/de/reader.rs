@@ -17,14 +17,22 @@ impl<R: io::Read> Reader<R> {
         }
     }
 
+    pub fn as_mut_read(&mut self) -> Reader<&mut dyn io::Read> {
+        Reader {
+            inner: Eof::new(self.inner.get_mut()),
+        }
+    }
+
     pub fn eof(&mut self) -> io::Result<bool> {
         self.inner.eof()
     }
 
-    pub fn nested(&mut self) -> io::Result<Reader<io::Take<&mut Self>>> {
+    pub fn nested(&mut self) -> io::Result<Reader<io::Take<Reader<&mut dyn io::Read>>>> {
         let size = u64::deserialize(self)?;
-        let reader = self.by_ref().take(size);
-        Ok(reader.into())
+        let reader = self.as_mut_read().take(size);
+        Ok(Reader {
+            inner: Eof::new(reader)
+        })
     }
 
     pub fn read_tag(&mut self) -> io::Result<(u32, WireType)> {
