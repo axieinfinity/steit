@@ -184,6 +184,9 @@ impl<K: MapKey, V: State> Deserialize for Map<K, V> {
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             let field_number = u32::deserialize(reader)?;
+
+            let (field_number, _) = wire_fmt::parse_tag(field_number)?;
+
             wire_fmt::validate_field_number(field_number)?;
             K::try_from_field_number(field_number)?;
 
