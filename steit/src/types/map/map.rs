@@ -184,6 +184,7 @@ impl<K: MapKey, V: State> Deserialize for Map<K, V> {
     fn merge(&mut self, reader: &mut Reader<impl io::Read>) -> io::Result<()> {
         while !reader.eof()? {
             let field_number = u32::deserialize(reader)?;
+            let (field_number, _) = wire_fmt::parse_tag(field_number)?;
             wire_fmt::validate_field_number(field_number)?;
             K::try_from_field_number(field_number)?;
 
@@ -460,7 +461,7 @@ mod tests {
         map.insert(1u16, 10);
         map.insert(2, 20);
         logger.lock().unwrap().clear();
-        merge(&mut map, &[3, 60]);
+        merge(&mut map, &[24, 60]);
         assert_eq!(map.get(&3), Some(&30));
         assert_eq!(logger.lock().unwrap().bytes(), &[]);
     }
@@ -470,14 +471,14 @@ mod tests {
         let mut map = map();
         map.insert_with(1u8, |runtime| Point::new(runtime, -1, -1, -1));
         map.insert_with(10, |runtime| Point::new(runtime, 2, 2, 2));
-        merge(&mut map, &[10, 2, 8, 5]);
+        merge(&mut map, &[82, 2, 8, 5]);
         assert_eq!(map.get(&10), Some(&Point::new(Runtime::new(), 2, -3, 2)));
     }
 
     #[test]
     fn merge_push_new() {
         let mut map = map();
-        merge(&mut map, &[2, 2, 16, 7]);
+        merge(&mut map, &[18, 2, 16, 7]);
         assert_eq!(map.get(&2u8), Some(&Point::new(Runtime::new(), 0, 0, -4)));
     }
 
