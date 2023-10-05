@@ -229,7 +229,8 @@ impl<K: MapKey, V: State> State for Map<K, V> {
                 value.handle(path, kind, key, reader)
             } else if kind == LogEntryKind::Update && path.next().is_none() {
                 let mut value = V::with_runtime(self.runtime.nested(field_number));
-                value.merge_nested(V::WIRE_TYPE, reader)?;
+                value.merge(reader)?;
+
                 self.entries.insert(field_number, value);
                 Ok(())
             } else {
